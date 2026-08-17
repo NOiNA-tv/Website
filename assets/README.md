@@ -1,8 +1,23 @@
 # Assets
 
-The site renders end-to-end with what is in this folder, but most of it is
-**placeholder artwork generated to stand in for the real files**. Swap each one
-for the real asset at the same path and filename — nothing else needs to change.
+The audio, font and video here are the real files. The **images are still
+placeholders** generated to stand in for the real artwork — swap each one at
+the same path and filename, nothing else needs to change.
+
+## Real assets
+
+| File | Used for |
+|---|---|
+| `segment7.woff2` | 7-segment LCD face for the channel number in the decoder |
+| `static-noise-transition.mp4` | Full-screen static burst when entering/leaving SYS. INFO (0.250s @ 60fps) |
+| `static-click.mp3` | Channel-change click |
+| `loading-loop.mp3` | Loop while a Vimeo channel buffers |
+
+> **`static-noise-transition.mp4` is 4.55 MB for a quarter-second** — roughly
+> 145 Mbps. The `<video>` carries `preload="auto"`, so every visitor downloads
+> all of it during load whether or not they ever open SYS. INFO. Re-encoding it
+> would be the single biggest win available on page weight; see the note at the
+> bottom of this file.
 
 ## Placeholders to replace
 
@@ -17,17 +32,23 @@ for the real asset at the same path and filename — nothing else needs to chang
 | `favicon-small.svg`, `favicon-16.png`, `favicon-32.png`, `favicon-48.png`, `apple-touch-icon.png` | Browser/app icons | apple-touch-icon is 180×180. |
 | `../coins-data.js` | Client logos bouncing in the CLIENTS box | Exports `COINS: {viewBox, inner}[]`, where `inner` is raw SVG markup rendered inside `<svg fill="currentColor">` — so shapes must not set their own `fill`. Currently typeset monograms; replace with the real vector marks. |
 
-## Still missing
+## Shrinking the transition video
 
-These are referenced by the page but not included. Each one degrades
-gracefully — the site works without them, it just loses that flourish.
+Static noise is close to the worst case for a video codec — every pixel changes
+every frame — which is why a 0.25s clip landed at 4.55 MB. Options, best first:
 
-| File | Used for | What happens without it |
-|---|---|---|
-| `segment7.woff2` | 7-segment LCD face for the channel number in the decoder | Falls back to `monospace`; the number still reads correctly. The `<link rel="preload">` in the head 404s until the font is added. |
-| `static-noise-transition.mp4` | Full-screen static burst when entering/leaving SYS. INFO | The transition still completes on its safety timer (~450ms), but flashes black instead of static. |
-| `static-click.mp3` | Channel-change click | Silent. |
-| `loading-loop.mp3` | Loop while a Vimeo channel buffers | Silent. |
+1. **Re-encode at a sane bitrate.** The clip is on screen for 250ms behind a
+   channel-change flash; it does not need visually-lossless noise.
+   `ffmpeg -i static-noise-transition.mp4 -c:v libx264 -crf 30 -preset slow -an out.mp4`
+2. **Drop the audio track.** The player sets `el.muted = true` permanently (the
+   click sound comes from `static-click.mp3` instead), so the mp4's AAC track is
+   never heard — `-an` removes it.
+3. **Halve the frame rate.** At 30fps instead of 60 the static still reads as
+   motion over 250ms.
+4. **Ship a WebM/VP9 alternate** alongside the mp4 for browsers that take it.
+
+If it cannot be made small, consider dropping `preload="auto"` to `preload="none"`
+so the download stops blocking first paint.
 
 ## Regenerating the placeholders
 

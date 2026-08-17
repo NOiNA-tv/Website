@@ -79,7 +79,7 @@ The page is fully wired and verified in a browser: channel changes, the Vimeo
 embeds, the description panel, mute, and the SYS. INFO page (typewriter,
 pixel-reveal photo, bouncing coin, BACK) all work.
 
-Most of `assets/` is placeholder artwork, and four media files
-(`segment7.woff2`, the transition video, two sound effects) are still missing —
-all of it degrades gracefully. See `assets/README.md` for the full list and
-the specs each replacement needs to meet.
+The font, transition video and sound effects in `assets/` are the real files.
+The **images are still placeholders** and degrade gracefully. See
+`assets/README.md` for the list and the specs each replacement must meet —
+it also flags the 4.55 MB transition video as the main page-weight problem.
