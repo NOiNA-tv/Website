@@ -26,10 +26,10 @@ the same path and filename, nothing else needs to change.
 | `noina-logo.gif` | Animated logo on the station channel (00) | The page applies `brightness(0) invert(96%)`, so it renders pure white whatever the source colour. Transparent background. |
 | `noina-logo-static.png` | Static logo under the TV bezel | Same filter treatment (`brightness(0) invert(1)`), rendered at 16.5px tall. |
 | `profile-photo.png` | Photo in the SYS. INFO panel | Shown in a 102×148 box, `object-fit: cover`, revealed by the pixel-wipe animation. Portrait crop. |
-| `terrazzo-random.png` | Floor + wall texture | Must tile seamlessly; drawn at 270×270. |
+| `terrazzo-random.png` | Floor + wall texture | Must tile seamlessly; drawn at 270×270. Chip palette (green/purple/blue/magenta on grey) matched from a reference image; density is approximate. |
 | `static-noise-tile.png` | CRT static grain over the screen | Must tile seamlessly; drawn at 180×180, screen-blended at 0.2 opacity. |
 | `og-share.png` | Social share card | Must be exactly 1200×630 (declared in the OG tags). |
-| `favicon-small.svg`, `favicon-16.png`, `favicon-32.png`, `favicon-48.png`, `apple-touch-icon.png` | Browser/app icons | apple-touch-icon is 180×180. |
+| `favicon-small.svg`, `favicon-16.png`, `favicon-32.png`, `favicon-48.png`, `apple-touch-icon.png` | Browser/app icons | Redrawn to approximate the real ghost mark (arch, two eyes, smile, chin dome) from a reference image — still a stand-in, not the actual artwork. apple-touch-icon is 180×180. |
 | `../coins-data.js` | Client logos bouncing in the CLIENTS box | Exports `COINS: {viewBox, inner}[]`, where `inner` is raw SVG markup rendered inside `<svg fill="currentColor">` — so shapes must not set their own `fill`. Currently typeset monograms; replace with the real vector marks. |
 
 ## Shrinking the transition video
