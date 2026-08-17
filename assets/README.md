@@ -13,7 +13,8 @@ project is `../coins-data.js` (see below).
 | `terrazzo-random.png` | Floor + wall texture, tiled at 270px |
 | `static-noise-tile.png` | CRT static grain over the screen, tiled at 180px |
 | `og-share.png` | Social share card — 1200×630, as declared in the OG tags |
-| `favicon-small.svg`, `favicon-16/32/48.png`, `apple-touch-icon.png` | Browser and app icons |
+| `favicon-small.svg` | Browser icon — the penguin, blinking on an 8s cycle |
+| `favicon-16/32/48.png`, `apple-touch-icon.png` | Icon fallbacks for browsers that will not take an SVG |
 | `segment7.woff2` | 7-segment LCD face for the channel number in the decoder |
 | `static-noise-transition.mp4` | Full-screen static burst entering/leaving SYS. INFO (0.250s @ 60fps) |
 | `static-click.mp3` | Channel-change click |
@@ -23,13 +24,20 @@ Both logo files carry real alpha, which matters: the page renders them through
 `brightness(0) invert(1)`, so any opaque background would come out as a solid
 white box over the mark.
 
+## The icon set is two colourways
+
+`favicon-small.svg` is a **dark penguin on cyan**; the PNG fallbacks are the
+same penguin **inverted** — cyan on dark `#0d1418`. Browsers that accept an SVG
+favicon therefore show one colourway and everything else shows the other. If
+that should be consistent, rasterize `favicon-small.svg` to 16/32/48/180 and
+replace the PNGs (or recolour the SVG to match them).
+
 ## Present but not referenced
 
-`favicon.svg`, `icon-512.png`, `mute-screen-icon.svg` and
-`terrazzo-pattern.svg` ship with the brand set but nothing in `index.html`
-points at them. `icon-512.png` is the right size for a PWA manifest icon and
-`terrazzo-pattern.svg` is the vector source for the floor texture, so they are
-kept rather than dropped.
+`icon-512.png`, `mute-screen-icon.svg` and `terrazzo-pattern.svg` ship with the
+brand set but nothing in `index.html` points at them. `icon-512.png` is the
+right size for a PWA manifest icon and `terrazzo-pattern.svg` is the vector
+source for the floor texture, so they are kept rather than dropped.
 
 ## Client logos
 
