@@ -43,7 +43,6 @@ Do not hand-edit `support.js` or `image-slot.js`; both are generated upstream.
 | `image-slot.js` | `<image-slot>` custom element, used for the SYS. INFO photo (generated — do not edit) |
 | `coins-data.js` | Client marks for the bouncing coin in the CLIENTS box |
 | `assets/` | Artwork, fonts, audio, video — see `assets/README.md` |
-| `tools/` | Placeholder-asset generator; not part of the site |
 
 ### Runtime dependencies
 
@@ -79,7 +78,8 @@ The page is fully wired and verified in a browser: channel changes, the Vimeo
 embeds, the description panel, mute, and the SYS. INFO page (typewriter,
 pixel-reveal photo, bouncing coin, BACK) all work.
 
-The font, transition video and sound effects in `assets/` are the real files.
-The **images are still placeholders** and degrade gracefully. See
-`assets/README.md` for the list and the specs each replacement must meet —
-it also flags the 4.55 MB transition video as the main page-weight problem.
+All of `assets/` is the real artwork. The one stand-in left is `coins-data.js`,
+whose client marks are typeset monograms rather than the real logos.
+
+`assets/README.md` has the full inventory, and flags the 4.55 MB transition
+video as the site's main page-weight problem.

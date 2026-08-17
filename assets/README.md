@@ -1,57 +1,62 @@
 # Assets
 
-The audio, font and video here are the real files. The **images are still
-placeholders** generated to stand in for the real artwork — swap each one at
-the same path and filename, nothing else needs to change.
+Everything in this folder is the real artwork. The only stand-in left in the
+project is `../coins-data.js` (see below).
 
-## Real assets
+## Referenced by the page
 
 | File | Used for |
 |---|---|
+| `noina-logo.gif` | Animated logo on the station channel (00) — 648×200, 200 frames |
+| `noina-logo-static.png` | Static logo under the TV bezel — 648×200, transparent |
+| `profile-photo.png` | Portrait in the SYS. INFO panel, revealed by the pixel wipe |
+| `terrazzo-random.png` | Floor + wall texture, tiled at 270px |
+| `static-noise-tile.png` | CRT static grain over the screen, tiled at 180px |
+| `og-share.png` | Social share card — 1200×630, as declared in the OG tags |
+| `favicon-small.svg`, `favicon-16/32/48.png`, `apple-touch-icon.png` | Browser and app icons |
 | `segment7.woff2` | 7-segment LCD face for the channel number in the decoder |
-| `static-noise-transition.mp4` | Full-screen static burst when entering/leaving SYS. INFO (0.250s @ 60fps) |
+| `static-noise-transition.mp4` | Full-screen static burst entering/leaving SYS. INFO (0.250s @ 60fps) |
 | `static-click.mp3` | Channel-change click |
 | `loading-loop.mp3` | Loop while a Vimeo channel buffers |
 
-> **`static-noise-transition.mp4` is 4.55 MB for a quarter-second** — roughly
-> 145 Mbps. The `<video>` carries `preload="auto"`, so every visitor downloads
-> all of it during load whether or not they ever open SYS. INFO. Re-encoding it
-> would be the single biggest win available on page weight; see the note at the
-> bottom of this file.
+Both logo files carry real alpha, which matters: the page renders them through
+`brightness(0) invert(1)`, so any opaque background would come out as a solid
+white box over the mark.
 
-## Placeholders to replace
+## Present but not referenced
 
-| File | Used for | Notes for the replacement |
-|---|---|---|
-| `noina-logo.gif` | Animated logo on the station channel (00) | The page applies `brightness(0) invert(96%)`, so it renders pure white whatever the source colour. Transparent background. |
-| `noina-logo-static.png` | Static logo under the TV bezel | Same filter treatment (`brightness(0) invert(1)`), rendered at 16.5px tall. |
-| `profile-photo.png` | Photo in the SYS. INFO panel | Shown in a 102×148 box, `object-fit: cover`, revealed by the pixel-wipe animation. Portrait crop. |
-| `terrazzo-random.png` | Floor + wall texture | Must tile seamlessly; drawn at 270×270. Chip palette (green/purple/blue/magenta on grey) matched from a reference image; density is approximate. |
-| `static-noise-tile.png` | CRT static grain over the screen | Must tile seamlessly; drawn at 180×180, screen-blended at 0.2 opacity. |
-| `og-share.png` | Social share card | Must be exactly 1200×630 (declared in the OG tags). |
-| `favicon-small.svg`, `favicon-16.png`, `favicon-32.png`, `favicon-48.png`, `apple-touch-icon.png` | Browser/app icons | Redrawn to approximate the real ghost mark (arch, two eyes, smile, chin dome) from a reference image — still a stand-in, not the actual artwork. apple-touch-icon is 180×180. |
-| `../coins-data.js` | Client logos bouncing in the CLIENTS box | Exports `COINS: {viewBox, inner}[]`, where `inner` is raw SVG markup rendered inside `<svg fill="currentColor">` — so shapes must not set their own `fill`. Currently typeset monograms; replace with the real vector marks. |
+`favicon.svg`, `icon-512.png`, `mute-screen-icon.svg` and
+`terrazzo-pattern.svg` ship with the brand set but nothing in `index.html`
+points at them. `icon-512.png` is the right size for a PWA manifest icon and
+`terrazzo-pattern.svg` is the vector source for the floor texture, so they are
+kept rather than dropped.
 
-## Shrinking the transition video
+## Still a placeholder
 
-Static noise is close to the worst case for a video codec — every pixel changes
-every frame — which is why a 0.25s clip landed at 4.55 MB. Options, best first:
+`../coins-data.js` holds the client marks that bounce around the CLIENTS box on
+the SYS. INFO page — currently typeset monograms (`KNS`, `BZB`, …) standing in
+for the real logos. It exports `COINS: {viewBox, inner}[]`, where `inner` is raw
+SVG markup rendered inside `<svg fill="currentColor">`, so the shapes must not
+set their own `fill`.
 
-1. **Re-encode at a sane bitrate.** The clip is on screen for 250ms behind a
+## One thing worth fixing
+
+**`static-noise-transition.mp4` is 4.55 MB for a quarter-second** — roughly
+145 Mbps. The `<video>` carries `preload="auto"`, so every visitor downloads all
+of it during load whether or not they ever open SYS. INFO. It is by a wide
+margin the heaviest thing on the site.
+
+Static noise is close to the worst case for a codec — every pixel changes every
+frame — which is how a 0.25s clip got this big. Options, best first:
+
+1. **Re-encode at a sane bitrate.** It is on screen for 250ms behind a
    channel-change flash; it does not need visually-lossless noise.
    `ffmpeg -i static-noise-transition.mp4 -c:v libx264 -crf 30 -preset slow -an out.mp4`
 2. **Drop the audio track.** The player sets `el.muted = true` permanently (the
-   click sound comes from `static-click.mp3` instead), so the mp4's AAC track is
-   never heard — `-an` removes it.
-3. **Halve the frame rate.** At 30fps instead of 60 the static still reads as
-   motion over 250ms.
+   click comes from `static-click.mp3` instead), so the mp4's AAC track is never
+   heard — `-an` removes it.
+3. **Halve the frame rate.** At 30fps the static still reads as motion over 250ms.
 4. **Ship a WebM/VP9 alternate** alongside the mp4 for browsers that take it.
 
-If it cannot be made small, consider dropping `preload="auto"` to `preload="none"`
-so the download stops blocking first paint.
-
-## Regenerating the placeholders
-
-`tools/gen-placeholder-assets.py` (Pillow) produced every generated file here.
-It is kept only so the stand-ins can be rebuilt or tweaked; it is not part of
-the site and nothing at runtime depends on it.
+If it cannot be made small, change `preload="auto"` to `preload="none"` on the
+`<video>` in `index.html` so the download stops competing with first paint.
