@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=VT323&family=Jersey+10&display=swap" rel="stylesheet">
+<link rel="stylesheet" media="screen" href="https://fontlibrary.org//face/segment7" type="text/css">
+<script src="./projects-data.js"></script>
+<style>
+  html,body{margin:0;padding:0;background:#111517;}
+  *{box-sizing:border-box;}
+  ::-webkit-scrollbar{width:12px;height:12px;}
+  ::-webkit-scrollbar-track{background:#15191b;}
+  ::-webkit-scrollbar-thumb{background:oklch(0.55 0.10 175);border:3px solid #15191b;border-radius:8px;}
+  ::-webkit-scrollbar-thumb:hover{background:oklch(0.78 0.15 175);}
+  input,textarea,select,button{font-family:'Poppins',sans-serif;}
+  input:focus,textarea:focus{outline:2px solid oklch(0.78 0.15 175);outline-offset:0;}
+  a{color:oklch(0.78 0.15 175);}
+  a:hover{color:oklch(0.88 0.13 175);}
+  @keyframes cms-blink{0%,49%{opacity:1;}50%,100%{opacity:0.15;}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:
+    radial-gradient(1200px 600px at 50% -10%, #1b2224 0%, #111517 60%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.014) 0 1px, transparent 1px 3px);
+  font-family:'Poppins',sans-serif;color:#e8eeef;padding:0 0 120px;">
+
+  <div style="position:sticky;top:0;z-index:30;backdrop-filter:blur(10px);background:rgba(17,21,23,0.88);border-bottom:1px solid #262f31;">
+    <div style="max-width:1180px;margin:0 auto;padding:18px 24px 16px;display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:oklch(0.72 0.16 25);box-shadow:0 0 10px oklch(0.72 0.16 25);animation:cms-blink 1.6s steps(1,end) infinite;"></div>
+          <div style="font-family:'Jersey 10',sans-serif;font-size:34px;line-height:1;letter-spacing:1px;color:#fff;">NOiNA BROADCAST CONTROL</div>
+        </div>
+        <div style="font-size:11px;letter-spacing:2.4px;text-transform:uppercase;color:#7d8f92;padding-left:20px;">Channel line-up manager</div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;margin-right:6px;">
+          <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:oklch(0.78 0.15 175);">{{ onAirCount }}</div>
+          <div style="font-size:9px;letter-spacing:2px;color:#6f8083;">ON AIR</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;margin-right:14px;">
+          <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:#5c6b6e;">{{ offAirCount }}</div>
+          <div style="font-size:9px;letter-spacing:2px;color:#6f8083;">OFF AIR</div>
+        </div>
+
+        <button onClick="{{ addProject }}" style="border:none;cursor:pointer;padding:11px 16px;border-radius:9px;background:#232b2d;color:#dbe6e7;font-size:11px;font-weight:700;letter-spacing:1.4px;box-shadow:0 3px 0 #151b1c;" style-hover="background:#2c3639;transform:translateY(-1px);box-shadow:0 4px 0 #151b1c;" style-active="transform:translateY(2px);box-shadow:0 1px 0 #151b1c;">+ NEW CHANNEL</button>
+        <button onClick="{{ openIO }}" style="border:none;cursor:pointer;padding:11px 16px;border-radius:9px;background:#232b2d;color:#dbe6e7;font-size:11px;font-weight:700;letter-spacing:1.4px;box-shadow:0 3px 0 #151b1c;" style-hover="background:#2c3639;transform:translateY(-1px);box-shadow:0 4px 0 #151b1c;" style-active="transform:translateY(2px);box-shadow:0 1px 0 #151b1c;">IMPORT / EXPORT</button>
+        <button onClick="{{ publish }}" style="{{ publishStyle }}">{{ publishLabel }}</button>
+      </div>
+    </div>
+
+    <div style="max-width:1180px;margin:0 auto;padding:0 24px 12px;display:flex;gap:26px;align-items:center;font-size:10.5px;letter-spacing:1.4px;color:#6f8083;text-transform:uppercase;">
+      <span>Drag rows to reorder — channel numbers follow the line-up</span>
+      <span style="color:#3d4749;">|</span>
+      <span>Top row = CH 01</span>
+      <span style="color:#3d4749;">|</span>
+      <span>Click a row to edit its full record</span>
+      <span style="color:#3d4749;">|</span>
+      <a href="./NOiNA Portfolio.dc.html" target="_blank" style="text-decoration:none;letter-spacing:1.4px;">OPEN THE SITE ↗</a>
+    </div>
+  </div>
+
+  <div style="max-width:1180px;margin:0 auto;padding:26px 24px 0;">
+
+    <div style="display:grid;grid-template-columns:26px 68px 104px 1fr 118px 100px 128px;gap:13px;align-items:center;padding:0 16px 10px;font-size:9.5px;letter-spacing:2px;color:#5f6f72;text-transform:uppercase;">
+      <span></span><span>CH</span><span>Frame</span><span>Title / subtitle</span><span>Vimeo ID</span><span>Status</span><span style="text-align:right;">Actions</span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;margin-bottom:10px;border-radius:12px;background:linear-gradient(90deg,#1e2325 0%,#191e20 100%);border:1px dashed #333d3f;opacity:0.75;">
+      <span style="width:26px;text-align:center;color:#4a5658;font-size:14px;">◆</span>
+      <span style="width:74px;font-family:'Segment7Standard',monospace;font-size:24px;color:oklch(0.78 0.15 55);">00</span>
+      <span style="flex:1;font-weight:600;font-size:14px;">NOiNA <span style="color:#7d8f92;font-weight:400;">— Station ID</span></span>
+      <span style="font-size:10px;letter-spacing:1.6px;color:#6f8083;">FIXED · NOT EDITABLE HERE</span>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <sc-for list="{{ rows }}" as="row" hint-placeholder-count="6">
+        <div style="{{ row.wrapStyle }}">
+          <div draggable="true" onDragStart="{{ onDragStart }}" onDragOver="{{ onDragOver }}" onDragEnd="{{ onDragEnd }}" onDrop="{{ onDrop }}" data-idx="{{ row.i }}"
+            style="display:grid;grid-template-columns:26px 68px 104px 1fr 118px 100px 128px;gap:13px;align-items:center;padding:13px 16px;cursor:grab;">
+            <div style="color:#4d5a5c;font-size:15px;line-height:1;letter-spacing:1px;user-select:none;">⣿</div>
+            <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:{{ row.numColor }};text-shadow:0 0 12px {{ row.numGlow }};">{{ row.num }}</div>
+            <div onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="preview" style="position:relative;width:104px;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:#0d1112;box-shadow:inset 0 0 0 1px #2b3336;cursor:pointer;flex-shrink:0;">
+              <sc-if value="{{ row.hasThumb }}" hint-placeholder-val="{{ false }}">
+                <img data-thumb="{{ row.thumb }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;opacity:{{ row.thumbOpacity }};transition:opacity .3s;" />
+              </sc-if>
+              <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.22) 0 1px,transparent 1px 3px);"></div>
+              <div style="position:absolute;bottom:3px;right:4px;color:#dfeaec;font-size:8px;letter-spacing:1px;text-shadow:0 1px 3px #000;">{{ row.thumbNote }}</div>
+            </div>
+            <div onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="toggleOpen" style="cursor:pointer;min-width:0;">
+              <div style="font-weight:600;font-size:14.5px;color:#f0f5f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ row.title }}</div>
+              <div style="font-size:11.5px;color:#849699;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ row.sub }}</div>
+            </div>
+            <div style="font-family:'VT323',monospace;font-size:16px;color:#7f9295;letter-spacing:0.5px;">{{ row.vimeoId }}</div>
+            <div>
+              <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="toggleHidden" style="{{ row.statusStyle }}">{{ row.statusLabel }}</button>
+            </div>
+            <div style="display:flex;gap:6px;justify-content:flex-end;">
+              <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="up" title="Move up" style="border:none;cursor:pointer;width:28px;height:28px;border-radius:7px;background:#242c2e;color:#9fb0b3;font-size:12px;" style-hover="background:#2f393b;color:#fff;">▲</button>
+              <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="down" title="Move down" style="border:none;cursor:pointer;width:28px;height:28px;border-radius:7px;background:#242c2e;color:#9fb0b3;font-size:12px;" style-hover="background:#2f393b;color:#fff;">▼</button>
+              <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="toggleOpen" title="Edit" style="border:none;cursor:pointer;height:28px;padding:0 10px;border-radius:7px;background:#242c2e;color:oklch(0.78 0.15 175);font-size:10px;font-weight:700;letter-spacing:1.2px;" style-hover="background:#2f393b;">{{ row.editLabel }}</button>
+            </div>
+          </div>
+
+          <sc-if value="{{ row.isOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:4px 16px 18px;border-top:1px solid #262f31;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;padding-top:16px;">
+                <label style="display:flex;flex-direction:column;gap:6px;">
+                  <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Title</span>
+                  <input value="{{ row.title }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="title" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#f0f5f6;padding:10px 12px;font-size:14px;font-weight:600;" />
+                </label>
+                <label style="display:flex;flex-direction:column;gap:6px;">
+                  <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Subtitle</span>
+                  <input value="{{ row.sub }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="sub" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#f0f5f6;padding:10px 12px;font-size:14px;" />
+                </label>
+                <label style="display:flex;flex-direction:column;gap:6px;">
+                  <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Vimeo ID</span>
+                  <input value="{{ row.vimeoId }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="vimeoId" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:oklch(0.82 0.13 175);padding:10px 12px;font-family:'VT323',monospace;font-size:17px;letter-spacing:1px;" />
+                </label>
+                <label style="display:flex;flex-direction:column;gap:6px;">
+                  <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Vimeo URL</span>
+                  <input value="{{ row.vimeoUrl }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="vimeoUrl" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#9db0b3;padding:10px 12px;font-size:12px;" />
+                </label>
+                <label style="display:flex;flex-direction:column;gap:6px;grid-column:1 / -1;">
+                  <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Description <span style="color:#4f5c5e;">— shown in the channel info drawer</span></span>
+                  <textarea onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="desc" rows="5" value="{{ row.desc }}" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#dde7e8;padding:12px;font-size:13px;line-height:1.6;resize:vertical;"></textarea>
+                </label>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;padding-top:14px;">
+                <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="preview" style="border:none;cursor:pointer;padding:10px 14px;border-radius:8px;background:#232b2d;color:#dbe6e7;font-size:10.5px;font-weight:700;letter-spacing:1.4px;box-shadow:0 3px 0 #151b1c;" style-hover="background:#2c3639;">▶ PREVIEW VIDEO</button>
+                <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="duplicate" style="border:none;cursor:pointer;padding:10px 14px;border-radius:8px;background:#232b2d;color:#dbe6e7;font-size:10.5px;font-weight:700;letter-spacing:1.4px;box-shadow:0 3px 0 #151b1c;" style-hover="background:#2c3639;">DUPLICATE</button>
+                <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="delete" style="border:none;cursor:pointer;margin-left:auto;padding:10px 14px;border-radius:8px;background:#2a2022;color:oklch(0.78 0.13 25);font-size:10.5px;font-weight:700;letter-spacing:1.4px;box-shadow:0 3px 0 #1a1315;" style-hover="background:#3a2a2c;">DELETE CHANNEL</button>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="margin-top:22px;padding:16px 18px;border-radius:12px;border:1px solid #232b2d;background:#161b1d;font-size:11.5px;line-height:1.7;color:#7d8f92;">
+      Saved line-ups publish to this browser and the site picks them up on next load — the factory list stays in
+      <span style="font-family:'VT323',monospace;font-size:15px;color:#9db0b3;">projects-data.js</span>.
+      Use <span style="color:#c6d3d5;">Import / Export</span> to move a line-up between browsers, or hand me the exported JSON to bake it into the site permanently.
+    </div>
+  </div>
+
+  <sc-if value="{{ previewId }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closePreview }}" style="position:fixed;inset:0;z-index:60;background:rgba(8,10,11,0.86);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:40px;">
+      <div style="width:min(980px,100%);aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.6);border:1px solid #2c3639;">
+        <iframe src="https://player.vimeo.com/video/{{ previewId }}?autoplay=1&loop=1&muted=1&controls=1&title=0&byline=0&portrait=0" style="width:100%;height:100%;border:none;" allow="autoplay; fullscreen"></iframe>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ioOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:60;background:rgba(8,10,11,0.86);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:40px;">
+      <div style="width:min(760px,100%);background:#171d1f;border:1px solid #2c3639;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 30px 80px rgba(0,0,0,0.6);">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="font-family:'Jersey 10',sans-serif;font-size:26px;color:#fff;">LINE-UP TAPE</div>
+          <button onClick="{{ closeIO }}" style="border:none;cursor:pointer;margin-left:auto;width:30px;height:30px;border-radius:8px;background:#232b2d;color:#9fb0b3;font-size:14px;" style-hover="background:#2f393b;color:#fff;">✕</button>
+        </div>
+        <textarea ref="{{ ioRef }}" spellcheck="false" style="width:100%;height:320px;background:#101416;border:1px solid #2c3639;border-radius:10px;color:#a9d8d3;padding:14px;font-family:'VT323',monospace;font-size:15px;line-height:1.5;resize:vertical;"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button onClick="{{ copyIO }}" style="border:none;cursor:pointer;padding:11px 16px;border-radius:9px;background:#232b2d;color:#dbe6e7;font-size:11px;font-weight:700;letter-spacing:1.4px;box-shadow:0 3px 0 #151b1c;" style-hover="background:#2c3639;">COPY</button>
+          <button onClick="{{ downloadIO }}" style="border:none;cursor:pointer;padding:11px 16px;border-radius:9px;background:#232b2d;color:#dbe6e7;font-size:11px;font-weight:700;letter-spacing:1.4px;box-shadow:0 3px 0 #151b1c;" style-hover="background:#2c3639;">DOWNLOAD .JSON</button>
+          <button onClick="{{ applyIO }}" style="border:none;cursor:pointer;margin-left:auto;padding:11px 18px;border-radius:9px;background:oklch(0.78 0.15 175);color:#0d1213;font-size:11px;font-weight:800;letter-spacing:1.4px;box-shadow:0 3px 0 oklch(0.55 0.14 175);" style-hover="transform:translateY(-1px);box-shadow:0 4px 0 oklch(0.55 0.14 175);">LOAD THIS TAPE</button>
+        </div>
+        <div style="font-size:11px;color:#7d8f92;">{{ ioNote }}</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:70;padding:12px 20px;border-radius:10px;background:#1d2426;border:1px solid #33403f;color:oklch(0.85 0.12 175);font-size:12px;letter-spacing:1.4px;box-shadow:0 14px 40px rgba(0,0,0,0.5);">{{ toast }}</div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;compact&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Line-up&quot;}}">
+class Component extends DCLogic {
+  KEY = 'noina_cms_projects_v1';
+  ACCENT = 'oklch(0.78 0.15 175)';
+  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', thumbs: {} };
+
+  sweepThumbs = () => {
+    document.querySelectorAll('img[data-thumb]').forEach(el => {
+      const u = el.dataset.thumb || '';
+      if (u.startsWith('http') && el.getAttribute('src') !== u) el.setAttribute('src', u);
+    });
+  };
+  syncThumbs() {
+    if (this._thumbRaf) return;
+    this._thumbRaf = requestAnimationFrame(() => { this._thumbRaf = null; this.sweepThumbs(); });
+  }
+
+  fetchThumbs(items) {
+    (items || []).forEach(p => {
+      const id = p.vimeoId;
+      if (!id || this.state.thumbs[id] || this._pending?.[id]) return;
+      this._pending = this._pending || {};
+      this._pending[id] = true;
+      fetch('https://vimeo.com/api/oembed.json?url=https://vimeo.com/' + id + '&width=480')
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)))
+        .then(d => this.setState(s => ({ thumbs: { ...s.thumbs, [id]: d.thumbnail_url || '' } })))
+        .catch(() => this.setState(s => ({ thumbs: { ...s.thumbs, [id]: '' } })));
+    });
+  }
+
+  componentDidMount() {
+    this.hydrate();
+    this._t = setInterval(() => { if (!this.state.items) this.hydrate(); }, 200);
+    this._sweepT = setInterval(this.sweepThumbs, 400);
+  }
+  componentWillUnmount() { clearInterval(this._t); clearInterval(this._sweepT); clearTimeout(this._toastT); }
+
+  factory() {
+    const src = (typeof window !== 'undefined' && window.NOINA_PROJECTS_DEFAULT) || [];
+    return src.map(p => ({ ...p }));
+  }
+  hydrate() {
+    let saved = null;
+    try { const raw = localStorage.getItem(this.KEY); if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) saved = a; } } catch (e) {}
+    const base = saved || this.factory();
+    if (!base.length) return;
+    clearInterval(this._t);
+    this.setState({ items: base.map((p, i) => ({ ...p, _id: p._id || 'p' + i + '_' + Math.random().toString(36).slice(2, 7) })), dirty: false });
+    this.fetchThumbs(base);
+  }
+
+  update(items, dirty = true) { this.setState({ items, dirty }); }
+  flash(msg) { clearTimeout(this._toastT); this.setState({ toast: msg }); this._toastT = setTimeout(() => this.setState({ toast: '' }), 2200); }
+
+  onField = (e) => {
+    const { idx, field } = e.target.dataset;
+    const v = e.target.value;
+    const items = this.state.items.slice();
+    items[+idx] = { ...items[+idx], [field]: v };
+    if (field === 'vimeoId') { items[+idx].vimeoUrl = 'https://vimeo.com/' + v; this.fetchThumbs([items[+idx]]); }
+    this.update(items);
+  };
+
+  onAction = (e) => {
+    const btn = e.currentTarget;
+    const i = +btn.dataset.idx, act = btn.dataset.act;
+    const items = this.state.items.slice();
+    if (act === 'toggleOpen') { const id = items[i]._id; this.setState({ openId: this.state.openId === id ? null : id }); return; }
+    if (act === 'toggleHidden') { items[i] = { ...items[i], hidden: !items[i].hidden }; this.update(items); return; }
+    if (act === 'up' && i > 0) { const [m] = items.splice(i, 1); items.splice(i - 1, 0, m); this.update(items); return; }
+    if (act === 'down' && i < items.length - 1) { const [m] = items.splice(i, 1); items.splice(i + 1, 0, m); this.update(items); return; }
+    if (act === 'duplicate') { const c = { ...items[i], _id: 'p_' + Math.random().toString(36).slice(2, 8), title: items[i].title + ' (copy)' }; items.splice(i + 1, 0, c); this.update(items); return; }
+    if (act === 'delete') { items.splice(i, 1); this.update(items); this.flash('CHANNEL REMOVED'); return; }
+    if (act === 'preview') { this.setState({ previewId: items[i].vimeoId }); return; }
+  };
+
+  addProject = () => {
+    const items = [{ _id: 'p_' + Math.random().toString(36).slice(2, 8), label: 'PRIME TIME', title: 'New Project', sub: 'Subtitle', type: 'project', aspect: '16/9', vimeoId: '', vimeoUrl: '', desc: '' }, ...(this.state.items || [])];
+    this.setState({ items, dirty: true, openId: items[0]._id });
+  };
+
+  onDragStart = (e) => { this.setState({ dragIdx: +e.currentTarget.dataset.idx }); e.dataTransfer.effectAllowed = 'move'; };
+  onDragOver = (e) => {
+    e.preventDefault();
+    const from = this.state.dragIdx, to = +e.currentTarget.dataset.idx;
+    if (from === null || from === to) return;
+    const items = this.state.items.slice();
+    const [m] = items.splice(from, 1);
+    items.splice(to, 0, m);
+    this.setState({ items, dragIdx: to, dirty: true });
+  };
+  onDrop = (e) => { e.preventDefault(); this.setState({ dragIdx: null }); };
+  onDragEnd = () => this.setState({ dragIdx: null });
+
+  publish = () => {
+    const clean = (this.state.items || []).map(({ _id, ...p }) => p);
+    try {
+      localStorage.setItem(this.KEY, JSON.stringify(clean));
+      localStorage.setItem(this.KEY + '_at', String(Date.now()));
+      this.setState({ dirty: false });
+      this.flash('PUBLISHED — ' + clean.filter(p => !p.hidden).length + ' CHANNELS ON AIR');
+    } catch (err) { this.flash('SAVE FAILED: ' + err.message); }
+  };
+
+  resetFactory = () => {
+    const f = this.factory();
+    if (!f.length) { this.flash('FACTORY LIST NOT LOADED'); return; }
+    this.setState({ items: f.map((p, i) => ({ ...p, _id: 'f' + i })), dirty: true, openId: null });
+    this.flash('FACTORY LINE-UP RESTORED — PUBLISH TO APPLY');
+  };
+
+  ioRef = (el) => { this._io = el; if (el && !el.value) el.value = this.tape(); };
+  tape() { return JSON.stringify((this.state.items || []).map(({ _id, ...p }) => p), null, 2); }
+  openIO = () => { this.setState({ ioOpen: true, ioNote: 'Paste a line-up tape and load it, or copy this one out.' }); setTimeout(() => { if (this._io) this._io.value = this.tape(); }, 0); };
+  closeIO = () => this.setState({ ioOpen: false });
+  copyIO = () => { if (this._io) { navigator.clipboard.writeText(this._io.value); this.flash('COPIED TO CLIPBOARD'); } };
+  downloadIO = () => {
+    const blob = new Blob([this.tape()], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'noina-channels.json'; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  applyIO = () => {
+    try {
+      const arr = JSON.parse(this._io.value);
+      if (!Array.isArray(arr) || !arr.length) throw new Error('expected a non-empty array');
+      this.setState({ items: arr.map((p, i) => ({ ...p, _id: 'i' + i })), dirty: true, ioOpen: false, openId: null });
+      this.flash('TAPE LOADED — PUBLISH TO APPLY');
+    } catch (err) { this.setState({ ioNote: 'Could not read that tape: ' + err.message }); }
+  };
+  closePreview = () => this.setState({ previewId: null });
+
+  renderVals() {
+    this.syncThumbs();
+    const items = this.state.items || [];
+    const desc = false;
+    const accent = this.ACCENT;
+    const thumbs = this.state.thumbs;
+    const compact = this.props.compact ?? false;
+    const visible = items.filter(p => !p.hidden);
+    let vi = 0;
+    const rows = items.map((p, i) => {
+      let num = '--';
+      if (!p.hidden) { num = String(desc ? visible.length - vi : vi + 1).padStart(2, '0'); vi++; }
+      const isOpen = this.state.openId === p._id;
+      const dragging = this.state.dragIdx === i;
+      return {
+        ...p, i, num, isOpen,
+        title: p.title || '', sub: p.sub || '', desc: p.desc || '', vimeoId: p.vimeoId || '', vimeoUrl: p.vimeoUrl || '', label: p.label || '',
+        thumb: thumbs[p.vimeoId] || '',
+        hasThumb: !!thumbs[p.vimeoId],
+        thumbOpacity: p.hidden ? '0.4' : '1',
+        thumbNote: p.vimeoId ? (thumbs[p.vimeoId] === undefined ? '…' : (thumbs[p.vimeoId] ? '' : 'NO SIGNAL')) : 'NO ID',
+        numColor: p.hidden ? '#4d5a5c' : accent,
+        numGlow: p.hidden ? 'transparent' : 'oklch(0.6 0.12 175 / 0.45)',
+        editLabel: isOpen ? 'CLOSE' : 'EDIT',
+        statusLabel: p.hidden ? 'OFF AIR' : 'ON AIR',
+        statusStyle: 'border:none;cursor:pointer;padding:6px 10px;border-radius:20px;font-size:9.5px;font-weight:800;letter-spacing:1.4px;'
+          + (p.hidden ? 'background:#242c2e;color:#7d8f92;' : 'background:oklch(0.3 0.06 175);color:' + accent + ';box-shadow:inset 0 0 0 1px oklch(0.45 0.09 175);'),
+        wrapStyle: 'border-radius:12px;border:1px solid ' + (isOpen ? '#37464a' : '#232b2d')
+          + ';background:' + (isOpen ? '#1a2123' : '#171c1e')
+          + ';opacity:' + (dragging ? '0.45' : p.hidden ? '0.6' : '1')
+          + ';transition:border-color .15s,background .15s,opacity .15s;'
+          + (compact ? 'font-size:12px;' : ''),
+      };
+    });
+    return {
+      rows,
+      onAirCount: String(visible.length).padStart(2, '0'),
+      offAirCount: String(items.length - visible.length).padStart(2, '0'),
+      onField: this.onField, onAction: this.onAction, addProject: this.addProject,
+      onDragStart: this.onDragStart, onDragOver: this.onDragOver, onDrop: this.onDrop, onDragEnd: this.onDragEnd,
+      publish: this.publish, resetFactory: this.resetFactory,
+      publishLabel: this.state.dirty ? 'PUBLISH CHANGES' : 'PUBLISHED ✓',
+      publishStyle: 'border:none;cursor:pointer;padding:11px 20px;border-radius:9px;font-size:11px;font-weight:800;letter-spacing:1.4px;'
+        + (this.state.dirty
+          ? 'background:' + accent + ';color:#0d1213;box-shadow:0 3px 0 oklch(0.55 0.14 175);'
+          : 'background:#1e2527;color:#6f8083;box-shadow:0 3px 0 #141a1b;'),
+      openIO: this.openIO, closeIO: this.closeIO, copyIO: this.copyIO, downloadIO: this.downloadIO, applyIO: this.applyIO,
+      ioRef: this.ioRef, ioOpen: this.state.ioOpen, ioNote: this.state.ioNote,
+      previewId: this.state.previewId, closePreview: this.closePreview, toast: this.state.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

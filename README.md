@@ -41,7 +41,9 @@ Do not hand-edit `support.js` or `image-slot.js`; both are generated upstream.
 | `index.html` | The page: template + component logic + SEO/schema head |
 | `support.js` | Design Canvas runtime (generated — do not edit) |
 | `image-slot.js` | `<image-slot>` custom element, used for the SYS. INFO photo (generated — do not edit) |
-| `coins-data.js` | Client marks for the bouncing coin in the CLIENTS box |
+| `cms.html` | Channel line-up manager (a second Design Canvas document) |
+| `projects-data.js` | Factory line-up the CMS seeds itself from |
+| `coins-data.js` | The 37 client logos for the bouncing coin in the CLIENTS box |
 | `assets/` | Artwork, fonts, audio, video — see `assets/README.md` |
 
 ### Runtime dependencies
@@ -62,24 +64,46 @@ Channels are defined by `CHANNELS_BUILTIN` in the component script. Channel
 numbers are always derived from list order, so reordering the list renumbers
 the dial.
 
-A CMS can override the line-up: the page reads `localStorage` key
-`noina_cms_projects_v1`, and if it holds a non-empty array, that replaces the
-built-in project list. It also listens for `storage` events, so a CMS page
-publishing in another tab updates the dial live. The station ID (00) always
-comes from the built-in list and can't be overridden. Entries marked
-`hidden: true` are dropped.
+The CMS at **`/cms.html`** overrides that line-up. It lets you reorder channels
+by drag, hide them, edit every field, duplicate, delete and preview, then
+Publish. The page reads `localStorage` key `noina_cms_projects_v1`, and if it
+holds a non-empty array, that replaces the built-in project list. It also
+listens for `storage` events, so publishing in another tab updates the dial
+live. The station ID (00) always comes from the built-in list and can't be
+overridden; entries marked `hidden: true` are dropped.
 
-> The companion `Channels CMS.dc.html` that writes that key is not in this
-> repo yet.
+The CMS must be served from the **same origin** as the site — `localStorage` is
+per-origin, so a CMS on a different host writes a key the site never sees.
+
+### Publishing is per-browser
+
+This is the important limitation. **Publish writes to the publisher's own
+browser and nothing else.** Visitors get whatever `CHANNELS_BUILTIN` says; they
+do not see a published line-up. Treat the CMS as an authoring and preview tool.
+
+To make a line-up permanent for everyone: use **Import / Export** in the CMS to
+copy the JSON out, then bake it into the source.
+
+### Two copies of the line-up
+
+The project list currently lives in two places, and they must be kept in step:
+
+- `CHANNELS_BUILTIN` in `index.html` — what visitors see
+- `NOINA_PROJECTS_DEFAULT` in `projects-data.js` — what the CMS seeds from and
+  what its "restore factory line-up" button resets to
+
+They are identical today (verified field by field). When you bake in an exported
+line-up, update **both**, or the CMS and the live site will drift apart.
 
 ## Status
 
-The page is fully wired and verified in a browser: channel changes, the Vimeo
-embeds, the description panel, mute, and the SYS. INFO page (typewriter,
-pixel-reveal photo, bouncing coin, BACK) all work.
+Both pages are fully wired and verified in a browser: channel changes, the
+Vimeo embeds, the description panel, mute, and the SYS. INFO page (typewriter,
+pixel-reveal photo, bouncing client logos, BACK). The CMS round-trip is
+verified too — hiding a channel and publishing drops it from the dial and
+renumbers the remaining channels.
 
-All of `assets/` is the real artwork. The one stand-in left is `coins-data.js`,
-whose client marks are typeset monograms rather than the real logos.
+All of `assets/` is the real artwork and `coins-data.js` holds the 37 real
+client logos. Nothing in the project is a placeholder any more.
 
-`assets/README.md` has the full inventory, and flags the 4.55 MB transition
-video as the site's main page-weight problem.
+`assets/README.md` has the full asset inventory.

@@ -31,32 +31,27 @@ points at them. `icon-512.png` is the right size for a PWA manifest icon and
 `terrazzo-pattern.svg` is the vector source for the floor texture, so they are
 kept rather than dropped.
 
-## Still a placeholder
+## Client logos
 
-`../coins-data.js` holds the client marks that bounce around the CLIENTS box on
-the SYS. INFO page — currently typeset monograms (`KNS`, `BZB`, …) standing in
-for the real logos. It exports `COINS: {viewBox, inner}[]`, where `inner` is raw
-SVG markup rendered inside `<svg fill="currentColor">`, so the shapes must not
-set their own `fill`.
+`../coins-data.js` holds the 37 client logos that bounce around the CLIENTS box
+on the SYS. INFO page. It exports `COINS: {name, viewBox, inner}[]`, where
+`inner` is raw SVG markup rendered inside `<svg fill="currentColor">` — the
+shapes carry no `fill` of their own, which is what lets them pick up the
+terminal's cyan.
 
-## One thing worth fixing
+## Page weight
 
-**`static-noise-transition.mp4` is 4.55 MB for a quarter-second** — roughly
-145 Mbps. The `<video>` carries `preload="auto"`, so every visitor downloads all
-of it during load whether or not they ever open SYS. INFO. It is by a wide
-margin the heaviest thing on the site.
+`static-noise-transition.mp4` was re-encoded from 4.55 MB down to **1.47 MB**
+(same 0.250s @ 60fps, 15 frames, H.264 Main). The `<video>` still carries
+`preload="auto"`, so every visitor downloads it during load whether or not they
+open SYS. INFO — it remains the single heaviest asset on the site.
 
-Static noise is close to the worst case for a codec — every pixel changes every
-frame — which is how a 0.25s clip got this big. Options, best first:
+If it needs to come down further:
 
-1. **Re-encode at a sane bitrate.** It is on screen for 250ms behind a
-   channel-change flash; it does not need visually-lossless noise.
-   `ffmpeg -i static-noise-transition.mp4 -c:v libx264 -crf 30 -preset slow -an out.mp4`
-2. **Drop the audio track.** The player sets `el.muted = true` permanently (the
-   click comes from `static-click.mp3` instead), so the mp4's AAC track is never
-   heard — `-an` removes it.
-3. **Halve the frame rate.** At 30fps the static still reads as motion over 250ms.
-4. **Ship a WebM/VP9 alternate** alongside the mp4 for browsers that take it.
-
-If it cannot be made small, change `preload="auto"` to `preload="none"` on the
-`<video>` in `index.html` so the download stops competing with first paint.
+- **Drop the audio track.** The clip still carries a 0.32s AAC track, and the
+  player sets `el.muted = true` permanently (the click comes from
+  `static-click.mp3` instead), so it is never heard. `ffmpeg -i in.mp4 -c copy -an out.mp4`
+- **Halve the frame rate.** At 30fps the static still reads as motion over 250ms.
+- **Ship a WebM/VP9 alternate** alongside the mp4 for browsers that take it.
+- **Or set `preload="none"`** on the `<video>` in `index.html` so the download
+  stops competing with first paint.
