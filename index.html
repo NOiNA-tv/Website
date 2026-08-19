@@ -1031,11 +1031,10 @@ class Component extends DCLogic {
     const el = this.kickEl;
     if (!el) return;
     cancelAnimationFrame(this._kickRaf);
-    // Triple the friction of the handoff's value so the shell stops ringing
-    // (2.7s and seven bounces was too long to watch); the launch velocity goes
-    // up to match, so the dip keeps its original 12.5px depth.
-    let t = 0, v = 290;
-    const stiffness = 80, damping = 12, to = 0;
+    // Handoff values, with damping raised from 4 so the shell stops ringing
+    // (at 4 it bounced seven times over ~2.7s).
+    let t = 0, v = 160;
+    const stiffness = 80, damping = 8, to = 0;
     const step = () => {
       const dt = 1 / 60;
       v += (-stiffness * (t - to) - damping * v) * dt;
