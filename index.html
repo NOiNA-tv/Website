@@ -426,7 +426,15 @@
     pointer-events:none;z-index:0;opacity:.36;
     animation:tv-ambient-breathe 1s ease-in-out infinite;}
   @keyframes tv-ambient-breathe{0%,100%{opacity:.28;}50%{opacity:.46;}}
-  @media (prefers-reduced-motion:reduce){.tv-ambient{animation:none;}}
+  /* A palette glow slides its gradient instead of sitting still, so the light
+     travels through the chosen colours. Background-position is cheap to
+     animate and the whole layer is blurred anyway, so the band reads as a soft
+     colour shift rather than a moving stripe. */
+  .tv-ambient--pal{background-size:300% 300%;
+    animation:tv-ambient-breathe 1s ease-in-out infinite,
+              tv-pal-drift 14s ease-in-out infinite;}
+  @keyframes tv-pal-drift{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+  @media (prefers-reduced-motion:reduce){.tv-ambient,.tv-ambient--pal{animation:none;}}
   /* SYS. INFO fills the window on plain black. One margin unit all round, two
      at the bottom — that lower band is where BACK sits. */
   /* --info-m is the margin unit; the bottom gets two of them plus enough room
@@ -502,7 +510,7 @@
            the chassis; the source is the channel's own Vimeo poster frame, so the
            colour matches what is playing. See the note in renderVals. -->
       <sc-if value="{{ showGlow }}" hint-placeholder-val="{{ true }}">
-        <div class="tv-ambient" aria-hidden="true" style="background-image:{{ glowImage }}"></div>
+        <div class="tv-ambient {{ glowMode }}" aria-hidden="true" style="background-image:{{ glowImage }}"></div>
       </sc-if>
       <div ref="{{ screenRef }}" style="{{ screenStyle }}">
         <svg width="0" height="0" style="position:absolute;"><defs><clipPath id="tv-screen-clip" clipPathUnits="userSpaceOnUse"><path ref="{{ clipPathRef }}" d="M82.29,95.56S0,289.02,0,540s82.29,444.44,82.29,444.44c0,0,392.97,95.56,877.71,95.56,484.75,0,877.71-95.56,877.71-95.56,0,0,82.29-193.46,82.29-444.44s-82.29-444.44-82.29-444.44c0,0-392.97-95.56-877.71-95.56C475.25,0,82.29,95.56,82.29,95.56Z"></path></clipPath></defs></svg>
@@ -1775,9 +1783,29 @@ class Component extends DCLogic {
     // The channel's Vimeo poster frame is the next best source: it carries the
     // real colour of the piece, costs one cached image, and needs no per-frame
     // work. The station channel has no video, so it glows in brand cyan.
-    const glowImage = channel.isProject && c.vimeoId
-      ? `url('https://vumbnail.com/${c.vimeoId}.jpg')`
-      : 'radial-gradient(circle at 50% 45%, oklch(0.72 0.15 205) 0%, oklch(0.45 0.11 205) 45%, transparent 72%)';
+    // A hand-picked palette beats the poster frame: it is art-directed rather
+    // than whatever average the video happens to produce, and it moves. Up to
+    // four colours, any of which may be left empty in the CMS. Two or more
+    // cross-fade through a drifting gradient; one paints a steady wash; none
+    // falls back to the channel's poster frame.
+    const HEX = /^#[0-9a-f]{6}$/i;
+    const palette = (Array.isArray(c.palette) ? c.palette : [])
+      .filter((h) => typeof h === 'string' && HEX.test(h.trim()))
+      .map((h) => h.trim())
+      .slice(0, 4);
+    const stationWash =
+      'radial-gradient(circle at 50% 45%, oklch(0.72 0.15 205) 0%, oklch(0.45 0.11 205) 45%, transparent 72%)';
+    let glowImage;
+    if (palette.length >= 2) {
+      // repeat the first colour so the drift loops back on itself seamlessly
+      glowImage = `linear-gradient(115deg, ${[...palette, palette[0]].join(', ')})`;
+    } else if (palette.length === 1) {
+      glowImage = `linear-gradient(115deg, ${palette[0]}, ${palette[0]})`;
+    } else if (channel.isProject && c.vimeoId) {
+      glowImage = `url('https://vumbnail.com/${c.vimeoId}.jpg')`;
+    } else {
+      glowImage = stationWash;
+    }
     const sloganIdx = SLOGANS.indexOf(this.props.slogan ?? SLOGANS[0]);
     const crt = this.props.crtIntensity ?? 60;
     return {
@@ -1790,6 +1818,7 @@ class Component extends DCLogic {
       scanOpacity: Math.min(1, crt / 100),
       infoOpen: this.state.infoOpen,
       glowImage,
+      glowMode: palette.length >= 2 ? 'tv-ambient--pal' : '',
       showGlow: !this.state.infoOpen,
       // SYS. INFO is a full-screen terminal, not a picture on a television —
       // so the chassis, the tube mask and the CRT overlays all step aside and

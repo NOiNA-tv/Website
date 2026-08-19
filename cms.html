@@ -130,6 +130,21 @@
                   <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Vimeo URL</span>
                   <input value="{{ row.vimeoUrl }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="vimeoUrl" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#9db0b3;padding:10px 12px;font-size:12px;" />
                 </label>
+                <div style="display:flex;flex-direction:column;gap:8px;grid-column:1 / -1;">
+                  <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Glow palette
+                    <span style="color:#4f5c5e;">— up to four colours, leave any empty. Two or more drift between each other; none falls back to the video's poster frame.</span></span>
+                  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                    <sc-for list="{{ row.swatches }}" as="sw" hint-placeholder-count="{{ 4 }}">
+                      <div style="display:flex;align-items:center;gap:6px;background:#161c1e;border:1px solid #2c3639;border-radius:9px;padding:6px 8px;">
+                        <input type="color" value="{{ sw.value }}" onChange="{{ onPalette }}" data-idx="{{ row.i }}" data-slot="{{ sw.slot }}" title="Pick a colour" style="width:34px;height:26px;border:none;background:none;padding:0;cursor:pointer;" />
+                        <span style="font-family:'VT323',monospace;font-size:15px;letter-spacing:.5px;color:{{ sw.labelColor }};min-width:66px;">{{ sw.label }}</span>
+                        <button onClick="{{ onEyedrop }}" data-idx="{{ row.i }}" data-slot="{{ sw.slot }}" title="{{ eyedropperTitle }}" style="{{ eyedropperStyle }}">⌖</button>
+                        <button onClick="{{ onPaletteClear }}" data-idx="{{ row.i }}" data-slot="{{ sw.slot }}" title="Clear this colour" style="border:none;cursor:pointer;background:none;color:#5f6d70;font-size:15px;line-height:1;padding:2px 3px;" style-hover="color:#c9d6d8;">×</button>
+                      </div>
+                    </sc-for>
+                    <div style="flex:1;min-width:120px;height:34px;border-radius:9px;border:1px solid #2c3639;background:{{ row.paletteSwatch }};" title="How the glow will read"></div>
+                  </div>
+                </div>
                 <label style="display:flex;flex-direction:column;gap:6px;grid-column:1 / -1;">
                   <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Description <span style="color:#4f5c5e;">— shown in the channel info drawer</span></span>
                   <textarea onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="desc" rows="5" value="{{ row.desc }}" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#dde7e8;padding:12px;font-size:13px;line-height:1.6;resize:vertical;"></textarea>
@@ -248,6 +263,46 @@ class Component extends DCLogic {
     this.update(items);
   };
 
+  /** Write one palette slot, keeping the array compact (no holes) so the site
+   *  can just count entries. */
+  setPaletteSlot(idx, slot, hex) {
+    const items = this.state.items.slice();
+    const cur = Array.isArray(items[idx].palette) ? items[idx].palette.slice() : [];
+    while (cur.length < 4) cur.push('');
+    cur[slot] = hex || '';
+    const palette = cur.filter(Boolean);
+    items[idx] = { ...items[idx], palette };
+    this.update(items);
+  }
+
+  onPalette = (e) => {
+    const { idx, slot } = e.target.dataset;
+    this.setPaletteSlot(+idx, +slot, e.target.value);
+  };
+
+  onPaletteClear = (e) => {
+    const { idx, slot } = e.currentTarget.dataset;
+    this.setPaletteSlot(+idx, +slot, '');
+  };
+
+  /** The browser's own eyedropper. It is a MANUAL, one-shot sample: the cursor
+   *  becomes a picker, you click anywhere on screen — including a playing
+   *  video — and it returns the single colour under the cursor at that moment.
+   *  It does not track or update afterwards. The page never gets pixel access;
+   *  the browser does the reading, which is why it can sample a cross-origin
+   *  video the page itself cannot touch. Chromium only, hence the fallback to
+   *  the colour input sitting next to it. */
+  onEyedrop = (e) => {
+    const { idx, slot } = e.currentTarget.dataset;
+    if (typeof window.EyeDropper !== 'function') {
+      this.flash('EYEDROPPER NEEDS CHROME OR EDGE — USE THE SWATCH');
+      return;
+    }
+    new window.EyeDropper().open()
+      .then((r) => { if (r && r.sRGBHex) this.setPaletteSlot(+idx, +slot, r.sRGBHex); })
+      .catch(() => {});   // the user pressing Escape lands here
+  };
+
   onAction = (e) => {
     const btn = e.currentTarget;
     const i = +btn.dataset.idx, act = btn.dataset.act;
@@ -340,6 +395,17 @@ class Component extends DCLogic {
         thumbNote: p.vimeoId ? (thumbs[p.vimeoId] === undefined ? '…' : (thumbs[p.vimeoId] ? '' : 'NO SIGNAL')) : 'NO ID',
         numColor: p.hidden ? '#4d5a5c' : accent,
         numGlow: p.hidden ? 'transparent' : 'oklch(0.6 0.12 175 / 0.45)',
+        swatches: [0, 1, 2, 3].map((slot) => {
+          const v = (Array.isArray(p.palette) ? p.palette : [])[slot] || '';
+          return { slot: String(slot), value: v || '#000000', label: v ? v.toUpperCase() : 'empty',
+                   labelColor: v ? '#c9d6d8' : '#4f5c5e' };
+        }),
+        paletteSwatch: (() => {
+          const set = (Array.isArray(p.palette) ? p.palette : []).filter(Boolean);
+          if (set.length >= 2) return `linear-gradient(115deg, ${[...set, set[0]].join(', ')})`;
+          if (set.length === 1) return set[0];
+          return 'repeating-linear-gradient(45deg,#1b2224 0 8px,#161c1e 8px 16px)';
+        })(),
         editLabel: isOpen ? 'CLOSE' : 'EDIT',
         statusLabel: p.hidden ? 'OFF AIR' : 'ON AIR',
         statusStyle: 'border:none;cursor:pointer;padding:6px 10px;border-radius:20px;font-size:9.5px;font-weight:800;letter-spacing:1.4px;'
@@ -356,6 +422,14 @@ class Component extends DCLogic {
       onAirCount: String(visible.length).padStart(2, '0'),
       offAirCount: String(items.length - visible.length).padStart(2, '0'),
       onField: this.onField, onAction: this.onAction, addProject: this.addProject,
+      onPalette: this.onPalette, onPaletteClear: this.onPaletteClear, onEyedrop: this.onEyedrop,
+      eyedropperTitle: typeof window !== 'undefined' && typeof window.EyeDropper === 'function'
+        ? 'Pick a colour from anywhere on screen — play the video first'
+        : 'Screen eyedropper needs Chrome or Edge',
+      eyedropperStyle: 'border:none;border-radius:6px;cursor:pointer;padding:4px 7px;font-size:13px;line-height:1;'
+        + (typeof window !== 'undefined' && typeof window.EyeDropper === 'function'
+            ? 'background:#242c2e;color:oklch(0.78 0.15 175);'
+            : 'background:#1d2325;color:#4f5c5e;'),
       onDragStart: this.onDragStart, onDragOver: this.onDragOver, onDrop: this.onDrop, onDragEnd: this.onDragEnd,
       publish: this.publish, resetFactory: this.resetFactory,
       publishLabel: this.state.dirty ? 'PUBLISH CHANGES' : 'PUBLISHED ✓',
