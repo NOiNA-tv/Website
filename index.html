@@ -760,7 +760,7 @@
            path is scaled non-uniformly to fill the remote's tall silhouette. -->
       <svg style="position:absolute;left:0;right:0;top:0;aspect-ratio:298.71/549.1;pointer-events:none;z-index:1;overflow:visible;"><path ref="{{ remoteOutlineRef }}" d="M0.02960,0.14252 C0.01610,0.22546 0,0.35480 0,0.50000 s0.01610,0.27448 0.02960,0.35755 c0.00984,0.06039 0.07626,0.10910 0.16542,0.12119 c0.10385,0.01412 0.20649,0.02127 0.30507,0.02127 s0.20123,-0.00716 0.30507,-0.02127 c0.08908,-0.01211 0.15550,-0.06081 0.16542,-0.12119 c0.01349,-0.08299 0.02960,-0.21243 0.02960,-0.35755 s-0.01610,-0.27447 -0.02960,-0.35755 c-0.00984,-0.06039 -0.07626,-0.10910 -0.16542,-0.12119 C0.70123,0.00716 0.59860,0 0.50017,0 s-0.20123,0.00716 -0.30507,0.02127 C0.10589,0.03337 0.03944,0.08209 0.02960,0.14252 Z" fill="none" stroke="oklch(0.62 0.135 205)" stroke-width="6" vector-effect="non-scaling-stroke"></path></svg>
 
-      <div style="position:relative;padding:32px 46px 24px;display:flex;flex-direction:column;align-items:center;gap:0;">
+      <div style="position:relative;padding:28px 46px 20px;display:flex;flex-direction:column;align-items:center;gap:0;">
       <!-- mute / info. Each hitbox is the exact clickable size; the Lottie player
            inside is larger and centred, so squash-and-stretch never clips. It
            carries pointer-events:none so its transparent margin can't swallow a
@@ -775,7 +775,7 @@
       </div>
 
       <!-- channel rocker -->
-      <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:-8px;">
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:-16px;">
         <div data-remote-btn onclick="{{ onNext }}" style="position:relative;width:200px;height:120px;cursor:pointer;z-index:1;">
           <div ref="{{ prevRef }}" style="position:absolute;left:50%;top:50%;width:242px;height:194px;transform:translate(-50%,-50%);pointer-events:none;"></div>
         </div>
@@ -1031,8 +1031,11 @@ class Component extends DCLogic {
     const el = this.kickEl;
     if (!el) return;
     cancelAnimationFrame(this._kickRaf);
-    let t = 0, v = 160;
-    const stiffness = 80, damping = 4, to = 0;
+    // Triple the friction of the handoff's value so the shell stops ringing
+    // (2.7s and seven bounces was too long to watch); the launch velocity goes
+    // up to match, so the dip keeps its original 12.5px depth.
+    let t = 0, v = 290;
+    const stiffness = 80, damping = 12, to = 0;
     const step = () => {
       const dt = 1 / 60;
       v += (-stiffness * (t - to) - damping * v) * dt;
@@ -1864,7 +1867,7 @@ class Component extends DCLogic {
       // leave a plain black page.
       tvBezelStyle: this.state.infoOpen
         ? "background:#000;border-radius:0;padding:0;border:none;box-shadow:none;position:fixed;inset:0;width:100vw;height:100dvh;z-index:100;display:flex;flex-direction:column;"
-        : "background:linear-gradient(135deg, oklch(0.34 0.016 205), oklch(0.24 0.018 205));border-radius:32px;padding:18px 18px 14px;border:4px solid oklch(0.40 0.09 205);box-shadow:0 8px 18px -8px rgba(0,0,0,.45);position:relative;",
+        : "background:linear-gradient(135deg, oklch(0.24 0.016 205), oklch(0.14 0.018 205));border-radius:32px;padding:18px 18px 14px;border:4px solid oklch(0.40 0.09 205);box-shadow:0 8px 18px -8px rgba(0,0,0,.45);position:relative;",
       screenStyle: this.state.infoOpen
         ? "position:absolute;inset:0;overflow:hidden;background:#000;"
         : "position:absolute;inset:0;overflow:hidden;background:#050505;clip-path:url(#tv-screen-clip);box-shadow:inset 0 0 0 3px rgba(255,255,255,.04), inset 0 0 40px rgba(0,0,0,.9);animation:screen-flicker 6s ease-in-out infinite;",
