@@ -423,16 +423,16 @@
     background-size:cover;background-position:center;
     border-radius:10%/18%;
     filter:blur(48px) saturate(1.9) brightness(1.1);mix-blend-mode:screen;
-    pointer-events:none;z-index:0;opacity:.72;
-    animation:tv-ambient-breathe 2s ease-in-out infinite;}
-  @keyframes tv-ambient-breathe{0%,100%{opacity:.6;}50%{opacity:.85;}}
+    pointer-events:none;z-index:0;opacity:.36;
+    animation:tv-ambient-breathe 1s ease-in-out infinite;}
+  @keyframes tv-ambient-breathe{0%,100%{opacity:.28;}50%{opacity:.46;}}
   @media (prefers-reduced-motion:reduce){.tv-ambient{animation:none;}}
   /* SYS. INFO fills the window on plain black. One margin unit all round, two
      at the bottom — that lower band is where BACK sits. */
   /* --info-m is the margin unit; the bottom gets two of them plus enough room
      for the BACK control itself, which lives in that band. Both rules read the
      same variable, so the frame can never crowd the button. */
-  :root{--info-m:clamp(16px,3.2vw,34px);}
+  :root{--info-m:clamp(26px,5vw,60px);}
   .info-page{position:absolute;inset:0;background:#000;
     padding:var(--info-m) var(--info-m) calc(var(--info-m) * 2 + 40px);
     z-index:8;display:flex;font-family:'VT323',monospace;color:oklch(0.8 0.17 205);}
@@ -596,15 +596,15 @@
             <div class="info-frame">
               <div style="position:absolute;top:6px;bottom:6px;right:5px;width:5px;background:oklch(0.8 0.17 205 / .15);z-index:2;"></div>
               <div ref="{{ infoScrollThumbRef }}" style="position:absolute;top:6px;right:5px;width:5px;height:40px;background:oklch(0.8 0.17 205);box-shadow:0 0 6px oklch(0.8 0.17 205 / .5);z-index:2;"></div>
-              <div ref="{{ infoScrollRef }}" onscroll="{{ onInfoScroll }}" data-no-scrollbar="true" style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:16px 26px 16px 16px;font-size:clamp(13px,1.1vw + 9px,17px);line-height:1.55;letter-spacing:.03em;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
+              <div ref="{{ infoScrollRef }}" onscroll="{{ onInfoScroll }}" data-no-scrollbar="true" style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:16px 26px 16px 16px;font-size:clamp(16px,1.5vw + 11px,23px);line-height:1.55;letter-spacing:.03em;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-                <div style="flex:1;overflow:hidden;white-space:nowrap;font-family:'Jersey 10',monospace;font-size:20px;letter-spacing:.1em;">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</div>
-                <div data-type-line="true" style="font-family:'Jersey 10',monospace;font-size:20px;text-align:center;letter-spacing:.1em;text-shadow:0 0 6px oklch(0.8 0.17 205 / .4);white-space:nowrap;">SYSTEM INFO</div>
-                <div style="flex:1;overflow:hidden;white-space:nowrap;font-family:'Jersey 10',monospace;font-size:20px;letter-spacing:.1em;">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</div>
+                <div style="flex:1;overflow:hidden;white-space:nowrap;font-family:'Jersey 10',monospace;font-size:27px;letter-spacing:.1em;">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</div>
+                <div data-type-line="true" style="font-family:'Jersey 10',monospace;font-size:27px;text-align:center;letter-spacing:.1em;text-shadow:0 0 6px oklch(0.8 0.17 205 / .4);white-space:nowrap;">SYSTEM INFO</div>
+                <div style="flex:1;overflow:hidden;white-space:nowrap;font-family:'Jersey 10',monospace;font-size:27px;letter-spacing:.1em;">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</div>
               </div>
 
               <div style="display:flex;justify-content:flex-start;align-items:flex-start;gap:16px;">
-                <div ref="{{ photoBoxRef }}" style="flex-shrink:0;position:relative;width:114px;height:160px;opacity:0;border:2px dashed oklch(0.8 0.17 205);">
+                <div ref="{{ photoBoxRef }}" style="flex-shrink:0;position:relative;width:152px;height:213px;opacity:0;border:2px dashed oklch(0.8 0.17 205);">
                   <div style="position:absolute;inset:6px;">
                     <image-slot id="profile-photo" shape="rect" style="width:100%;height:100%;visibility:hidden;pointer-events:none;" placeholder="Photo" src="./assets/profile-photo.png"></image-slot>
                     <canvas ref="{{ pixelRevealRef }}" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
@@ -620,7 +620,7 @@
                 <div style="position:absolute;top:-10px;left:34px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:10px solid oklch(0.8 0.17 205);"></div>
                 <div style="position:absolute;top:-6px;left:36px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:8px solid #020402;"></div>
                 <div style="border:2px solid oklch(0.8 0.17 205);border-radius:4px;padding:8px 10px;background:#020402;">
-                  <div data-type-line="true" data-fast="true" style="color:oklch(0.85 0.1 205);font-size:14px;">"Experienced in building motion design systems, crafting creative concepts, and bringing brands to life through design and animation. Aims for playful, purposeful, polished motion — nudges keyframes into the night to get it just right!"</div>
+                  <div data-type-line="true" data-fast="true" style="color:oklch(0.85 0.1 205);font-size:19px;">"Experienced in building motion design systems, crafting creative concepts, and bringing brands to life through design and animation. Aims for playful, purposeful, polished motion — nudges keyframes into the night to get it just right!"</div>
                 </div>
               </div>
               <div ref="{{ clientsBoxRef }}" style="opacity:0;">
@@ -638,7 +638,7 @@
                 </div>
               </div>
               <div ref="{{ clientsSquareRef }}" style="border:1px solid oklch(0.8 0.17 205);border-top:none;border-radius:0;aspect-ratio:1/1;max-height:min(46vh,340px);width:100%;background:#020402;margin-bottom:24px;position:relative;overflow:hidden;">
-                <div ref="{{ dvdBallRef }}" style="position:absolute;top:0;left:0;width:80px;height:80px;">
+                <div ref="{{ dvdBallRef }}" style="position:absolute;top:0;left:0;width:106px;height:106px;">
                   <div ref="{{ coinInnerRef }}" onclick="{{ onCoinClick }}" style="width:100%;height:100%;color:oklch(0.8 0.17 205);cursor:pointer;"></div>
                 </div>
               </div>
@@ -660,7 +660,7 @@
 
       </div>
       <sc-if value="{{ !infoOpen }}" hint-placeholder-val="{{ true }}">
-      <svg viewBox="0 0 1920 1080" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:9;overflow:visible;"><path d="M82.29,95.56S0,289.02,0,540s82.29,444.44,82.29,444.44c0,0,392.97,95.56,877.71,95.56,484.75,0,877.71-95.56,877.71-95.56,0,0,82.29-193.46,82.29-444.44s-82.29-444.44-82.29-444.44c0,0-392.97-95.56-877.71-95.56C475.25,0,82.29,95.56,82.29,95.56Z" fill="none" stroke="oklch(0.14 0.018 205)" stroke-width="12" vector-effect="non-scaling-stroke"></path></svg>
+      <svg viewBox="0 0 1920 1080" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:9;overflow:visible;"><path d="M82.29,95.56S0,289.02,0,540s82.29,444.44,82.29,444.44c0,0,392.97,95.56,877.71,95.56,484.75,0,877.71-95.56,877.71-95.56,0,0,82.29-193.46,82.29-444.44s-82.29-444.44-82.29-444.44c0,0-392.97-95.56-877.71-95.56C475.25,0,82.29,95.56,82.29,95.56Z" fill="none" stroke="oklch(0.14 0.018 205)" stroke-opacity="0.85" stroke-width="12" vector-effect="non-scaling-stroke"></path></svg>
       </sc-if>
       </div>
       <video ref="{{ transitionVideoRef }}" src="./assets/static-noise-transition.mp4" playsinline preload="auto" onEnded="{{ onTransitionEnded }}" style="position:fixed;inset:0;width:100vw;height:100dvh;object-fit:cover;z-index:999;background:#000;opacity:{{ infoTransitioning }};pointer-events:none;"></video>
@@ -851,6 +851,9 @@ const SLOGANS = [
 ];
 
 class Component extends DCLogic {
+  // One spring for everything the remote does — the panel slide, the button
+  // presses and the description reveal all read as the same mechanism.
+  SPRING = { stiffness: 320, damping: 11 };
   PEEK_HEIGHT = 270;
   TAGLINES = [
     'FEINSCHMECKER MOTION DESIGNER',
@@ -888,7 +891,7 @@ class Component extends DCLogic {
     const up = () => {
       window.removeEventListener('pointerup', up);
       let t = depth, v = 0;
-      const stiffness = 80, damping = 5, to = 0;
+      const { stiffness, damping } = this.SPRING, to = 0;
       const step = () => {
         const dt = 1 / 60;
         v += (-stiffness * (t - to) - damping * v) * dt;
@@ -918,8 +921,7 @@ class Component extends DCLogic {
       if (!this.descEl) return;
       el.style.opacity = '1';
       let t = -8, v = 0;
-      // matched to springTo so the panel and the remote share one feel
-      const stiffness = 320, damping = 9, to = 0;
+      const { stiffness, damping } = this.SPRING, to = 0;
       const step = () => {
         const dt = 1 / 60;
         v += (-stiffness * (t - to) - damping * v) * dt;
@@ -940,10 +942,10 @@ class Component extends DCLogic {
     const maxT = Math.max(0, h - 85);
     if (opening) {
       this.setState({ descOpen: true, descRendered: true });
-      this.springTo(0, maxT, () => this.setState({ remoteOpen: false }));
+      this.animateRemoteTo(false);
     } else {
       this.setState({ descOpen: false });
-      this.springTo(maxT, 0, () => this.setState({ remoteOpen: true }));
+      this.animateRemoteTo(true);
       const el = this.descEl;
       if (el) {
         const dur = 60, start = performance.now();
@@ -978,7 +980,7 @@ class Component extends DCLogic {
     const up = () => {
       window.removeEventListener('pointerup', up);
       let t = depth, v = 0;
-      const stiffness = 80, damping = 5, to = 0;
+      const { stiffness, damping } = this.SPRING, to = 0;
       const step = () => {
         const dt = 1 / 60;
         v += (-stiffness * (t - to) - damping * v) * dt;
@@ -1043,8 +1045,8 @@ class Component extends DCLogic {
   photoBoxRef = (el) => { this.photoBoxEl = el; };
   // fixed size (matches the photo box's inner inset: 114-2*6 / 160-2*6) — hardcoded rather
   // than measured via getBoundingClientRect, which can race with layout and return 0x0.
-  PIXEL_REVEAL_W = 102;
-  PIXEL_REVEAL_H = 148;
+  PIXEL_REVEAL_W = 140;
+  PIXEL_REVEAL_H = 201;
   pixelRevealRef = (el) => {
     this.pixelRevealEl = el;
     if (!el) return;
@@ -1204,7 +1206,7 @@ class Component extends DCLogic {
   startDvdAnimation() {
     if (this._dvdRaf) return;
     let last = performance.now();
-    const size = 80;
+    const size = 106;
     const step = (now) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
@@ -1574,7 +1576,7 @@ class Component extends DCLogic {
       this.updateWallPosition();
       const h = this.remoteEl ? this.remoteEl.offsetHeight : 0;
       const startsOpen = this.props.remoteStartsOpen ?? true;
-      if (startsOpen) this.springTo(Math.max(0, h - 85), 0, () => this.setState({ remoteOpen: true }));
+      if (startsOpen) { this._maxT = Math.max(0, h - 85); this.animateRemoteTo(true); }
     }, 1000);
     this.scheduleFlicker();
     this.startNoise();
@@ -1617,9 +1619,9 @@ class Component extends DCLogic {
   springTo(from, to, onDone) {
     cancelAnimationFrame(this._raf);
     let t = from, v = 0;
-    // Quicker and springier than before: stiffness sets the speed, and damping
-    // well below the critical 2*sqrt(k) (~36) is what leaves the overshoot in.
-    const stiffness = 320, damping = 11;
+    // Damping well below the critical 2*sqrt(k) (~36) is what leaves the
+    // overshoot in rather than just making the move fast.
+    const { stiffness, damping } = this.SPRING;
     const step = () => {
       const dt = 1 / 60;
       v += (-stiffness * (t - to) - damping * v) * dt;
@@ -1635,13 +1637,45 @@ class Component extends DCLogic {
     this._raf = requestAnimationFrame(step);
   }
 
+  /** Where the remote actually is, read off the element. An interrupted
+   *  spring leaves state behind; the transform never lies. */
+  currentRemoteT() {
+    const m = /translate\(\s*-50%\s*,\s*(-?[\d.]+)px\s*\)/.exec(
+      (this.remoteEl && this.remoteEl.style.transform) || '');
+    if (m) return parseFloat(m[1]);
+    return this.remoteOpenTarget() ? 0 : (this._maxT || 0);
+  }
+
+  /** The state the remote is heading for. springTo's callback is what writes
+   *  remoteOpen, and the next gesture cancels the animation before it runs —
+   *  so reading this.state to decide a toggle returns the stale value and
+   *  replays the same move. This field is set the instant a gesture decides. */
+  remoteOpenTarget() {
+    return this._openTarget != null ? this._openTarget : this.state.remoteOpen;
+  }
+
+  /** Slide the remote to `open`, from wherever it currently sits. */
+  animateRemoteTo(open, onDone) {
+    const maxT = this.remoteEl ? Math.max(0, this.remoteEl.offsetHeight - 85) : 0;
+    this._maxT = maxT;
+    // Read the start point BEFORE the target changes: currentRemoteT falls back
+    // to the target's position when the transform is still the template's
+    // calc() string, which on first mount would collapse the move to nothing.
+    const from = this.currentRemoteT();
+    this._openTarget = open;
+    this.springTo(from, open ? 0 : maxT, () => {
+      this.setState({ remoteOpen: open });
+      if (onDone) onDone();
+    });
+  }
+
   onHandleDown = (e) => {
     if (!this.remoteEl || e.target.closest('button, [data-remote-btn]')) return;
     e.preventDefault();
     cancelAnimationFrame(this._raf);
     const h = this.remoteEl.offsetHeight;
     this._maxT = Math.max(0, h - 85);
-    this._baseT = this.state.remoteOpen ? 0 : this._maxT;
+    this._baseT = this.currentRemoteT();
     this._startY = e.clientY;
     this._moved = false;
     this._lastT = this._baseT;
@@ -1662,7 +1696,8 @@ class Component extends DCLogic {
   onHandleUp = () => {
     window.removeEventListener('pointermove', this.onHandleMove);
     window.removeEventListener('pointerup', this.onHandleUp);
-    const open = this._moved ? (this._lastT < this._maxT / 2) : !this.state.remoteOpen;
+    const open = this._moved ? (this._lastT < this._maxT / 2) : !this.remoteOpenTarget();
+    this._openTarget = open;
     this.springTo(this._lastT, open ? 0 : this._maxT, () => this.setState({ dragging: false, remoteOpen: open }));
   };
 
