@@ -84,6 +84,38 @@ do not see a published line-up. Treat the CMS as an authoring and preview tool.
 To make a line-up permanent for everyone: use **Import / Export** in the CMS to
 copy the JSON out, then bake it into the source.
 
+### The ambient glow, and its palette
+
+The television casts light onto its own chassis. That layer is the poster image
+itself — solid colour edge to edge, shaped like the tube and blurred hard —
+sitting *under* the matte, so the picture hides its centre and only the spill
+reads. It blends with `screen`, so it adds light rather than tinting.
+
+Each channel can carry a `palette` of **up to four hex colours**, set per
+channel in the CMS:
+
+| Colours | What the glow does |
+|---|---|
+| 2–4 | Drifts through them in a seamless loop |
+| 1 | Steady wash in that colour |
+| none | Falls back to the channel's Vimeo poster frame |
+
+The drift slides `background-position` across a gradient — no images, no canvas,
+no per-frame JavaScript. Values are validated against a strict six-digit hex
+before they reach CSS.
+
+Each CMS swatch has a **screen eyedropper** beside it. That is the browser's own
+`EyeDropper` API: a manual, one-shot sample taken by clicking anywhere on
+screen, including a playing video. It returns a single colour at that instant
+and never updates. It works because the *browser* reads the pixel and hands over
+only the result — the page never gets pixel access. Chromium only; elsewhere the
+button is disabled and the colour input beside it is used instead.
+
+> A glow that tracks the video frame by frame is not possible while the player
+> is a Vimeo `<iframe>`. Canvas sampling needs a `<video>` element, and there is
+> no API that lets a page read pixels out of a cross-origin iframe. It would
+> require self-hosting the video files.
+
 ### Two copies of the line-up
 
 The project list currently lives in two places, and they must be kept in step:
@@ -101,7 +133,8 @@ Both pages are fully wired and verified in a browser: channel changes, the
 Vimeo embeds, the description panel, mute, and the SYS. INFO page (typewriter,
 pixel-reveal photo, bouncing client logos, BACK). The CMS round-trip is
 verified too — hiding a channel and publishing drops it from the dial and
-renumbers the remaining channels.
+renumbers the remaining channels, and a palette set in the CMS reaches the glow
+as a drifting gradient.
 
 All of `assets/` is the real artwork and `coins-data.js` holds the 37 real
 client logos. Nothing in the project is a placeholder any more.
