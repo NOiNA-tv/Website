@@ -404,6 +404,31 @@
   @keyframes soft-bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
   @keyframes crt-roll{0%{top:calc(-1 * var(--bh) - 10%);}100%{top:110%;}}
   [data-no-scrollbar]::-webkit-scrollbar{width:0;height:0;}
+  /* Ambient broadcast glow — a blurred copy of the channel's poster frame,
+     bled out past the glass and screen-blended so only its light adds to the
+     chassis. One decoded image and one composited blur: no per-frame work.
+     Only opacity/transform animate, both compositor-only properties. */
+  /* z-index 10 puts the light in FRONT of the tube's outline stroke (z-index 9)
+     so the rim is lit by the glow instead of cutting a flat dark line through
+     it. The radial mask keeps the middle fully clear, so the picture itself is
+     never washed out — only the rim and the chassis around it catch the light. */
+  /* The light must not end on an edge of any kind, so nothing here clips it:
+     no border-radius (that hard-cut the background into a rounded silhouette),
+     and the mask fades back to fully transparent before the element's own
+     bounds. Sized at 140% of the glass so the ray has room for the falloff —
+     at 114% the glass edge already sat at 88% of the gradient, leaving too
+     little to feather across. Stops, as a fraction of the 50%/50% radius:
+     66% is just inside the glass so the rim catches light, 80% is the peak of
+     the ring, and it dissolves to nothing by 100%. */
+  .tv-ambient{position:absolute;left:-20%;top:-20%;width:140%;height:140%;
+    background-size:cover;background-position:center;
+    filter:blur(24px) saturate(1.9) brightness(1.05);mix-blend-mode:screen;
+    pointer-events:none;z-index:10;opacity:.7;
+    -webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%, transparent 72%, rgba(0,0,0,.6) 84%, rgba(0,0,0,.3) 92%, transparent 100%);
+    mask-image:radial-gradient(ellipse 50% 50% at 50% 50%, transparent 72%, rgba(0,0,0,.6) 84%, rgba(0,0,0,.3) 92%, transparent 100%);
+    animation:tv-ambient-breathe 6s ease-in-out infinite;}
+  @keyframes tv-ambient-breathe{0%,100%{opacity:.62;transform:scale(1);}50%{opacity:.82;transform:scale(1.05);}}
+  @media (prefers-reduced-motion:reduce){.tv-ambient{animation:none;}}
 </style>
 </helmet>
 <div ref="{{ rootRef }}" style="height:100dvh;width:100%;display:flex;justify-content:center;align-items:flex-start;padding:16px 14px;font-family:'Poppins',sans-serif;background:linear-gradient(135deg, oklch(0.73 0.012 205), oklch(0.60 0.013 205));overflow:hidden;position:relative;">
@@ -455,6 +480,12 @@
 
       <!-- SCREEN -->
       <div style="{{ screenWrapStyle }}">
+      <!-- Ambient broadcast light. Sits under the screen and bleeds past it onto
+           the chassis; the source is the channel's own Vimeo poster frame, so the
+           colour matches what is playing. See the note in renderVals. -->
+      <sc-if value="{{ showGlow }}" hint-placeholder-val="{{ true }}">
+        <div class="tv-ambient" aria-hidden="true" style="background-image:{{ glowImage }}"></div>
+      </sc-if>
       <div ref="{{ screenRef }}" style="position:absolute;inset:0;overflow:hidden;background:#050505;clip-path:url(#tv-screen-clip);box-shadow:inset 0 0 0 3px rgba(255,255,255,.04), inset 0 0 40px rgba(0,0,0,.9);animation:screen-flicker 6s ease-in-out infinite;">
         <svg width="0" height="0" style="position:absolute;"><defs><clipPath id="tv-screen-clip" clipPathUnits="userSpaceOnUse"><path ref="{{ clipPathRef }}" d="M82.29,95.56S0,289.02,0,540s82.29,444.44,82.29,444.44c0,0,392.97,95.56,877.71,95.56,484.75,0,877.71-95.56,877.71-95.56,0,0,82.29-193.46,82.29-444.44s-82.29-444.44-82.29-444.44c0,0-392.97-95.56-877.71-95.56C475.25,0,82.29,95.56,82.29,95.56Z"></path></clipPath></defs></svg>
 
@@ -615,21 +646,21 @@
         </div>
       </sc-if>
 
-      <div style="margin:18px 0 0;display:flex;justify-content:center;">
+      <div style="margin:14px 0 0;display:flex;justify-content:center;">
         <img src="./assets/noina-logo-static.png" alt="NOiNA logo" style="height:16.5px;width:auto;filter:brightness(0) invert(1) opacity(0.55);">
       </div>
     </div>
 
     <!-- DECODER STRIP -->
-    <div style="margin-top:-4px;margin-left:38px;margin-right:38px;position:relative;">
+    <div style="margin-top:-4px;margin-left:18px;margin-right:18px;position:relative;">
       <div style="position:absolute;left:5%;right:5%;bottom:-16px;height:32px;background:radial-gradient(ellipse at center, oklch(0.22 0.045 205 / .85) 0%, oklch(0.22 0.045 205 / .45) 50%, transparent 78%);filter:blur(3px);z-index:-1;"></div>
       <div ref="{{ decoderRef }}" style="position:relative;aspect-ratio:320/88;">
         <svg width="0" height="0" style="position:absolute;"><defs><clipPath id="decoder-shape-clip" clipPathUnits="userSpaceOnUse"><path ref="{{ decoderClipRef }}" d="M313.49,25.34l-28.15-20.68c-4.12-3.03-9.1-4.66-14.21-4.66H48.87c-5.11,0-10.09,1.63-14.21,4.66L6.51,25.34c-3.86,1.99-6.51,6.01-6.51,10.66v40c0,6.63,5.37,12,12,12h296c6.63,0,12-5.37,12-12v-40c0-4.65-2.64-8.67-6.51-10.66Z"></path></clipPath></defs></svg>
         <div style="position:absolute;inset:0;background:linear-gradient(135deg, oklch(0.24 0.016 205), oklch(0.14 0.018 205));clip-path:url(#decoder-shape-clip);box-shadow:0 6px 14px rgba(0,0,0,.4);"></div>
-        <div style="position:absolute;left:0;right:0;top:calc(46% - 16px);bottom:calc(8% - 16px);border:4px solid oklch(0.30 0.065 205);border-radius:12px;background:transparent;pointer-events:none;transform:translateY(-4px);z-index:2;"></div>
+        <div style="position:absolute;left:0;right:0;top:calc(46% - 16px);bottom:-4px;border:4px solid oklch(0.30 0.065 205);border-radius:12px;background:transparent;pointer-events:none;transform:translateY(-4px);z-index:2;"></div>
         <div style="position:absolute;left:16px;right:16px;top:46%;bottom:8%;display:flex;align-items:center;gap:8px;transform:translateY(-4px);">
         <div style="background:oklch(0.14 0.018 205);border-radius:6px;padding:4px 5px;display:flex;align-items:center;gap:5px;width:100%;height:100%;">
-        <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);width:50px;height:100%;display:flex;align-items:center;justify-content:center;padding-top:4px;">{{ channel.num }}</div>
+        <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);width:42px;height:100%;display:flex;align-items:center;justify-content:center;padding-top:4px;">{{ channel.num }}</div>
         <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px;align-self:stretch;">
           <div style="font-family:'Jersey 10',monospace;font-size:20px;letter-spacing:.04em;color:oklch(0.8 0.17 205);text-shadow:0 0 6px oklch(0.8 0.17 205 / .4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;top:1px;">{{ channel.title }}</div>
           <div style="font-family:'Jersey 10',monospace;font-size:15px;letter-spacing:.04em;color:oklch(0.6 0.02 205);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;top:-1px;">{{ channel.sub }}</div>
@@ -859,7 +890,8 @@ class Component extends DCLogic {
       if (!this.descEl) return;
       el.style.opacity = '1';
       let t = -8, v = 0;
-      const stiffness = 50, damping = 5, to = 0;
+      // 2x speed, same damping ratio — see the note in springTo.
+      const stiffness = 200, damping = 10, to = 0;
       const step = () => {
         const dt = 1 / 60;
         v += (-stiffness * (t - to) - damping * v) * dt;
@@ -886,7 +918,7 @@ class Component extends DCLogic {
       this.springTo(maxT, 0, () => this.setState({ remoteOpen: true }));
       const el = this.descEl;
       if (el) {
-        const dur = 166, start = performance.now();
+        const dur = 83, start = performance.now();
         const ease = (x) => 1 - Math.pow(1 - x, 3);
         const step = (now) => {
           const raw = Math.min(1, (now - start) / dur);
@@ -1468,7 +1500,7 @@ class Component extends DCLogic {
     if (r.width > 0 && r.height > 0) {
       this.remoteOutlineEl.setAttribute('transform', `scale(${r.width}, ${r.height})`);
       const avgScale = (r.width + r.height) / 2;
-      this.remoteOutlineEl.setAttribute('stroke-width', `${4 / avgScale}`);
+      this.remoteOutlineEl.setAttribute('stroke-width', `${6 / avgScale}`);
     }
   }
 
@@ -1556,7 +1588,10 @@ class Component extends DCLogic {
   springTo(from, to, onDone) {
     cancelAnimationFrame(this._raf);
     let t = from, v = 0;
-    const stiffness = 50, damping = 6.5;
+    // 2x the perceived speed of the original 50/6.5 pair: quadrupling stiffness
+    // doubles the natural frequency, and doubling damping holds the same
+    // damping ratio, so the motion keeps its shape and only gets quicker.
+    const stiffness = 200, damping = 13;
     const step = () => {
       const dt = 1 / 60;
       v += (-stiffness * (t - to) - damping * v) * dt;
@@ -1662,6 +1697,16 @@ class Component extends DCLogic {
       aspect: c.aspect || '4/3',
       vimeoLink: c.vimeoUrl || 'https://vimeo.com/noina',
     };
+    // Ambient glow source. The YouTube-style trick — sample the video into a
+    // canvas every frame and blur that — cannot work here: the player is a
+    // cross-origin <iframe>, and drawImage() accepts a <video>, never an
+    // iframe, so the parent page has no pixel access to what is playing.
+    // The channel's Vimeo poster frame is the next best source: it carries the
+    // real colour of the piece, costs one cached image, and needs no per-frame
+    // work. The station channel has no video, so it glows in brand cyan.
+    const glowImage = channel.isProject && c.vimeoId
+      ? `url('https://vumbnail.com/${c.vimeoId}.jpg')`
+      : 'radial-gradient(circle at 50% 45%, oklch(0.72 0.15 205) 0%, oklch(0.45 0.11 205) 45%, transparent 72%)';
     const sloganIdx = SLOGANS.indexOf(this.props.slogan ?? SLOGANS[0]);
     const crt = this.props.crtIntensity ?? 60;
     return {
@@ -1673,6 +1718,8 @@ class Component extends DCLogic {
       scanlinesOn: this.props.scanlinesEnabled ?? true,
       scanOpacity: Math.min(1, crt / 100),
       infoOpen: this.state.infoOpen,
+      glowImage,
+      showGlow: !this.state.infoOpen,
       tvBezelStyle: this.state.infoOpen
         ? "background:linear-gradient(135deg, oklch(0.34 0.016 205), oklch(0.24 0.018 205));border-radius:0;padding:24px;border:none;box-shadow:none;position:fixed;inset:0;width:100vw;height:100dvh;z-index:100;display:flex;flex-direction:column;justify-content:center;"
         : "background:linear-gradient(135deg, oklch(0.34 0.016 205), oklch(0.24 0.018 205));border-radius:32px;padding:18px 18px 14px;border:4px solid oklch(0.40 0.09 205);box-shadow:0 8px 18px -8px rgba(0,0,0,.45);position:relative;",
