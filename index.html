@@ -427,12 +427,12 @@
      and stop it blending with the chassis at all. */
   .tv-ambient-wrap{position:absolute;inset:0;pointer-events:none;z-index:0;
     mix-blend-mode:screen;
-    animation:tv-glow-a .83s ease-in-out infinite;}
+    animation:tv-glow-a 1.66s ease-in-out infinite;}
   .tv-ambient{position:absolute;inset:-4%;
     background-size:cover;background-position:center;
     border-radius:10%/18%;
     filter:blur(48px) saturate(1.9) brightness(1.1);
-    animation:tv-glow-b 1.27s ease-in-out infinite;}
+    animation:tv-glow-b 2.54s ease-in-out infinite;}
   @keyframes tv-glow-a{0%{opacity:.6;}11%{opacity:.72;}26%{opacity:.53;}38%{opacity:.68;}
     53%{opacity:.57;}67%{opacity:.73;}81%{opacity:.55;}92%{opacity:.66;}100%{opacity:.6;}}
   @keyframes tv-glow-b{0%{opacity:.64;}9%{opacity:.53;}22%{opacity:.71;}35%{opacity:.58;}
@@ -442,16 +442,16 @@
      animate and the whole layer is blurred anyway, so the band reads as a soft
      colour shift rather than a moving stripe. */
   .tv-ambient--pal{background-size:300% 300%;
-    animation:tv-glow-b 1.27s ease-in-out infinite,
+    animation:tv-glow-b 2.54s ease-in-out infinite,
               tv-pal-drift 14s ease-in-out infinite;}
   @keyframes tv-pal-drift{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
   /* Room light: the same palette, drifting on the same 14s clock as the glow,
      masked away from the centre so it only touches the edges. soft-light tints
-     what is already there instead of painting over it, and at 15% it reads as
+     what is already there instead of painting over it, and at 25% it reads as
      a hint of colour in the corners rather than a wash. A gradient, a mask and
      a blend — no filter, so nothing here is expensive to composite. */
   .vignette-tint{position:absolute;inset:0;pointer-events:none;z-index:31;
-    background-size:300% 300%;mix-blend-mode:soft-light;opacity:.15;
+    background-size:300% 300%;mix-blend-mode:soft-light;opacity:.25;
     -webkit-mask-image:radial-gradient(ellipse 68% 70% at 50% 45%, transparent 34%, rgba(0,0,0,.55) 68%, #000 100%);
     mask-image:radial-gradient(ellipse 68% 70% at 50% 45%, transparent 34%, rgba(0,0,0,.55) 68%, #000 100%);
     animation:tv-pal-drift 14s ease-in-out infinite;}
@@ -721,8 +721,8 @@
         <div style="position:absolute;inset:0;background:linear-gradient(135deg, oklch(0.24 0.016 205), oklch(0.14 0.018 205));clip-path:url(#decoder-shape-clip);box-shadow:0 6px 14px rgba(0,0,0,.4);"></div>
         <div style="position:absolute;left:0;right:0;top:calc(46% - 16px);bottom:-4px;border:4px solid oklch(0.30 0.065 205);border-radius:12px;background:transparent;pointer-events:none;transform:translateY(-4px);z-index:2;"></div>
         <div style="position:absolute;left:16px;right:16px;top:46%;bottom:8%;display:flex;align-items:center;gap:8px;transform:translateY(-4px);">
-        <div style="background:oklch(0.14 0.018 205);border-radius:6px;padding:4px 5px;display:flex;align-items:center;gap:9px;width:100%;height:100%;">
-        <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);width:42px;height:100%;display:flex;align-items:center;justify-content:center;padding-top:4px;">{{ channel.num }}</div>
+        <div style="background:oklch(0.14 0.018 205);border-radius:6px;padding:4px 5px;display:flex;align-items:center;gap:5px;width:100%;height:100%;">
+        <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);width:46px;height:100%;display:flex;align-items:center;justify-content:center;padding-top:4px;">{{ channel.num }}</div>
         <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px;align-self:stretch;">
           <div style="font-family:'Jersey 10',monospace;font-size:20px;letter-spacing:.04em;color:oklch(0.8 0.17 205);text-shadow:0 0 6px oklch(0.8 0.17 205 / .4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;top:1px;">{{ channel.title }}</div>
           <div style="font-family:'Jersey 10',monospace;font-size:15px;letter-spacing:.04em;color:oklch(0.6 0.02 205);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;top:-1px;">{{ channel.sub }}</div>
