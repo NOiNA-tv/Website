@@ -386,6 +386,7 @@
 <link rel="preconnect" href="https://f.vimeocdn.com">
 <link rel="dns-prefetch" href="https://player.vimeo.com">
 <script src="https://player.vimeo.com/api/player.js"></script>
+<script src="./vendor/lottie_light.min.js"></script>
 <script src="./image-slot.js"></script>
 <style>
   @font-face{font-family:'Segment7Standard';src:url('./assets/segment7.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
@@ -433,8 +434,8 @@
     border-radius:10%/18%;
     filter:blur(48px) saturate(1.9) brightness(1.1);
     animation:tv-glow-b 2.54s ease-in-out infinite;}
-  @keyframes tv-glow-a{0%{opacity:.6;}11%{opacity:.72;}26%{opacity:.53;}38%{opacity:.68;}
-    53%{opacity:.57;}67%{opacity:.73;}81%{opacity:.55;}92%{opacity:.66;}100%{opacity:.6;}}
+  @keyframes tv-glow-a{0%{opacity:.48;}11%{opacity:.576;}26%{opacity:.424;}38%{opacity:.544;}
+    53%{opacity:.456;}67%{opacity:.584;}81%{opacity:.44;}92%{opacity:.528;}100%{opacity:.48;}}
   @keyframes tv-glow-b{0%{opacity:.64;}9%{opacity:.53;}22%{opacity:.71;}35%{opacity:.58;}
     48%{opacity:.72;}61%{opacity:.55;}74%{opacity:.68;}88%{opacity:.6;}100%{opacity:.64;}}
   /* A palette glow slides its gradient instead of sitting still, so the light
@@ -749,51 +750,40 @@
 
     <!-- REMOTE -->
     <svg width="0" height="0" style="position:absolute;"><defs><clipPath id="remote-clip" clipPathUnits="objectBoundingBox"><path d="M0.02960,0.14252 C0.01610,0.22546 0,0.35480 0,0.50000 s0.01610,0.27448 0.02960,0.35755 c0.00984,0.06039 0.07626,0.10910 0.16542,0.12119 c0.10385,0.01412 0.20649,0.02127 0.30507,0.02127 s0.20123,-0.00716 0.30507,-0.02127 c0.08908,-0.01211 0.15550,-0.06081 0.16542,-0.12119 c0.01349,-0.08299 0.02960,-0.21243 0.02960,-0.35755 s-0.01610,-0.27447 -0.02960,-0.35755 c-0.00984,-0.06039 -0.07626,-0.10910 -0.16542,-0.12119 C0.70123,0.00716 0.59860,0 0.50017,0 s-0.20123,0.00716 -0.30507,0.02127 C0.10589,0.03337 0.03944,0.08209 0.02960,0.14252 Z"></path></clipPath></defs></svg>
-    <div ref="{{ remoteRef }}" onpointerdown="{{ onHandleDown }}" style="position:fixed;left:50%;bottom:0;transform:{{ remoteTransform }};transition:{{ remoteTransition }};width:fit-content;touch-action:none;z-index:40;cursor:grab;">
+    <div ref="{{ remoteRef }}" onpointerdown="{{ onHandleDown }}" style="position:fixed;left:50%;bottom:12px;transform:{{ remoteTransform }};transition:{{ remoteTransition }};width:fit-content;touch-action:none;z-index:40;cursor:grab;">
+      <!-- The kick layer owns its own transform. The outer div's transform is
+           driven by the open/close drag, so the press-recoil needs a separate
+           element or the two animations overwrite each other. -->
+      <div ref="{{ remoteKickRef }}" style="position:relative;">
       <div style="position:absolute;left:0;right:0;top:0;aspect-ratio:298.71/549.1;background:linear-gradient(135deg, oklch(0.50 0.115 205), oklch(0.40 0.09 205));clip-path:url(#remote-clip);box-shadow:0 -10px 40px -10px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.05);"></div>
-      <svg style="position:absolute;left:0;right:0;top:0;aspect-ratio:298.71/549.1;pointer-events:none;z-index:1;overflow:visible;"><path ref="{{ remoteOutlineRef }}" d="M0.02960,0.14252 C0.01610,0.22546 0,0.35480 0,0.50000 s0.01610,0.27448 0.02960,0.35755 c0.00984,0.06039 0.07626,0.10910 0.16542,0.12119 c0.10385,0.01412 0.20649,0.02127 0.30507,0.02127 s0.20123,-0.00716 0.30507,-0.02127 c0.08908,-0.01211 0.15550,-0.06081 0.16542,-0.12119 c0.01349,-0.08299 0.02960,-0.21243 0.02960,-0.35755 s-0.01610,-0.27447 -0.02960,-0.35755 c-0.00984,-0.06039 -0.07626,-0.10910 -0.16542,-0.12119 C0.70123,0.00716 0.59860,0 0.50017,0 s-0.20123,0.00716 -0.30507,0.02127 C0.10589,0.03337 0.03944,0.08209 0.02960,0.14252 Z" fill="none" stroke="oklch(0.62 0.135 205)"></path></svg>
+      <!-- vector-effect keeps the stroke a true 6px on screen even though the
+           path is scaled non-uniformly to fill the remote's tall silhouette. -->
+      <svg style="position:absolute;left:0;right:0;top:0;aspect-ratio:298.71/549.1;pointer-events:none;z-index:1;overflow:visible;"><path ref="{{ remoteOutlineRef }}" d="M0.02960,0.14252 C0.01610,0.22546 0,0.35480 0,0.50000 s0.01610,0.27448 0.02960,0.35755 c0.00984,0.06039 0.07626,0.10910 0.16542,0.12119 c0.10385,0.01412 0.20649,0.02127 0.30507,0.02127 s0.20123,-0.00716 0.30507,-0.02127 c0.08908,-0.01211 0.15550,-0.06081 0.16542,-0.12119 c0.01349,-0.08299 0.02960,-0.21243 0.02960,-0.35755 s-0.01610,-0.27447 -0.02960,-0.35755 c-0.00984,-0.06039 -0.07626,-0.10910 -0.16542,-0.12119 C0.70123,0.00716 0.59860,0 0.50017,0 s-0.20123,0.00716 -0.30507,0.02127 C0.10589,0.03337 0.03944,0.08209 0.02960,0.14252 Z" fill="none" stroke="oklch(0.62 0.135 205)" stroke-width="6" vector-effect="non-scaling-stroke"></path></svg>
 
-      <div style="position:relative;padding:34px 46px 16px;">
-      <!-- mute / info -->
-      <div style="display:flex;justify-content:center;gap:0;margin-bottom:6px;">
-        <button ref="{{ muteRef }}" onpointerdown="{{ onMuteDown }}" onclick="{{ onToggleMute }}" style="border-width:4px;border-style:solid;border-color:#00555f;width:78px;height:56px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#9de2ea;box-shadow:0 10px 0 0 #00b0c2;position:relative;color:#00555f;margin-right:30px;">
-          <sc-if value="{{ !muted }}" hint-placeholder-val="{{ false }}">
-            <svg viewBox="0 0 40.84 33.25" fill="currentColor" style="width:34px;height:auto;">
-              <path d="M17.8,33.25c-.43,0-.86-.14-1.21-.41-3.4-2.59-6.61-5.37-9.1-7.58-1.95-.21-3.89-.47-5.79-.77-.53-.08-1.01-.38-1.32-.82-.31-.44-.43-.99-.34-1.52l2.28-12.52c.16-.89.9-1.56,1.8-1.63,1.62-.14,3.3-.26,4.98-.36,2.97-2.41,5.72-4.93,8.04-7.1.59-.55,1.45-.69,2.18-.36.74.33,1.2,1.07,1.18,1.87l-.7,29.25c-.02.75-.46,1.43-1.13,1.75-.28.13-.57.2-.87.2ZM4.34,20.84c1.39.19,2.79.36,4.2.51.42.04.81.22,1.13.5,1.75,1.56,3.9,3.44,6.24,5.35l.49-20.54c-1.65,1.48-3.43,3.02-5.29,4.51-.32.26-.72.41-1.14.44-1.34.08-2.67.16-3.98.27l-1.64,8.97Z"></path>
-              <path d="M40.01,20.21c-1.59-1.16-3.18-2.49-4.79-3.98.19-.25.38-.51.56-.76.93-1.26,1.82-2.45,2.66-3.56.67-.88.49-2.13-.39-2.8-.88-.67-2.13-.49-2.8.39-.85,1.12-1.74,2.32-2.68,3.59-.07.1-.15.21-.23.31-1.31-1.37-2.64-2.84-3.99-4.46-.71-.85-1.97-.96-2.82-.25-.85.71-.96,1.97-.25,2.82,1.57,1.87,3.11,3.57,4.63,5.14-1.24,1.64-2.53,3.34-3.9,5.05-.69.86-.54,2.12.32,2.81.37.29.81.43,1.24.43.59,0,1.17-.26,1.57-.76,1.28-1.6,2.5-3.2,3.66-4.73,1.62,1.49,3.23,2.82,4.84,3.99.36.26.77.38,1.18.38.62,0,1.23-.29,1.62-.82.65-.89.45-2.14-.44-2.79Z"></path>
-            </svg>
-          </sc-if>
-          <sc-if value="{{ muted }}" hint-placeholder-val="{{ true }}">
-            <svg viewBox="0 0 40.84 33.25" fill="currentColor" style="width:34px;height:auto;">
-              <path d="M17.8,33.25c-.43,0-.86-.14-1.21-.41-3.4-2.59-6.61-5.37-9.1-7.58-1.95-.21-3.89-.47-5.79-.77-.53-.08-1.01-.38-1.32-.82-.31-.44-.43-.99-.34-1.52l2.28-12.52c.16-.89.9-1.56,1.8-1.63,1.62-.14,3.3-.26,4.98-.36,2.97-2.41,5.72-4.93,8.04-7.1.59-.55,1.45-.69,2.18-.36.74.33,1.2,1.07,1.18,1.87l-.7,29.25c-.02.75-.46,1.43-1.13,1.75-.28.13-.57.2-.87.2ZM4.34,20.84c1.39.19,2.79.36,4.2.51.42.04.81.22,1.13.5,1.75,1.56,3.9,3.44,6.24,5.35l.49-20.54c-1.65,1.48-3.43,3.02-5.29,4.51-.32.26-.72.41-1.14.44-1.34.08-2.67.16-3.98.27l-1.64,8.97Z"></path>
-              <path d="M36.27,28c-.42,0-.85-.13-1.21-.41-.88-.67-1.05-1.92-.38-2.8,1.84-2.41,2.52-5.24,1.97-8.17-.53-2.83-2.08-5.77-4.49-8.51-.73-.83-.65-2.09.18-2.82.83-.73,2.09-.65,2.82.18,2.88,3.28,4.76,6.88,5.42,10.42.76,4.07-.18,7.99-2.72,11.32-.39.52-.99.79-1.59.79Z"></path>
-              <path d="M27.55,23.77c-.45,0-.9-.15-1.28-.46-.85-.71-.96-1.97-.26-2.82.83-.99,1.22-2.34,1.11-3.79-.11-1.48-.7-2.89-1.67-3.99-.73-.83-.64-2.09.19-2.82.83-.73,2.09-.64,2.82.19,1.53,1.75,2.47,3.99,2.64,6.32.19,2.5-.53,4.86-2.02,6.65-.4.48-.97.72-1.54.72Z"></path>
-            </svg>
-          </sc-if>
-        </button>
-        <div style="position:relative;">
-          <div style="position:absolute;inset:0;border-radius:50%;pointer-events:none;box-shadow:0 0 10px 2px oklch(0.90 0.09 205 / .55), 0 0 22px 8px oklch(0.85 0.11 205 / .35);opacity:{{ infoGlowOpacity }};transition:{{ infoGlowTransition }};"></div>
-          <button ref="{{ infoRef }}" onpointerdown="{{ onInfoDown }}" style="border-width:4px;border-style:solid;border-color:#00555f;width:78px;height:56px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;background:{{ infoBg }};box-shadow:{{ infoShadow }};color:#00555f;transition:{{ infoTransition }};position:relative;">
-          <svg viewBox="0 0 18.75 30.19" fill="currentColor" style="width:16px;height:auto;">
-            <path d="M16.38,25.15c-1.57.3-3.17.49-4.77.59-.1-4.7-.19-9.41-.29-14.11-.03-1.2-.9-2.2-1.95-2.2-2.01,0-4.01.06-5.98.17-1.03.07-1.93,1.03-2.04,2.13-.1,1.09.68,2.01,1.76,2.04,1.4.02,2.83.04,4.26.04-.08,3.98-.16,7.96-.24,11.93-1.6-.09-3.2-.29-4.77-.59-1.21-.22-2.25.42-2.36,1.52-.1,1.09.82,2.33,2.08,2.64,4.79,1.16,9.78,1.16,14.57,0,1.26-.31,2.19-1.55,2.08-2.64-.1-1.1-1.15-1.74-2.36-1.52Z"></path>
-            <path d="M13.91,3.59c.12,1.73-2.27,2.91-5.37,2.98-3.1.02-5.43-1.04-5.28-2.72C3.4,2.19,5.76.11,8.6,0c2.84-.09,5.2,1.87,5.31,3.59Z"></path>
-          </svg>
-        </button>
+      <div style="position:relative;padding:32px 46px 24px;display:flex;flex-direction:column;align-items:center;gap:0;">
+      <!-- mute / info. Each hitbox is the exact clickable size; the Lottie player
+           inside is larger and centred, so squash-and-stretch never clips. It
+           carries pointer-events:none so its transparent margin can't swallow a
+           click meant for the button beside it. -->
+      <div style="display:flex;justify-content:center;align-items:center;gap:32px;">
+        <div data-remote-btn onclick="{{ onToggleMute }}" style="position:relative;width:80px;height:80px;cursor:pointer;">
+          <div ref="{{ muteRef }}" style="position:absolute;left:50%;top:50%;width:132px;height:132px;transform:translate(-50%,-50%);pointer-events:none;"></div>
+        </div>
+        <div data-remote-btn onclick="{{ onInfoDown }}" style="position:relative;width:80px;height:80px;cursor:pointer;">
+          <div ref="{{ infoRef }}" style="position:absolute;left:50%;top:50%;width:132px;height:132px;transform:translate(-50%,-50%);pointer-events:none;"></div>
         </div>
       </div>
 
-      <!-- rocker -->
-      <div style="position:relative;height:204px;">
-        <div data-remote-btn ref="{{ prevRef }}" onpointerdown="{{ onPrevDown }}" onclick="{{ onNext }}" style="position:absolute;left:50%;transform:translateX(-50%);top:0;width:225px;height:104px;cursor:pointer;z-index:1;">
-          <svg ref="{{ prevTopRef }}" viewBox="0 0 250 88" style="position:absolute;left:0;top:0;width:225px;height:88px;filter:drop-shadow(0 16px 0 #0096a6);">
-            <path fill="#00bece" stroke="#00555f" stroke-width="6" d="M105.4,13.8 L47.4,54.6 Q0,88 58,88 L192,88 Q250,88 202.6,54.6 L144.6,13.8 Q125,0 105.4,13.8 Z"></path>
-          </svg>
+      <!-- channel rocker -->
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:-8px;">
+        <div data-remote-btn onclick="{{ onNext }}" style="position:relative;width:200px;height:120px;cursor:pointer;z-index:1;">
+          <div ref="{{ prevRef }}" style="position:absolute;left:50%;top:50%;width:242px;height:194px;transform:translate(-50%,-50%);pointer-events:none;"></div>
         </div>
-        <div data-remote-btn ref="{{ nextRef }}" onpointerdown="{{ onNextDown }}" onclick="{{ onPrev }}" style="position:absolute;left:50%;transform:translateX(-50%);top:100px;width:225px;height:104px;cursor:pointer;z-index:2;">
-          <svg ref="{{ nextTopRef }}" viewBox="0 0 250 88" style="position:absolute;left:0;top:0;width:225px;height:88px;filter:drop-shadow(0 16px 0 #0096a6);">
-            <path fill="#00bece" stroke="#00555f" stroke-width="6" d="M105.4,74.2 L47.4,33.4 Q0,0 58,0 L192,0 Q250,0 202.6,33.4 L144.6,74.2 Q125,88 105.4,74.2 Z"></path>
-          </svg>
+        <div data-remote-btn onclick="{{ onPrev }}" style="position:relative;width:200px;height:120px;cursor:pointer;z-index:2;">
+          <div ref="{{ nextRef }}" style="position:absolute;left:50%;top:50%;width:242px;height:194px;transform:translate(-50%,-50%);pointer-events:none;"></div>
         </div>
+      </div>
+
       </div>
       </div>
     </div>
@@ -935,37 +925,6 @@ class Component extends DCLogic {
     this.state.taglineFlickering = false;
   }
 
-  chunkyPressDown = (ref, depth, sx0, sy0, shadowColor, glowFn) => {
-    const el = ref();
-    if (!el) return;
-    const getColor = () => typeof shadowColor === 'function' ? shadowColor() : shadowColor;
-    const getGlow = () => glowFn ? glowFn() : '';
-    el.style.transform = `translateY(${depth}px) scale(${1 + sx0},${1 - sy0})`;
-    el.style.boxShadow = `0 0px 0 0 ${getColor()}${getGlow()}`;
-    const up = () => {
-      window.removeEventListener('pointerup', up);
-      let t = depth, v = 0;
-      const { stiffness, damping } = this.SPRING, to = 0;
-      const step = () => {
-        const dt = 1 / 60;
-        v += (-stiffness * (t - to) - damping * v) * dt;
-        t += v * dt;
-        const y = Math.max(-depth * 0.25, t);
-        const p = t / depth;
-        el.style.transform = `translateY(${y}px) scale(${1 + sx0 * p},${1 - sy0 * p})`;
-        el.style.boxShadow = `0 ${Math.max(0, depth - y)}px 0 0 ${getColor()}${getGlow()}`;
-        if (Math.abs(t - to) < 0.01 && Math.abs(v) < 0.01) {
-          el.style.transform = 'translateY(0px) scale(1,1)';
-          el.style.boxShadow = `0 ${depth}px 0 0 ${getColor()}${getGlow()}`;
-          return;
-        }
-        requestAnimationFrame(step);
-      };
-      step();
-    };
-    window.addEventListener('pointerup', up);
-  };
-
   descRef = (el) => {
     if (!el) return;
     this.descEl = el;
@@ -1019,50 +978,73 @@ class Component extends DCLogic {
     }
   };
 
-  onMuteDown = () => this.chunkyPressDown(() => this.muteEl, 10, 0.2, 0.2, '#00b0c2');
+  // --- remote buttons: Lottie -------------------------------------------
+  // Each button is a Lottie clip loaded once and driven by segment, never by
+  // CSS. Toggles hold two idle frames (0 and 60) with a transition between
+  // them; momentary buttons run 0-60 and land back where they started.
+  loadRemoteAnim(container, file, initialFrame) {
+    if (!container || typeof lottie === 'undefined') return null;
+    const anim = lottie.loadAnimation({
+      container, renderer: 'svg', loop: false, autoplay: false,
+      path: './assets/lottie/' + file,
+    });
+    anim.addEventListener('DOMLoaded', () => anim.goToAndStop(initialFrame, true));
+    return anim;
+  }
+
+  // A ref fires again whenever React re-parents the node, so each loader bails
+  // if it already owns this element — otherwise every render stacks another
+  // player into the same container.
+  mountRemoteAnim(key, el, file, initialFrame) {
+    if (this['_' + key + 'El'] === el) return;
+    if (this[key]) { this[key].destroy(); this[key] = null; }
+    this['_' + key + 'El'] = el;
+    if (el) this[key] = this.loadRemoteAnim(el, file, initialFrame);
+  }
+
+  muteRef = (el) => { this.mountRemoteAnim('muteAnim', el, 'mute.json', this.state.muted ? 0 : 60); };
+  infoRef = (el) => { this.mountRemoteAnim('infoAnim', el, 'info.json', this.state.descOpen ? 60 : 0); };
+  prevRef = (el) => { this.mountRemoteAnim('prevAnim', el, 'channel-up.json', 0); };
+  nextRef = (el) => { this.mountRemoteAnim('nextAnim', el, 'channel-down.json', 0); };
+
+  // Frames 61-120 turn mute ON, 1-60 turn it off; the idle frames either side
+  // are what the button rests on.
+  playMuteAnim(muted) {
+    if (this.muteAnim) this.muteAnim.playSegments(muted ? [61, 120] : [1, 60], true);
+  }
+
   onInfoDown = () => {
-    const willBeOpen = !this.state.descOpen; // setState is async — don't read this.state.descOpen after calling toggle, it may still be stale
+    const opening = !this.state.descOpen;
+    // Verified against the rendered clip: closed->open is [61,120], not what
+    // the segment labels suggest.
+    if (this.infoAnim) this.infoAnim.playSegments(opening ? [61, 120] : [1, 60], true);
+    this.kickRemote();
     this.onToggleDesc();
-    this.chunkyPressDown(() => this.infoEl, 10, 0.2, 0.2,
-      () => willBeOpen ? 'oklch(0.95 0.06 205)' : '#00b0c2');
-  };
-  chunkyPressDownFilter = (ref, depth, sx0, sy0, shadowColor) => {
-    const el = ref();
-    if (!el) return;
-    el.style.transform = `translateY(${depth}px) scale(${1 + sx0},${1 - sy0})`;
-    el.style.filter = `drop-shadow(0 0px 0 ${shadowColor})`;
-    const up = () => {
-      window.removeEventListener('pointerup', up);
-      let t = depth, v = 0;
-      const { stiffness, damping } = this.SPRING, to = 0;
-      const step = () => {
-        const dt = 1 / 60;
-        v += (-stiffness * (t - to) - damping * v) * dt;
-        t += v * dt;
-        const y = Math.max(-depth * 0.25, t);
-        const p = t / depth;
-        el.style.transform = `translateY(${y}px) scale(${1 + sx0 * p},${1 - sy0 * p})`;
-        el.style.filter = `drop-shadow(0 ${Math.max(0, depth - y)}px 0 ${shadowColor})`;
-        if (Math.abs(t - to) < 0.01 && Math.abs(v) < 0.01) {
-          el.style.transform = 'translateY(0px) scale(1,1)';
-          el.style.filter = `drop-shadow(0 ${depth}px 0 ${shadowColor})`;
-          return;
-        }
-        requestAnimationFrame(step);
-      };
-      step();
-    };
-    window.addEventListener('pointerup', up);
   };
 
-  onPrevDown = () => this.chunkyPressDownFilter(() => this.prevTopEl, 16, 0.2, 0.2, '#0096a6');
-  onNextDown = () => this.chunkyPressDownFilter(() => this.nextTopEl, 16, 0.2, 0.2, '#0096a6');
-  muteRef = (el) => { this.muteEl = el; };
-  infoRef = (el) => { this.infoEl = el; };
-  prevRef = (el) => { this.prevEl = el; };
-  nextRef = (el) => { this.nextEl = el; };
-  prevTopRef = (el) => { this.prevTopEl = el; };
-  nextTopRef = (el) => { this.nextTopEl = el; };
+  onPrevPress = () => { if (this.prevAnim) this.prevAnim.playSegments([0, 60], true); this.kickRemote(); this.next(); };
+  onNextPress = () => { if (this.nextAnim) this.nextAnim.playSegments([0, 60], true); this.kickRemote(); this.prev(); };
+
+  // The shell dips and springs back on every press, as if the plastic absorbed
+  // the click. Runs on its own layer so it never fights the drag transform.
+  kickRemote() {
+    const el = this.kickEl;
+    if (!el) return;
+    cancelAnimationFrame(this._kickRaf);
+    let t = 0, v = 160;
+    const stiffness = 80, damping = 4, to = 0;
+    const step = () => {
+      const dt = 1 / 60;
+      v += (-stiffness * (t - to) - damping * v) * dt;
+      t += v * dt;
+      el.style.transform = `translateY(${t}px)`;
+      if (Math.abs(t - to) < 0.05 && Math.abs(v) < 0.5) { el.style.transform = 'translateY(0px)'; return; }
+      this._kickRaf = requestAnimationFrame(step);
+    };
+    step();
+  }
+
+  remoteKickRef = (el) => { this.kickEl = el; };
 
   remoteRef = (el) => {
     this.remoteEl = el;
@@ -1283,6 +1265,11 @@ class Component extends DCLogic {
     this._dvdRaf = requestAnimationFrame(step);
   }
   componentWillUnmount() {
+    cancelAnimationFrame(this._kickRaf);
+    ['muteAnim', 'infoAnim', 'prevAnim', 'nextAnim'].forEach((k) => {
+      if (this[k]) { this[k].destroy(); this[k] = null; }
+      this['_' + k + 'El'] = null;
+    });
     cancelAnimationFrame(this._dvdRaf);
     cancelAnimationFrame(this._vignetteRaf);
     cancelAnimationFrame(this._raf);
@@ -1583,9 +1570,9 @@ class Component extends DCLogic {
     if (!svg) return;
     const r = svg.getBoundingClientRect();
     if (r.width > 0 && r.height > 0) {
+      // stroke-width is fixed at 6 in the markup with vector-effect:
+      // non-scaling-stroke, so this only has to fit the path to the box.
       this.remoteOutlineEl.setAttribute('transform', `scale(${r.width}, ${r.height})`);
-      const avgScale = (r.width + r.height) / 2;
-      this.remoteOutlineEl.setAttribute('stroke-width', `${6 / avgScale}`);
     }
   }
 
@@ -1857,8 +1844,8 @@ class Component extends DCLogic {
     return {
       channel,
       transitioning: this.state.transitioning,
-      onNext: () => this.next(),
-      onPrev: () => this.prev(),
+      onNext: this.onPrevPress,
+      onPrev: this.onNextPress,
       slogan: sloganIdx >= 0 ? SLOGANS[sloganIdx] : SLOGANS[0],
       scanlinesOn: this.props.scanlinesEnabled ?? true,
       scanOpacity: Math.min(1, crt / 100),
@@ -1915,18 +1902,13 @@ class Component extends DCLogic {
       onTransitionEnded: this.onTransitionEnded,
       onToggleMute: () => this.setState(s => {
         const muted = !s.muted;
+        this.playMuteAnim(muted);
+        this.kickRemote();
         if (this.player) this.player.setMuted(muted).catch(() => {});
         this.applyMuteToSfx(muted);
         if (!muted) this.flashVolume();
         return { muted };
       }),
-      muteBg: this.state.muted ? ACCENTS.bars.bg : ACCENTS.static.bg,
-      muteShadow: this.state.muted ? ACCENTS.bars.shadow : ACCENTS.static.shadow,
-      infoBg: this.state.descOpen ? 'oklch(0.97 0.035 205)' : '#9de2ea',
-      infoShadow: this.state.descOpen ? '0 6px 0 0 oklch(0.95 0.06 205)' : '0 10px 0 0 #00b0c2',
-      infoTransition: this.state.descOpen ? 'none' : 'background .15s,box-shadow .15s',
-      infoGlowOpacity: this.state.descOpen ? 1 : 0,
-      infoGlowTransition: this.state.descOpen ? 'opacity 0s' : 'opacity 400ms ease',
       remoteRef: this.remoteRef,
       screenRef: this.screenRef,
       clipPathRef: this.clipPathRef,
@@ -1937,10 +1919,11 @@ class Component extends DCLogic {
       wallRef: this.wallRef,
       vignetteRef: this.vignetteRef,
       remoteOutlineRef: this.remoteOutlineRef,
-      muteRef: this.muteRef, onMuteDown: this.onMuteDown,
+      remoteKickRef: this.remoteKickRef,
+      muteRef: this.muteRef,
       infoRef: this.infoRef, onInfoDown: this.onInfoDown,
-      prevRef: this.prevRef, onPrevDown: this.onPrevDown, prevTopRef: this.prevTopRef,
-      nextRef: this.nextRef, onNextDown: this.onNextDown, nextTopRef: this.nextTopRef,
+      prevRef: this.prevRef,
+      nextRef: this.nextRef,
       onHandleDown: this.onHandleDown,
       remoteTransform: this.state.remoteOpen ? 'translate(-50%, 0)' : 'translate(-50%, calc(100% - 85px))',
       remotePeekPad: Math.max(60, this.state.remoteHeight + 12),

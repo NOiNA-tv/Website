@@ -45,6 +45,8 @@ Do not hand-edit `support.js` or `image-slot.js`; both are generated upstream.
 | `projects-data.js` | Factory line-up the CMS seeds itself from |
 | `coins-data.js` | The 37 client logos for the bouncing coin in the CLIENTS box |
 | `assets/` | Artwork, fonts, audio, video — see `assets/README.md` |
+| `assets/lottie/` | The remote's four button animations |
+| `vendor/lottie_light.min.js` | Lottie player 5.12.2, self-hosted |
 
 ### Runtime dependencies
 
@@ -83,6 +85,33 @@ do not see a published line-up. Treat the CMS as an authoring and preview tool.
 
 To make a line-up permanent for everyone: use **Import / Export** in the CMS to
 copy the JSON out, then bake it into the source.
+
+### The remote's buttons
+
+The four buttons — mute, info, channel up, channel down — are Lottie clips, not
+CSS. Each is loaded once from `assets/lottie/` and driven by frame range:
+
+| Button | Behaviour | Segments |
+|---|---|---|
+| Mute | Toggle, idles at frame 0 (muted) or 60 (unmuted) | `[61,120]` to mute, `[1,60]` to unmute |
+| Info | Toggle, idles at 0 (closed) or 60 (open) | `[61,120]` to open, `[1,60]` to close |
+| Channel up / down | Momentary — starts and ends at idle | `[0,60]` |
+
+The info segments are the reverse of what the frame labels suggest; the numbers
+above were checked against the rendered animation.
+
+Each button's clickable area is a plain `div` sized to the *hitbox*, with the
+Lottie player centred inside it at its larger native size and set to
+`pointer-events: none`. The clip is deliberately bigger than the button so
+squash-and-stretch never clips, and the transparent margin must not steal
+clicks from the button next to it.
+
+Every press also runs `kickRemote()`, a small spring that dips the whole shell
+and bounces back. It writes to its own wrapper element, because the outer shell's
+`transform` is already owned by the open/close drag.
+
+The player is **self-hosted** in `vendor/`. The buttons are the site's only
+controls, so they don't depend on a third-party CDN staying up.
 
 ### The ambient glow, and its palette
 
