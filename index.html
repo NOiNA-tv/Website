@@ -419,22 +419,43 @@
      outward across the blur. No mask: a mask is what produced the ring.
      Screen blending keeps it additive, so it lights the chassis rather than
      tinting it. Only opacity animates — the size must stay put. */
+  /* The flicker is two opacity animations multiplied together — one on the
+     wrapper, one on the light itself — at durations that do not divide into
+     each other. Their product only repeats after ~105s, so it reads as random
+     rather than as a loop, and both stay compositor-only. The blend lives on
+     the wrapper: an animated opacity there would otherwise isolate the child
+     and stop it blending with the chassis at all. */
+  .tv-ambient-wrap{position:absolute;inset:0;pointer-events:none;z-index:0;
+    mix-blend-mode:screen;
+    animation:tv-glow-a .83s ease-in-out infinite;}
   .tv-ambient{position:absolute;inset:-4%;
     background-size:cover;background-position:center;
     border-radius:10%/18%;
-    filter:blur(48px) saturate(1.9) brightness(1.1);mix-blend-mode:screen;
-    pointer-events:none;z-index:0;opacity:.36;
-    animation:tv-ambient-breathe 1s ease-in-out infinite;}
-  @keyframes tv-ambient-breathe{0%,100%{opacity:.28;}50%{opacity:.46;}}
+    filter:blur(48px) saturate(1.9) brightness(1.1);
+    animation:tv-glow-b 1.27s ease-in-out infinite;}
+  @keyframes tv-glow-a{0%{opacity:.6;}11%{opacity:.72;}26%{opacity:.53;}38%{opacity:.68;}
+    53%{opacity:.57;}67%{opacity:.73;}81%{opacity:.55;}92%{opacity:.66;}100%{opacity:.6;}}
+  @keyframes tv-glow-b{0%{opacity:.64;}9%{opacity:.53;}22%{opacity:.71;}35%{opacity:.58;}
+    48%{opacity:.72;}61%{opacity:.55;}74%{opacity:.68;}88%{opacity:.6;}100%{opacity:.64;}}
   /* A palette glow slides its gradient instead of sitting still, so the light
      travels through the chosen colours. Background-position is cheap to
      animate and the whole layer is blurred anyway, so the band reads as a soft
      colour shift rather than a moving stripe. */
   .tv-ambient--pal{background-size:300% 300%;
-    animation:tv-ambient-breathe 1s ease-in-out infinite,
+    animation:tv-glow-b 1.27s ease-in-out infinite,
               tv-pal-drift 14s ease-in-out infinite;}
   @keyframes tv-pal-drift{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-  @media (prefers-reduced-motion:reduce){.tv-ambient,.tv-ambient--pal{animation:none;}}
+  /* Room light: the same palette, drifting on the same 14s clock as the glow,
+     masked away from the centre so it only touches the edges. soft-light tints
+     what is already there instead of painting over it, and at 15% it reads as
+     a hint of colour in the corners rather than a wash. A gradient, a mask and
+     a blend — no filter, so nothing here is expensive to composite. */
+  .vignette-tint{position:absolute;inset:0;pointer-events:none;z-index:31;
+    background-size:300% 300%;mix-blend-mode:soft-light;opacity:.15;
+    -webkit-mask-image:radial-gradient(ellipse 68% 70% at 50% 45%, transparent 34%, rgba(0,0,0,.55) 68%, #000 100%);
+    mask-image:radial-gradient(ellipse 68% 70% at 50% 45%, transparent 34%, rgba(0,0,0,.55) 68%, #000 100%);
+    animation:tv-pal-drift 14s ease-in-out infinite;}
+  @media (prefers-reduced-motion:reduce){.tv-ambient-wrap,.tv-ambient,.tv-ambient--pal,.vignette-tint{animation:none;}}
   /* SYS. INFO fills the window on plain black. One margin unit all round, two
      at the bottom — that lower band is where BACK sits. */
   /* --info-m is the margin unit; the bottom gets two of them plus enough room
@@ -454,7 +475,7 @@
     cursor:pointer;background:oklch(0.86 0.17 205);
     box-shadow:0 0 14px oklch(0.86 0.17 205 / .5);}
   .info-back div{font-family:'VT323',monospace;font-size:15px;letter-spacing:.12em;
-    color:oklch(0.88 0.14 205);text-shadow:0 0 8px oklch(0.86 0.17 205 / .45);}
+    color:oklch(0.6 0.02 205);}
 </style>
 </helmet>
 <div ref="{{ rootRef }}" style="height:100dvh;width:100%;display:flex;justify-content:center;align-items:flex-start;padding:16px 14px;font-family:'Poppins',sans-serif;background:linear-gradient(135deg, oklch(0.73 0.012 205), oklch(0.60 0.013 205));overflow:hidden;position:relative;">
@@ -499,6 +520,9 @@
   <div ref="{{ textureRef }}" style="position:absolute;left:50%;top:0;width:420%;transform:translateX(-50%) rotateX(88deg);transform-origin:50% 0%;background-image:linear-gradient(oklch(0.55 0.013 205) 2px, transparent 2px),linear-gradient(90deg, oklch(0.55 0.013 205) 2px, transparent 2px),url('./assets/terrazzo-random.png?v=2');background-repeat:repeat;background-size:90px 90px,90px 90px,270px 270px;"></div>
   </div>
   <div ref="{{ vignetteRef }}" style="position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:30;mix-blend-mode:multiply;background:radial-gradient(ellipse 62% 68% at 50% 50%, oklch(0.08 0.03 205 / 0) 0%, oklch(0.08 0.03 205 / 0) 55%, oklch(0.14 0.045 205 / .75) 78%, oklch(0.08 0.03 205 / .97) 100%);"></div>
+  <sc-if value="{{ showTint }}" hint-placeholder-val="{{ false }}">
+    <div class="vignette-tint" aria-hidden="true" style="background-image:{{ glowTint }}"></div>
+  </sc-if>
   <div ref="{{ contentColRef }}" style="width:100%;max-width:428px;display:flex;flex-direction:column;gap:12px;min-height:0;position:relative;">
 
     <!-- TV BEZEL -->
@@ -510,7 +534,9 @@
            the chassis; the source is the channel's own Vimeo poster frame, so the
            colour matches what is playing. See the note in renderVals. -->
       <sc-if value="{{ showGlow }}" hint-placeholder-val="{{ true }}">
-        <div class="tv-ambient {{ glowMode }}" aria-hidden="true" style="background-image:{{ glowImage }}"></div>
+        <div class="tv-ambient-wrap" aria-hidden="true">
+          <div class="tv-ambient {{ glowMode }}" style="background-image:{{ glowImage }}"></div>
+        </div>
       </sc-if>
       <div ref="{{ screenRef }}" style="{{ screenStyle }}">
         <svg width="0" height="0" style="position:absolute;"><defs><clipPath id="tv-screen-clip" clipPathUnits="userSpaceOnUse"><path ref="{{ clipPathRef }}" d="M82.29,95.56S0,289.02,0,540s82.29,444.44,82.29,444.44c0,0,392.97,95.56,877.71,95.56,484.75,0,877.71-95.56,877.71-95.56,0,0,82.29-193.46,82.29-444.44s-82.29-444.44-82.29-444.44c0,0-392.97-95.56-877.71-95.56C475.25,0,82.29,95.56,82.29,95.56Z"></path></clipPath></defs></svg>
@@ -628,7 +654,7 @@
                 <div style="position:absolute;top:-10px;left:34px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:10px solid oklch(0.8 0.17 205);"></div>
                 <div style="position:absolute;top:-6px;left:36px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:8px solid #020402;"></div>
                 <div style="border:2px solid oklch(0.8 0.17 205);border-radius:4px;padding:8px 10px;background:#020402;">
-                  <div data-type-line="true" data-fast="true" style="color:oklch(0.85 0.1 205);font-size:19px;">"Experienced in building motion design systems, crafting creative concepts, and bringing brands to life through design and animation. Aims for playful, purposeful, polished motion — nudges keyframes into the night to get it just right!"</div>
+                  <div data-type-line="true" data-fast="true" style="color:oklch(0.85 0.1 205);font-size:19px;line-height:1.2;">"Experienced in building motion design systems, crafting creative concepts, and bringing brands to life through design and animation. Aims for playful, purposeful, polished motion — nudges keyframes into the night to get it just right!"</div>
                 </div>
               </div>
               <div ref="{{ clientsBoxRef }}" style="opacity:0;">
@@ -652,11 +678,11 @@
               </div>
               </div>
               <div data-type-line="true" style="margin:8px 0 4px;">CONTACT:</div>
-              <div data-type-line="true">&gt; <a href="https://vimeo.com/noina" target="_blank" style="text-decoration:underline;">VIMEO</a></div>
-              <div data-type-line="true">&gt; <a href="https://www.linkedin.com/in/noi-navve/" target="_blank" style="text-decoration:underline;">LINKEDIN</a></div>
-              <div data-type-line="true">&gt; <a href="https://www.instagram.com/noi.navve/" target="_blank" style="text-decoration:underline;">INSTAGRAM</a></div>
-              <div data-type-line="true">&gt; <a href="mailto:noi.navve@gmail.com" style="text-decoration:underline;">EMAIL — noi.navve@gmail.com</a></div>
-              <div data-type-line="true">&gt; <a href="https://wa.me/972525592525" target="_blank" style="text-decoration:underline;">TEL — 052-559-2525</a></div>
+              <div data-type-line="true" style="margin-top:9px;">&gt; <a href="https://vimeo.com/noina" target="_blank" style="text-decoration:underline;">VIMEO</a></div>
+              <div data-type-line="true" style="margin-top:9px;">&gt; <a href="https://www.linkedin.com/in/noi-navve/" target="_blank" style="text-decoration:underline;">LINKEDIN</a></div>
+              <div data-type-line="true" style="margin-top:9px;">&gt; <a href="https://www.instagram.com/noi.navve/" target="_blank" style="text-decoration:underline;">INSTAGRAM</a></div>
+              <div data-type-line="true" style="margin-top:9px;">&gt; <a href="mailto:noi.navve@gmail.com" style="text-decoration:underline;">EMAIL — noi.navve@gmail.com</a></div>
+              <div data-type-line="true" style="margin-top:9px;">&gt; <a href="https://wa.me/972525592525" target="_blank" style="text-decoration:underline;">TEL — 052-559-2525</a></div>
               </div>
             </div>
           </div>
@@ -695,7 +721,7 @@
         <div style="position:absolute;inset:0;background:linear-gradient(135deg, oklch(0.24 0.016 205), oklch(0.14 0.018 205));clip-path:url(#decoder-shape-clip);box-shadow:0 6px 14px rgba(0,0,0,.4);"></div>
         <div style="position:absolute;left:0;right:0;top:calc(46% - 16px);bottom:-4px;border:4px solid oklch(0.30 0.065 205);border-radius:12px;background:transparent;pointer-events:none;transform:translateY(-4px);z-index:2;"></div>
         <div style="position:absolute;left:16px;right:16px;top:46%;bottom:8%;display:flex;align-items:center;gap:8px;transform:translateY(-4px);">
-        <div style="background:oklch(0.14 0.018 205);border-radius:6px;padding:4px 5px;display:flex;align-items:center;gap:5px;width:100%;height:100%;">
+        <div style="background:oklch(0.14 0.018 205);border-radius:6px;padding:4px 5px;display:flex;align-items:center;gap:9px;width:100%;height:100%;">
         <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);width:42px;height:100%;display:flex;align-items:center;justify-content:center;padding-top:4px;">{{ channel.num }}</div>
         <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px;align-self:stretch;">
           <div style="font-family:'Jersey 10',monospace;font-size:20px;letter-spacing:.04em;color:oklch(0.8 0.17 205);text-shadow:0 0 6px oklch(0.8 0.17 205 / .4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;top:1px;">{{ channel.title }}</div>
@@ -779,39 +805,59 @@
 const CHANNELS_BUILTIN = [
   {num:'00', label:'STATION ID', title:'NOiNA', sub:'Motion Designer', type:'station', aspect:'16/9'},
   {num:"01", label:"PRIME TIME", title:"Folo", sub:"KidsTV diary app", type:"project", aspect:"16/9", vimeoId:"477155128", vimeoUrl:"https://vimeo.com/477155128?share=copy&fl=sv&fe=ci",
+    palette:["#ffee18", "#42dae5", "#ff2f63", "#814bdd"],
     desc:"Meet Folo - the next generation of student diaries! A video I made for the app I designed for Kidstv. Had fun designing a complete app from scratch for the first time (grueling yet rewarding!), but nothing beats animating this wee fella. ɷ◡ɷ"},
   {num:"02", label:"PRIME TIME", title:"yes", sub:"Broadcast graphic package reel", type:"project", aspect:"16/9", vimeoId:"688429066", vimeoUrl:"https://vimeo.com/688429066?share=copy&fl=sv&fe=ci",
+    palette:["#c5a0ba", "#548f9c", "#a19e72"],
     desc:"An onscreen graphic package for yes, a direct broadcast satellite television provider in Israel. This brand design puts the content front and center across all of yes's home channels and digital platforms, from TV shows to movies, with a light cinematic flair. *⁂((✪⥎✪))⁂*"},
   {num:"03", label:"PRIME TIME", title:"Vimeo", sub:"ProdCon 2024 Intro", type:"project", aspect:"16/9", vimeoId:"1104693380", vimeoUrl:"https://vimeo.com/1104693380?share=copy&fl=sv&fe=ci",
+    palette:["#b87cff", "#17daff", "#ff7cec"],
     desc:"An intro video for Vimeo's 2024 product conference in Miami. It was a blast creating a product-focused animation using Vimeo's design language, with a splash of Miami sunshine throughout."},
   {num:"04", label:"PRIME TIME", title:"Rak BeHatzbaa", sub:"Kids TV title sequence", type:"project", aspect:"16/9", vimeoId:"477198214", vimeoUrl:"https://vimeo.com/477198214?share=copy&fl=sv&fe=ci",
+    palette:["#002052", "#60a9f2", "#0265d6", "#badaf3"],
     desc:"The results are in! An opening title sequence from a full graphic package made for \"Only by Vote\", a kids TV show on Kan Educational channel about what today's kids really think, with fun surveys & polls. The package includes on-screen titles, supers, wipers, a timer and the polls themselves, integrated with Arti's AR studio."},
   {num:"05", label:"PRIME TIME", title:"Noder", sub:"Wedding vows film", type:"project", aspect:"16/9", vimeoId:"841602064", vimeoUrl:"https://vimeo.com/841602064?share=copy&fl=sv&fe=ci",
+    palette:["#024bfb", "#ff60cc", "#00e5fc", "#fd0400"],
     desc:"For my and my partner's decade celebrations weddingish event, I decided to present my vows with a video, instead of reciting them with a shaky voice & sweaty palms. The color scheme of the entire event was inspired by my partner's favorite arcade game Pac-Man, and I had a blast experimenting with different animation techniques and design trends. That was the most passionate passion project I've had in a long time. Love you, Ba'alulu! ( ˘ ³˘)♥"},
   {num:"06", label:"PRIME TIME", title:"WRC", sub:"2017 Showreel", type:"project", aspect:"16/9", vimeoId:"476837478", vimeoUrl:"https://vimeo.com/476837478?share=copy&fl=sv&fe=ci",
+    palette:["#787878", "#98ce33"],
     desc:"A little taste of the World Rally Championship rebrand we did in Promotheus, from real-time TV graphics & dynamic maps to social media integration and technical implementation. I was incharge of the motion theory, intros, bumpers, and other elements of the brand's tv & social package."},
   {num:"07", label:"PRIME TIME", title:"PayBox", sub:"Commercials", type:"project", aspect:"16/9", vimeoId:"477184602", vimeoUrl:"https://vimeo.com/477184602?share=copy&fl=sv&fe=ci",
+    palette:["#24a5ed", "#ffcd35"],
     desc:"Promotional campaign for PayBox, a digital wallet and payment app, for TV and numerous social platforms. We had about 3 days per video - pretty stressful, but I'm happy with the end results."},
   {num:"08", label:"PRIME TIME", title:"Kido", sub:"Agency sizzle reel", type:"project", aspect:"16/9", vimeoId:"1104142278", vimeoUrl:"https://vimeo.com/1104142278?share=copy&fl=sv&fe=ci",
+    palette:["#fe7145", "#ffdc03", "#23cfb2", "#a051ff"],
     desc:"A sizzle video showcasing Kido's amazing and innovative projects. I absolutely loved my short time at Kido — thoughtful, seasoned design thinking leading to beautiful projects, all created by genuinely sweet people. ⸜(｡˃ ᵕ ˂ )⸝♡"},
   {num:"09", label:"PRIME TIME", title:"Kan Kids", sub:"TV Show Intro", type:"project", aspect:"16/9", vimeoId:"477141864", vimeoUrl:"https://vimeo.com/477141864?share=copy&fl=sv&fe=ci",
+    palette:["#028d89", "#243cd3", "#e2210b", "#f0e805"],
     desc:"Opening sequence for a TV show package for \"The Bumper-Sticker Poetry\" on Kan Educational channel. A series of 10 minutes shorts, each one on the history and background of one iconic bumper-sticker."},
   {num:"10", label:"PRIME TIME", title:"Aiways", sub:"ID Video", type:"project", aspect:"16/9", vimeoId:"688440815", vimeoUrl:"https://vimeo.com/688440815?share=copy&fl=sv&fe=ci",
+    palette:["#fba8af", "#fc86da", "#fde8e9"],
     desc:"A short ID for Aiways, a chinese electric car manufacturer. It was fun experimenting with reaction diffusion simulation for the first time! I can't wait to mess around with it again."},
   {num:"11", label:"PRIME TIME", title:"Vimeo", sub:"2024 Recap", type:"project", aspect:"16/9", vimeoId:"1104693622", vimeoUrl:"https://vimeo.com/1104693622?share=copy&fl=sv&fe=ci",
+    palette:["#787878"],
     desc:"A kind of showreel video, recapping all the standout projects I worked on in 2024 as part of the product creative team. Endless projects across a variety of content worlds, each with its own unique design and animation challenges."},
   {num:"12", label:"PRIME TIME", title:"Knesset TV", sub:"Channel Package", type:"project", aspect:"16/9", vimeoId:"477640753", vimeoUrl:"https://vimeo.com/477640753?share=copy&fl=sv&fe=ci",
+    palette:["#03adff", "#ffffff"],
     desc:"I got the opportunity to design and animate for The Israeli parliament channel rebrand, after promotheus took part in designing the winning bid. With the new \"kaf\"/Knesset-plenary-hall logo design and the objective of making the Knesset feel more digital and connected in mind, I've worked on the news broadcast package, multiple shows intros and other knick knacks."},
   {num:"13", label:"PRIME TIME", title:"Bizzabo", sub:"Feature Announcement", type:"project", aspect:"16/9", vimeoId:"689180114", vimeoUrl:"https://vimeo.com/689180114?share=copy&fl=sv&fe=ci",
+    palette:["#c3bcfc", "#fff004", "#0386fc"],
     desc:"A video introducing Bizzabo's (an event experience OS) brand new app market. It was fun and exciting taking their latest rebrand and bringing it to life with movement and animation."},
   {num:"14", label:"PRIME TIME", title:"Channel 10", sub:"TV Show Intro", type:"project", aspect:"16/9", vimeoId:"476829578", vimeoUrl:"https://vimeo.com/476829578?share=copy&fl=sv&fe=ci",
+    palette:["#d8032b", "#0c1b39"],
     desc:"An opening title sequence I made for the second season of the Israeli sitcom, \"Fallen Hard\". The bourgeoisie life is tumbling down!"},
   {num:"15", label:"PRIME TIME", title:"Discount", sub:"Product Teaser Video", type:"project", aspect:"16/9", vimeoId:"476804797", vimeoUrl:"https://vimeo.com/476804797?share=copy&fl=sv&fe=ci",
+    palette:["#1d1c22", "#6bab42", "#1c1c22", "#f9f088"],
     desc:"Explainer video for Israel Bank Discount's Open Banking platform, for promoting innovation and new financial services using API and other stuff that are beyond my understanding."},
   {num:"16", label:"PRIME TIME", title:"Xealth", sub:"Promotional Video", type:"project", aspect:"16/9", vimeoId:"688447594", vimeoUrl:"https://vimeo.com/688447594?share=copy&fl=sv&fe=ci",
+    palette:["#0176d4", "#00aefe"],
     desc:"Promotional video for Xealth, a digital ordering and analytics platform for health vendors."},
   {num:"17", label:"PRIME TIME", title:"Kan 11", sub:"Promo Kit", type:"project", aspect:"16/9", vimeoId:"688422750", vimeoUrl:"https://vimeo.com/688422750?share=copy&fl=sv&fe=ci",
+    palette:["#849fb4", "#ead7d1"],
     desc:"Graphic promo kit for Kan's TV show \"We'll meet again\" about five secular people whose one of his/her family members have repented and are sent on a journey documenting the attempt to reconnect with that family member. Suuuper emotional."},
+  {num:"18", label:"PRIME TIME", title:"bizi", sub:"Product Video", type:"project", aspect:"16/9", vimeoId:"1104141854", vimeoUrl:"https://vimeo.com/1104141854",
+    palette:["#7d5ce9", "#00e6b7"],
+    desc:"A video for bizi, a leading fintech company offering non-bank credit solutions for small businesses, showcasing the onboarding process in their app."},
 ];
 
 // Channel line-up: a line-up published from "Channels CMS.dc.html" overrides the built-in list.
@@ -1819,6 +1865,12 @@ class Component extends DCLogic {
       infoOpen: this.state.infoOpen,
       glowImage,
       glowMode: palette.length >= 2 ? 'tv-ambient--pal' : '',
+      // The room's vignette picks up a little of the channel's colour. Only a
+      // chosen palette drives it — a poster frame would need blurring to avoid
+      // showing recognisable imagery, and a full-viewport blur is the one thing
+      // here expensive enough to matter on a phone.
+      glowTint: palette.length ? glowImage : '',
+      showTint: !this.state.infoOpen && palette.length > 0,
       showGlow: !this.state.infoOpen,
       // SYS. INFO is a full-screen terminal, not a picture on a television —
       // so the chassis, the tube mask and the CRT overlays all step aside and
