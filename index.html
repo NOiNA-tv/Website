@@ -563,10 +563,10 @@
         </div>
         </div>
 
-        <div ref="{{ numFlashRef }}" style="position:absolute;top:8.5%;right:7.5%;z-index:11;pointer-events:none;font-family:'Jersey 10',monospace;font-size:calc(40px * var(--osd, 1));line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);opacity:0;">{{ channel.num }}</div>
+        <div ref="{{ numFlashRef }}" style="position:absolute;top:12.5%;right:7.5%;z-index:11;pointer-events:none;font-family:'Jersey 10',monospace;font-size:calc(40px * var(--osd, 1));line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);opacity:0;">{{ channel.num }}</div>
 
         <sc-if value="{{ showMuteIcon }}" hint-placeholder-val="{{ false }}">
-          <svg viewBox="0 0 48 36" fill="oklch(0.8 0.17 205)" style="position:absolute;top:9.5%;left:8.5%;z-index:11;pointer-events:none;width:calc(40px * var(--osd, 1));height:calc(30px * var(--osd, 1));filter:drop-shadow(0 0 8px oklch(0.8 0.17 205 / .5));">
+          <svg viewBox="0 0 48 36" fill="oklch(0.8 0.17 205)" style="position:absolute;top:13.5%;left:8.5%;z-index:11;pointer-events:none;width:calc(40px * var(--osd, 1));height:calc(30px * var(--osd, 1));filter:drop-shadow(0 0 8px oklch(0.8 0.17 205 / .5));">
             <polygon points="16 0 16 4 20 4 20 8 20 12 20 16 20 20 20 24 20 28 20 32 16 32 16 36 20 36 24 36 24 32 24 28 24 24 24 20 24 16 24 12 24 8 24 4 24 0 20 0 16 0"></polygon>
             <rect x="28" y="8" width="4" height="4"></rect>
             <rect x="32" y="12" width="4" height="4"></rect>
@@ -719,22 +719,22 @@
 
     <!-- DECODER STRIP -->
     <div style="margin-top:-4px;margin-left:18px;margin-right:18px;position:relative;">
-      <div style="position:absolute;left:5%;right:5%;bottom:-16px;height:32px;background:radial-gradient(ellipse at center, oklch(0.22 0.045 205 / .85) 0%, oklch(0.22 0.045 205 / .45) 50%, transparent 78%);filter:blur(3px);z-index:-1;"></div>
+      <div style="position:absolute;left:5%;right:5%;bottom:calc(-16px * var(--dec, 1));height:calc(32px * var(--dec, 1));background:radial-gradient(ellipse at center, oklch(0.22 0.045 205 / .85) 0%, oklch(0.22 0.045 205 / .45) 50%, transparent 78%);filter:blur(3px);z-index:-1;"></div>
       <div ref="{{ decoderRef }}" style="position:relative;aspect-ratio:320/88;">
         <svg width="0" height="0" style="position:absolute;"><defs><clipPath id="decoder-shape-clip" clipPathUnits="userSpaceOnUse"><path ref="{{ decoderClipRef }}" d="M313.49,25.34l-28.15-20.68c-4.12-3.03-9.1-4.66-14.21-4.66H48.87c-5.11,0-10.09,1.63-14.21,4.66L6.51,25.34c-3.86,1.99-6.51,6.01-6.51,10.66v40c0,6.63,5.37,12,12,12h296c6.63,0,12-5.37,12-12v-40c0-4.65-2.64-8.67-6.51-10.66Z"></path></clipPath></defs></svg>
         <div style="position:absolute;inset:0;background:linear-gradient(135deg, oklch(0.24 0.016 205), oklch(0.14 0.018 205));clip-path:url(#decoder-shape-clip);box-shadow:0 6px 14px rgba(0,0,0,.4);"></div>
-        <div style="position:absolute;left:0;right:0;top:calc(46% - 16px);bottom:-4px;border:4px solid oklch(0.30 0.065 205);border-radius:12px;background:transparent;pointer-events:none;transform:translateY(-4px);z-index:2;"></div>
-        <div style="position:absolute;left:16px;right:16px;top:46%;bottom:8%;display:flex;align-items:center;gap:8px;transform:translateY(-4px);">
-        <div style="background:oklch(0.14 0.018 205);border-radius:6px;padding:4px 5px;display:flex;align-items:center;gap:5px;width:100%;height:100%;">
-        <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);width:46px;height:100%;display:flex;align-items:center;justify-content:center;padding-top:4px;">{{ channel.num }}</div>
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px;align-self:stretch;">
-          <div style="font-family:'Jersey 10',monospace;font-size:20px;letter-spacing:.04em;color:oklch(0.8 0.17 205);text-shadow:0 0 6px oklch(0.8 0.17 205 / .4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;top:1px;">{{ channel.title }}</div>
-          <div style="font-family:'Jersey 10',monospace;font-size:15px;letter-spacing:.04em;color:oklch(0.6 0.02 205);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;top:-1px;">{{ channel.sub }}</div>
+        <div style="position:absolute;left:0;right:0;top:calc(46% - 16px * var(--dec, 1));bottom:calc(-4px * var(--dec, 1));border:calc(4px * var(--dec, 1)) solid oklch(0.30 0.065 205);border-radius:calc(12px * var(--dec, 1));background:transparent;pointer-events:none;transform:translateY(calc(-4px * var(--dec, 1)));z-index:2;"></div>
+        <div style="position:absolute;left:calc(16px * var(--dec, 1));right:calc(16px * var(--dec, 1));top:46%;bottom:8%;display:flex;align-items:center;gap:calc(8px * var(--dec, 1));transform:translateY(calc(-4px * var(--dec, 1)));">
+        <div style="background:oklch(0.14 0.018 205);border-radius:calc(6px * var(--dec, 1));padding:calc(4px * var(--dec, 1)) calc(5px * var(--dec, 1));display:flex;align-items:center;gap:calc(5px * var(--dec, 1));width:100%;height:100%;">
+        <div style="font-family:'Segment7Standard',monospace;font-size:calc(26px * var(--dec, 1));line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 calc(8px * var(--dec, 1)) oklch(0.8 0.17 205 / .5);width:calc(46px * var(--dec, 1));height:100%;display:flex;align-items:center;justify-content:center;padding-top:calc(4px * var(--dec, 1));">{{ channel.num }}</div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:calc(1px * var(--dec, 1));align-self:stretch;">
+          <div style="font-family:'Jersey 10',monospace;font-size:calc(20px * var(--dec, 1));letter-spacing:.04em;color:oklch(0.8 0.17 205);text-shadow:0 0 calc(6px * var(--dec, 1)) oklch(0.8 0.17 205 / .4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;top:calc(1px * var(--dec, 1));">{{ channel.title }}</div>
+          <div style="font-family:'Jersey 10',monospace;font-size:calc(15px * var(--dec, 1));letter-spacing:.04em;color:oklch(0.6 0.02 205);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;top:calc(-1px * var(--dec, 1));">{{ channel.sub }}</div>
         </div>
-        <div style="display:flex;align-items:center;justify-content:center;align-self:stretch;margin-right:14px;">
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">
-            <button onclick="{{ onToggleInfo }}" style="width:32px;height:8px;border-radius:9999px;background:oklch(0.40 0.09 205);border:none;padding:0;cursor:pointer;animation:sysinfo-blink 3s ease-in-out infinite;"></button>
-            <div onclick="{{ onToggleInfo }}" style="font-family:'VT323',monospace;font-size:9px;color:oklch(0.5 0.02 205);letter-spacing:.04em;text-align:center;padding-right:.1em;margin-left:2px;cursor:pointer;">SYS. INFO</div>
+        <div style="display:flex;align-items:center;justify-content:center;align-self:stretch;margin-right:calc(14px * var(--dec, 1));">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(6px * var(--dec, 1));">
+            <button onclick="{{ onToggleInfo }}" style="width:calc(32px * var(--dec, 1));height:calc(8px * var(--dec, 1));border-radius:9999px;background:oklch(0.40 0.09 205);border:none;padding:0;cursor:pointer;animation:sysinfo-blink 3s ease-in-out infinite;"></button>
+            <div onclick="{{ onToggleInfo }}" style="font-family:'VT323',monospace;font-size:calc(9px * var(--dec, 1));color:oklch(0.5 0.02 205);letter-spacing:.04em;text-align:center;padding-right:.1em;margin-left:calc(2px * var(--dec, 1));cursor:pointer;">SYS. INFO</div>
           </div>
         </div>
         </div>
@@ -1671,8 +1671,14 @@ class Component extends DCLogic {
     if (!col) return;
     this._fitW = w;
     this._osd = Math.min(2, Math.max(1, (w - 44) / 384)).toFixed(3);
+    // --dec does the same for the decoder strip, whose contents were fixed in
+    // pixels and so stayed phone-sized inside a chassis two and a half times
+    // bigger. 392 is the strip's width in the original layout; below that
+    // nothing scales, which keeps the phone rendering exactly as it was.
+    this._dec = Math.max(1, (w - 36) / 392).toFixed(3);
     col.style.maxWidth = w + 'px';
     col.style.setProperty('--osd', this._osd);
+    col.style.setProperty('--dec', this._dec);
   }
 
   remeasure = () => {
