@@ -563,10 +563,10 @@
         </div>
         </div>
 
-        <div ref="{{ numFlashRef }}" style="position:absolute;top:28px;right:30px;z-index:11;pointer-events:none;font-family:'Jersey 10',monospace;font-size:40px;line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);opacity:0;">{{ channel.num }}</div>
+        <div ref="{{ numFlashRef }}" style="position:absolute;top:8.5%;right:7.5%;z-index:11;pointer-events:none;font-family:'Jersey 10',monospace;font-size:calc(40px * var(--osd, 1));line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);opacity:0;">{{ channel.num }}</div>
 
         <sc-if value="{{ showMuteIcon }}" hint-placeholder-val="{{ false }}">
-          <svg viewBox="0 0 48 36" fill="oklch(0.8 0.17 205)" style="position:absolute;top:34px;left:36px;z-index:11;pointer-events:none;width:40px;height:30px;filter:drop-shadow(0 0 8px oklch(0.8 0.17 205 / .5));">
+          <svg viewBox="0 0 48 36" fill="oklch(0.8 0.17 205)" style="position:absolute;top:9.5%;left:8.5%;z-index:11;pointer-events:none;width:calc(40px * var(--osd, 1));height:calc(30px * var(--osd, 1));filter:drop-shadow(0 0 8px oklch(0.8 0.17 205 / .5));">
             <polygon points="16 0 16 4 20 4 20 8 20 12 20 16 20 20 20 24 20 28 20 32 16 32 16 36 20 36 24 36 24 32 24 28 24 24 24 20 24 16 24 12 24 8 24 4 24 0 20 0 16 0"></polygon>
             <rect x="28" y="8" width="4" height="4"></rect>
             <rect x="32" y="12" width="4" height="4"></rect>
@@ -583,9 +583,9 @@
           </svg>
         </sc-if>
 
-        <div ref="{{ volumeRef }}" style="position:absolute;left:30px;bottom:32px;z-index:11;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px;color:oklch(0.8 0.17 205);opacity:0;">
-          <div style="font-family:'Jersey 10',monospace;font-size:30px;line-height:1;text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);position:relative;top:2px;">VOLUME</div>
-          <svg viewBox="0 0 644 40" style="width:322px;height:20px;filter:drop-shadow(0 0 8px oklch(0.8 0.17 205 / .5));">
+        <div ref="{{ volumeRef }}" style="position:absolute;left:50%;transform:translateX(-50%);bottom:9%;z-index:11;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:2px;color:oklch(0.8 0.17 205);opacity:0;">
+          <div style="font-family:'Jersey 10',monospace;font-size:calc(30px * var(--osd, 1));line-height:1;text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);position:relative;top:2px;">VOLUME</div>
+          <svg viewBox="0 0 644 40" style="width:calc(322px * var(--osd, 1));height:calc(20px * var(--osd, 1));filter:drop-shadow(0 0 8px oklch(0.8 0.17 205 / .5));">
             <rect fill="currentColor" x="0" width="8" height="40"></rect>
             <rect fill="currentColor" x="20" width="8" height="40"></rect>
             <rect fill="currentColor" x="40" width="8" height="40"></rect>
@@ -1600,6 +1600,8 @@ class Component extends DCLogic {
     // to be redone whenever the tuned channel or the info page changes
     if (!prevState || prevState.index !== this.state.index || prevState.infoOpen !== this.state.infoOpen) {
       this.fitColumn();
+    } else if (this._fitW) {
+      this.applyFit(this._fitW);   // cheap reassert; no measuring, no reflow
     }
     // any unrelated setState triggers a React re-render, which reapplies this div's static
     // template style and would otherwise clobber the imperatively-driven opacity/background
@@ -1656,6 +1658,21 @@ class Component extends DCLogic {
       w = Math.max(280, Math.floor(w * (availH / h)));
       col.style.maxWidth = w + 'px';
     }
+    this.applyFit(w);
+  }
+
+  /** --osd scales the things drawn over the picture — the mute icon, the
+      channel number, the volume bar. 384 is the picture width the site shipped
+      at, so the scale is 1 there and reaches 2 at 768 and beyond. Held on the
+      column and reapplied after every render, because React rewrites this
+      element's style from the template and would otherwise drop it. */
+  applyFit(w) {
+    const col = this.colEl;
+    if (!col) return;
+    this._fitW = w;
+    this._osd = Math.min(2, Math.max(1, (w - 44) / 384)).toFixed(3);
+    col.style.maxWidth = w + 'px';
+    col.style.setProperty('--osd', this._osd);
   }
 
   remeasure = () => {
