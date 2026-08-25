@@ -917,7 +917,7 @@ class Component extends DCLogic {
   ];
   tagQueue = [];
 
-  state = { index: 0, transitioning: false, muted: true, infoOpen: false, descOpen: false, descRendered: false, remoteOpen: false, dragging: false, remoteHeight: 300 };
+  state = { index: 0, transitioning: false, muted: true, infoOpen: false, descOpen: false, descRendered: false, remoteOpen: false, dragging: false, remoteHeight: 300, videoReady: false };
 
   constructor(props) {
     super(props);
@@ -1804,7 +1804,7 @@ class Component extends DCLogic {
       this._bootVideoId = first ? first.vimeoId : '';
       this._loadedVideoId = this._bootVideoId;
       this._videoSrc = 'https://player.vimeo.com/video/' + this._bootVideoId +
-        '?autoplay=1&loop=1&muted=1&controls=0&title=0&byline=0&portrait=0';
+        '?autoplay=0&loop=1&muted=1&controls=0&title=0&byline=0&portrait=0';
     }
     return this._videoSrc;
   }
@@ -1817,54 +1817,68 @@ class Component extends DCLogic {
     this.player.ready()
       .then(() => this.player.setMuted(this.state.muted))
       .catch(() => {});
-    // One seek per loaded video, hung off 'play' so it covers both routes in:
-    // the first channel, which autoplays straight from src, and every later one
-    // that arrives through loadVideo().
-    this.player.on('play', () => {
-      if (this._seekDoneFor === this._loadedVideoId) return;
-      this._seekDoneFor = this._loadedVideoId;
-      this.randomSeek();
-    });
+    // 'playing' is the player telling us frames are actually going out — the
+    // honest moment to lift the black screen.
+    this.player.on('playing', () => this.showVideo(this._preparedFor));
   };
 
   /** Point the existing player at the channel's video, or park it on the
-      station. Loading in place skips the whole player boot; the seek to a
-      random timestamp that used to run here is gone, because it threw away the
-      buffer the player had just filled and doubled the wait. */
+      station. Loading in place skips the whole player boot. */
   syncPlayer(i) {
     if (!this.player) return;
     const c = CHANNELS[i];
     if (c.type !== 'project') { this.player.pause().catch(() => {}); return; }
-    // already the loaded video — a channel you come back to keeps running
-    // where it was, the way a real one does
-    if (c.vimeoId === this._loadedVideoId) { this.player.play().catch(() => {}); return; }
-    this._loadedVideoId = c.vimeoId;
-    this.player.loadVideo(c.vimeoId)
+
+    // A channel already tuned once keeps running where it was, the way a real
+    // one does — no reload, no second jump.
+    if (this._preparedFor === c.vimeoId) {
+      this.showVideo(c.vimeoId);
+      this.player.play().catch(() => {});
+      return;
+    }
+
+    // Everything below happens behind a black screen. The picture is only
+    // revealed once it is genuinely playing at its start point, so the visitor
+    // never sees frame 0 and never sees the jump away from it.
+    const target = c.vimeoId;
+    this._preparedFor = target;
+    this.setState({ videoReady: false });
+    clearTimeout(this._videoRevealT);
+    // never leave the screen black on a player that stopped answering
+    this._videoRevealT = setTimeout(() => this.showVideo(target), 8000);
+
+    const stale = () => this._preparedFor !== target;
+    // the boot video is already inside the player; every other channel loads
+    const loaded = target === this._loadedVideoId
+      ? Promise.resolve()
+      : this.player.loadVideo(target).then(() => { this._loadedVideoId = target; });
+
+    loaded
+      // pause before seeking: left playing, the player buffers from zero and
+      // that download is thrown away the moment we move the playhead
+      .then(() => (stale() ? null : this.player.pause()))
+      .then(() => (stale() ? null : this.player.getDuration()))
+      .then((d) => {
+        if (stale()) return null;
+        // buffering now starts at the destination, so there is one fill, not two
+        return this.player.setCurrentTime(d ? Math.random() * d * 0.75 : 0);
+      })
       .then(() => {
+        if (stale()) return null;
         this.player.setMuted(this.state.muted);
-        try { this.player.setLoop(true).catch(() => {}); } catch (e) { /* src params applied to the boot video only */ }
+        try { this.player.setLoop(true).catch(() => {}); } catch (e) { /* src params cover the boot video only */ }
         return this.player.play();
       })
-      // belt and braces: if the 'play' event is missed, the loading loop would
-      // otherwise keep running under a picture that is already up
-      .then(() => this.stopLoadingSound())
-      .catch(() => {});
+      .then(() => this.showVideo(target))
+      .catch(() => this.showVideo(target));
   }
 
-  /** Drop into the middle of the piece, the way a real channel is never at its
-      start — but only once the picture is already up. Seeking before playback
-      begins throws away the buffer the player just filled and doubles the wait,
-      which is what made this expensive before; after play() it costs nothing
-      the visitor is waiting on. */
-  randomSeek() {
-    if (!this.player) return;
-    const forVideo = this._loadedVideoId;
-    this.player.getDuration().then((d) => {
-      // a zap during the round trip must not drag the new channel to a
-      // timestamp picked for the old one
-      if (!d || forVideo !== this._loadedVideoId) return;
-      return this.player.setCurrentTime(Math.random() * d * 0.75);
-    }).catch(() => {});
+  /** Bring the picture up — once, and only for the channel still tuned in. */
+  showVideo(target) {
+    if (this._preparedFor !== target) return;
+    clearTimeout(this._videoRevealT);
+    this.stopLoadingSound();
+    if (!this.state.videoReady) this.setState({ videoReady: true });
   }
 
   renderVals() {
@@ -1964,7 +1978,7 @@ class Component extends DCLogic {
       videoSrc: this.videoSrc(),
       // The player stays mounted on the station too — hidden, not removed —
       // so coming back to a project doesn't rebuild it.
-      videoLayerStyle: channel.isProject
+      videoLayerStyle: channel.isProject && this.state.videoReady
         ? 'position:absolute;inset:0;background:#000;'
         : 'position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;',
       onToggleInfo: () => this.startInfoTransition(!this.state.infoOpen),
