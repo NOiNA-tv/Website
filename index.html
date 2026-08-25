@@ -524,7 +524,7 @@
   <sc-if value="{{ showTint }}" hint-placeholder-val="{{ false }}">
     <div class="vignette-tint" aria-hidden="true" style="background-image:{{ glowTint }}"></div>
   </sc-if>
-  <div ref="{{ contentColRef }}" style="width:100%;max-width:428px;display:flex;flex-direction:column;gap:12px;min-height:0;position:relative;">
+  <div ref="{{ contentColRef }}" style="width:100%;max-width:428px;--tv-max:1004px;display:flex;flex-direction:column;gap:12px;min-height:0;position:relative;">
 
     <!-- TV BEZEL -->
     <div style="{{ tvBezelStyle }}">
@@ -1356,7 +1356,7 @@ class Component extends DCLogic {
     this._volumeT = setTimeout(() => { if (this.volumeEl) this.volumeEl.style.opacity = '0'; }, 1000);
   }
 
-  contentColRef = (el) => { this.colEl = el; };
+  contentColRef = (el) => { this.colEl = el; if (el) this.fitColumn(); };
 
   scheduleFlicker = () => {
     // self-guarding: the chain is self-perpetuating, so any external re-entry (e.g. the
@@ -1595,7 +1595,12 @@ class Component extends DCLogic {
 
 
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps, prevState) {
+    // a 4/3 channel is taller than a 16/9 one at the same width, so the fit has
+    // to be redone whenever the tuned channel or the info page changes
+    if (!prevState || prevState.index !== this.state.index || prevState.infoOpen !== this.state.infoOpen) {
+      this.fitColumn();
+    }
     // any unrelated setState triggers a React re-render, which reapplies this div's static
     // template style and would otherwise clobber the imperatively-driven opacity/background
     // for a frame — a hard, unintended flicker cut. Reassert them immediately after commit.
@@ -1628,7 +1633,33 @@ class Component extends DCLogic {
     this.startNoise();
   }
 
+  /** Grow the television to fill the window, up to a 960px-wide picture — the
+      native width of the video files, past which it would only be upscaled.
+      The cap is 1004: 960 plus the bezel's 44px of border and padding.
+
+      Height is handled by measuring rather than arithmetic. The column's height
+      is not a straight function of its width (the copyright line is fixed, the
+      decoder scales, the picture's aspect ratio changes with the channel), so
+      instead of encoding those relationships as constants that would rot, this
+      sets a width, measures what came out, and scales down if it overflows. Two
+      or three passes converge and it adapts on its own if the layout changes. */
+  fitColumn() {
+    const col = this.colEl;
+    if (!col || this.state.infoOpen) return;
+    const availW = window.innerWidth - 28;                 // root padding, 14 a side
+    const availH = window.innerHeight - 32 - (85 + 12 + 8); // root padding, remote peek, breathing room
+    let w = Math.min(1004, availW);
+    col.style.maxWidth = w + 'px';
+    for (let i = 0; i < 3; i++) {
+      const h = col.offsetHeight;
+      if (h <= availH) break;
+      w = Math.max(280, Math.floor(w * (availH / h)));
+      col.style.maxWidth = w + 'px';
+    }
+  }
+
   remeasure = () => {
+    this.fitColumn();
     this.updateTexturePosition();
     this.updateVignettePosition();
     this.updateWallPosition();
