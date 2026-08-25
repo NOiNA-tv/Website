@@ -553,11 +553,14 @@
           </div>
         </sc-if>
 
-        <sc-if value="{{ channel.isProject }}" hint-placeholder-val="{{ false }}">
-          <div style="position:absolute;inset:0;background:#000;">
-            <iframe key="{{ channel.vimeoId }}" ref="{{ videoRef }}" src="https://player.vimeo.com/video/{{ channel.vimeoId }}?autoplay=1&loop=1&muted=1&controls=0&title=0&byline=0&portrait=0" style="width:100%;height:100%;border:0;" allow="autoplay; fullscreen" title="{{ channel.title }}"></iframe>
-          </div>
-        </sc-if>
+        <!-- One player for the whole session. It is never keyed or unmounted —
+             re-creating the iframe per channel meant every zap paid for a fresh
+             player boot (config call, CDN handshake, manifest) before a frame
+             appeared. The channel change now goes through loadVideo() instead,
+             and the station hides this layer rather than removing it. -->
+        <div style="{{ videoLayerStyle }}">
+          <iframe ref="{{ videoRef }}" src="{{ videoSrc }}" style="width:100%;height:100%;border:0;" allow="autoplay; fullscreen" title="{{ channel.title }}"></iframe>
+        </div>
         </div>
 
         <div ref="{{ numFlashRef }}" style="position:absolute;top:28px;right:30px;z-index:11;pointer-events:none;font-family:'Jersey 10',monospace;font-size:40px;line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);opacity:0;">{{ channel.num }}</div>
@@ -758,7 +761,7 @@
       <div style="position:absolute;left:0;right:0;top:0;aspect-ratio:298.71/549.1;background:linear-gradient(135deg, oklch(0.50 0.115 205), oklch(0.40 0.09 205));clip-path:url(#remote-clip);box-shadow:0 -10px 40px -10px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.05);"></div>
       <!-- vector-effect keeps the stroke a true 6px on screen even though the
            path is scaled non-uniformly to fill the remote's tall silhouette. -->
-      <svg style="position:absolute;left:0;right:0;top:0;aspect-ratio:298.71/549.1;pointer-events:none;z-index:1;overflow:visible;"><path ref="{{ remoteOutlineRef }}" d="M0.02960,0.14252 C0.01610,0.22546 0,0.35480 0,0.50000 s0.01610,0.27448 0.02960,0.35755 c0.00984,0.06039 0.07626,0.10910 0.16542,0.12119 c0.10385,0.01412 0.20649,0.02127 0.30507,0.02127 s0.20123,-0.00716 0.30507,-0.02127 c0.08908,-0.01211 0.15550,-0.06081 0.16542,-0.12119 c0.01349,-0.08299 0.02960,-0.21243 0.02960,-0.35755 s-0.01610,-0.27447 -0.02960,-0.35755 c-0.00984,-0.06039 -0.07626,-0.10910 -0.16542,-0.12119 C0.70123,0.00716 0.59860,0 0.50017,0 s-0.20123,0.00716 -0.30507,0.02127 C0.10589,0.03337 0.03944,0.08209 0.02960,0.14252 Z" fill="none" stroke="oklch(0.62 0.135 205)" stroke-width="6" vector-effect="non-scaling-stroke"></path></svg>
+      <svg style="position:absolute;left:0;right:0;top:0;aspect-ratio:298.71/549.1;pointer-events:none;z-index:1;overflow:visible;clip-path:url(#remote-clip);"><path ref="{{ remoteOutlineRef }}" d="M0.02960,0.14252 C0.01610,0.22546 0,0.35480 0,0.50000 s0.01610,0.27448 0.02960,0.35755 c0.00984,0.06039 0.07626,0.10910 0.16542,0.12119 c0.10385,0.01412 0.20649,0.02127 0.30507,0.02127 s0.20123,-0.00716 0.30507,-0.02127 c0.08908,-0.01211 0.15550,-0.06081 0.16542,-0.12119 c0.01349,-0.08299 0.02960,-0.21243 0.02960,-0.35755 s-0.01610,-0.27447 -0.02960,-0.35755 c-0.00984,-0.06039 -0.07626,-0.10910 -0.16542,-0.12119 C0.70123,0.00716 0.59860,0 0.50017,0 s-0.20123,0.00716 -0.30507,0.02127 C0.10589,0.03337 0.03944,0.08209 0.02960,0.14252 Z" fill="none" stroke="oklch(0.62 0.135 205)" stroke-width="12" vector-effect="non-scaling-stroke"></path></svg>
 
       <div style="position:relative;padding:28px 46px 20px;display:flex;flex-direction:column;align-items:center;gap:0;">
       <!-- mute / info. Each hitbox is the exact clickable size; the Lottie player
@@ -1750,6 +1753,7 @@ class Component extends DCLogic {
     // — which only fires from the player's 'play' event — never ran, so the loading loop
     // kept playing forever underneath the station screen. Stop it unconditionally here.
     if (CHANNELS[i].type === 'station') this.stopLoadingSound();
+    this.syncPlayer(i);
     this.setState({ index: i });
     clearTimeout(this._numFlashT);
     clearTimeout(this._numFlashT2);
@@ -1790,17 +1794,52 @@ class Component extends DCLogic {
     this.go(targetIdx);
   }
 
+  /** The video the iframe is born with — fixed for the session, so React never
+      rewrites src and never reloads the frame. It is the first project in the
+      line-up, which means it is already buffering while the visitor is still
+      looking at the station. */
+  videoSrc() {
+    if (!this._videoSrc) {
+      const first = CHANNELS.find((c) => c.type === 'project');
+      this._bootVideoId = first ? first.vimeoId : '';
+      this._loadedVideoId = this._bootVideoId;
+      this._videoSrc = 'https://player.vimeo.com/video/' + this._bootVideoId +
+        '?autoplay=1&loop=1&muted=1&controls=0&title=0&byline=0&portrait=0';
+    }
+    return this._videoSrc;
+  }
+
   videoRef = (el) => {
-    if (!el || !window.Vimeo) return;
+    if (!el || !window.Vimeo || this._playerEl === el) return;
+    this._playerEl = el;
     this.player = new window.Vimeo.Player(el);
     this.player.on('play', () => this.stopLoadingSound());
-    this.player.ready().then(() => {
-      this.player.setMuted(this.state.muted);
-      return this.player.getDuration();
-    }).then((d) => {
-      if (d) this.player.setCurrentTime(Math.random() * d * 0.75).catch(() => {});
-    }).catch(() => {});
+    this.player.ready()
+      .then(() => this.player.setMuted(this.state.muted))
+      .catch(() => {});
   };
+
+  /** Point the existing player at the channel's video, or park it on the
+      station. Loading in place skips the whole player boot; the seek to a
+      random timestamp that used to run here is gone, because it threw away the
+      buffer the player had just filled and doubled the wait. */
+  syncPlayer(i) {
+    if (!this.player) return;
+    const c = CHANNELS[i];
+    if (c.type !== 'project') { this.player.pause().catch(() => {}); return; }
+    if (c.vimeoId === this._loadedVideoId) { this.player.play().catch(() => {}); return; }
+    this._loadedVideoId = c.vimeoId;
+    this.player.loadVideo(c.vimeoId)
+      .then(() => {
+        this.player.setMuted(this.state.muted);
+        this.player.setLoop(true).catch(() => {});   // src params applied to the boot video only
+        return this.player.play();
+      })
+      // belt and braces: if the 'play' event is missed, the loading loop would
+      // otherwise keep running under a picture that is already up
+      .then(() => this.stopLoadingSound())
+      .catch(() => {});
+  }
 
   renderVals() {
     const c = CHANNELS[this.state.index];
@@ -1896,6 +1935,12 @@ class Component extends DCLogic {
       muted: this.state.muted,
       showMuteIcon: this.state.muted && !channel.isStation && !this.state.infoOpen,
       videoRef: this.videoRef,
+      videoSrc: this.videoSrc(),
+      // The player stays mounted on the station too — hidden, not removed —
+      // so coming back to a project doesn't rebuild it.
+      videoLayerStyle: channel.isProject
+        ? 'position:absolute;inset:0;background:#000;'
+        : 'position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;',
       onToggleInfo: () => this.startInfoTransition(!this.state.infoOpen),
       infoTransitioning: this.state.infoTransitioning ? 1 : 0,
       tagline: this.state.tagline,
