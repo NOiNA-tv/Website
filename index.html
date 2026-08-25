@@ -718,7 +718,7 @@
     </div>
 
     <!-- DECODER STRIP -->
-    <div style="margin-top:-4px;margin-left:18px;margin-right:18px;position:relative;">
+    <div style="margin-top:-4px;width:calc(100% - 36px);max-width:620px;margin-left:auto;margin-right:auto;position:relative;">
       <div style="position:absolute;left:5%;right:5%;bottom:calc(-16px * var(--dec, 1));height:calc(32px * var(--dec, 1));background:radial-gradient(ellipse at center, oklch(0.22 0.045 205 / .85) 0%, oklch(0.22 0.045 205 / .45) 50%, transparent 78%);filter:blur(3px);z-index:-1;"></div>
       <div ref="{{ decoderRef }}" style="position:relative;aspect-ratio:320/88;">
         <svg width="0" height="0" style="position:absolute;"><defs><clipPath id="decoder-shape-clip" clipPathUnits="userSpaceOnUse"><path ref="{{ decoderClipRef }}" d="M313.49,25.34l-28.15-20.68c-4.12-3.03-9.1-4.66-14.21-4.66H48.87c-5.11,0-10.09,1.63-14.21,4.66L6.51,25.34c-3.86,1.99-6.51,6.01-6.51,10.66v40c0,6.63,5.37,12,12,12h296c6.63,0,12-5.37,12-12v-40c0-4.65-2.64-8.67-6.51-10.66Z"></path></clipPath></defs></svg>
@@ -1675,7 +1675,9 @@ class Component extends DCLogic {
     // pixels and so stayed phone-sized inside a chassis two and a half times
     // bigger. 392 is the strip's width in the original layout; below that
     // nothing scales, which keeps the phone rendering exactly as it was.
-    this._dec = Math.max(1, (w - 36) / 392).toFixed(3);
+    // The strip stops growing at 620px; the television carries on. --dec
+    // follows the capped width, so the readout stops when the chassis does.
+    this._dec = Math.max(1, Math.min(620, w - 36) / 392).toFixed(3);
     col.style.maxWidth = w + 'px';
     col.style.setProperty('--osd', this._osd);
     col.style.setProperty('--dec', this._dec);
