@@ -1817,6 +1817,14 @@ class Component extends DCLogic {
     this.player.ready()
       .then(() => this.player.setMuted(this.state.muted))
       .catch(() => {});
+    // One seek per loaded video, hung off 'play' so it covers both routes in:
+    // the first channel, which autoplays straight from src, and every later one
+    // that arrives through loadVideo().
+    this.player.on('play', () => {
+      if (this._seekDoneFor === this._loadedVideoId) return;
+      this._seekDoneFor = this._loadedVideoId;
+      this.randomSeek();
+    });
   };
 
   /** Point the existing player at the channel's video, or park it on the
@@ -1827,6 +1835,8 @@ class Component extends DCLogic {
     if (!this.player) return;
     const c = CHANNELS[i];
     if (c.type !== 'project') { this.player.pause().catch(() => {}); return; }
+    // already the loaded video — a channel you come back to keeps running
+    // where it was, the way a real one does
     if (c.vimeoId === this._loadedVideoId) { this.player.play().catch(() => {}); return; }
     this._loadedVideoId = c.vimeoId;
     this.player.loadVideo(c.vimeoId)
@@ -1839,6 +1849,22 @@ class Component extends DCLogic {
       // otherwise keep running under a picture that is already up
       .then(() => this.stopLoadingSound())
       .catch(() => {});
+  }
+
+  /** Drop into the middle of the piece, the way a real channel is never at its
+      start — but only once the picture is already up. Seeking before playback
+      begins throws away the buffer the player just filled and doubles the wait,
+      which is what made this expensive before; after play() it costs nothing
+      the visitor is waiting on. */
+  randomSeek() {
+    if (!this.player) return;
+    const forVideo = this._loadedVideoId;
+    this.player.getDuration().then((d) => {
+      // a zap during the round trip must not drag the new channel to a
+      // timestamp picked for the old one
+      if (!d || forVideo !== this._loadedVideoId) return;
+      return this.player.setCurrentTime(Math.random() * d * 0.75);
+    }).catch(() => {});
   }
 
   renderVals() {
