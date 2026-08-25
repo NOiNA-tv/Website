@@ -1832,7 +1832,7 @@ class Component extends DCLogic {
     this.player.loadVideo(c.vimeoId)
       .then(() => {
         this.player.setMuted(this.state.muted);
-        this.player.setLoop(true).catch(() => {});   // src params applied to the boot video only
+        try { this.player.setLoop(true).catch(() => {}); } catch (e) { /* src params applied to the boot video only */ }
         return this.player.play();
       })
       // belt and braces: if the 'play' event is missed, the loading loop would
