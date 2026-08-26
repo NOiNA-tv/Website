@@ -1656,7 +1656,7 @@ class Component extends DCLogic {
     // let 'ended' drive the switch, with only a short safety deadline behind it.
     el.loop = false;
     el.volume = 0.85;
-    this.playSfx('./assets/static-click.mp3', 0.65);
+    this.playSfx('./assets/static-click.mp3', 1);
     // stays muted forever: unmuting mid-playback makes the autoplay policy pause the element the
     // instant it becomes audible, which killed playback ~20ms in and froze it on one frame.
     // The sound comes from the _staticSfx Audio above, which the click gesture authorizes.
@@ -2248,7 +2248,12 @@ class Component extends DCLogic {
     if (!host || typeof lottie === 'undefined') return;
     const r = host.getBoundingClientRect();
     const box = document.createElement('div');
-    const SIZE = Math.round(Math.min(r.width, r.height) * 0.3);
+    // A fingerprint is a physical thing: it should be about the same size on
+    // the glass whatever the set's size. Scaling it with the screen made it
+    // huge on a desktop and tiny on a phone, so it barely tapers at all —
+    // 81px against a phone's short edge, 72px against a desktop's.
+    const short = Math.min(r.width, r.height);
+    const SIZE = Math.round(Math.max(66, Math.min(92, 86.3 - short * 0.0297)));
     box.style.cssText = 'position:absolute;pointer-events:none;z-index:14;width:' + SIZE +
       'px;height:' + SIZE + 'px;left:' + (x - r.left - SIZE / 2) + 'px;top:' + (y - r.top - SIZE / 2) + 'px;';
     host.appendChild(box);
