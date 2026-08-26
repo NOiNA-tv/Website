@@ -535,7 +535,7 @@
            colour matches what is playing. See the note in renderVals. -->
       <sc-if value="{{ showGlow }}" hint-placeholder-val="{{ true }}">
         <div class="tv-ambient-wrap" aria-hidden="true">
-          <div class="tv-ambient {{ glowMode }}" style="background-image:{{ glowImage }}"></div>
+          <div ref="{{ glowRef }}" class="tv-ambient {{ glowMode }}" style="background-image:{{ glowImage }}"></div>
         </div>
       </sc-if>
       <div ref="{{ screenRef }}" style="{{ screenStyle }}">
@@ -800,58 +800,58 @@ const VIDEO_BASE = 'https://pub-5b672117a09a448c8adcce01bccabfc1.r2.dev';
 
 const CHANNELS_BUILTIN = [
   {num:'00', label:'STATION ID', title:'NOiNA', sub:'Motion Designer', type:'station', aspect:'16/9'},
-  {num:"01", label:"PRIME TIME", title:"Folo", file:"01-folo.mp4", sub:"KidsTV diary app", type:"project", aspect:"16/9", vimeoId:"477155128", vimeoUrl:"https://vimeo.com/477155128?share=copy&fl=sv&fe=ci",
+  {num:"01", label:"PRIME TIME", title:"Folo", sub:"KidsTV diary app", type:"project", aspect:"16/9", file:"01-folo.mp4", vimeoId:"477155128", vimeoUrl:"https://vimeo.com/477155128?share=copy&fl=sv&fe=ci",
     palette:["#ffee18", "#42dae5", "#ff2f63", "#814bdd"],
     desc:"Meet Folo - the next generation of student diaries! A video I made for the app I designed for Kidstv. Had fun designing a complete app from scratch for the first time (grueling yet rewarding!), but nothing beats animating this wee fella. ɷ◡ɷ"},
-  {num:"02", label:"PRIME TIME", title:"yes", file:"02-yes.mp4", sub:"Broadcast graphic package reel", type:"project", aspect:"16/9", vimeoId:"688429066", vimeoUrl:"https://vimeo.com/688429066?share=copy&fl=sv&fe=ci",
-    palette:["#c5a0ba", "#548f9c", "#a19e72"],
+  {num:"02", label:"PRIME TIME", title:"yes", sub:"Broadcast graphic package reel", type:"project", aspect:"16/9", file:"02-yes.mp4", vimeoId:"688429066", vimeoUrl:"https://vimeo.com/688429066?share=copy&fl=sv&fe=ci",
+    palette:["#c66cab", "#2f7c8e", "#9d9743"],
     desc:"An onscreen graphic package for yes, a direct broadcast satellite television provider in Israel. This brand design puts the content front and center across all of yes's home channels and digital platforms, from TV shows to movies, with a light cinematic flair. *⁂((✪⥎✪))⁂*"},
-  {num:"03", label:"PRIME TIME", title:"Vimeo", file:"03-vimeo.mp4", sub:"ProdCon 2024 Intro", type:"project", aspect:"16/9", vimeoId:"1104693380", vimeoUrl:"https://vimeo.com/1104693380?share=copy&fl=sv&fe=ci",
+  {num:"03", label:"PRIME TIME", title:"Vimeo", sub:"ProdCon 2024 Intro", type:"project", aspect:"16/9", file:"03-vimeo.mp4", vimeoId:"1104693380", vimeoUrl:"https://vimeo.com/1104693380?share=copy&fl=sv&fe=ci",
     palette:["#b87cff", "#17daff", "#ff7cec"],
     desc:"An intro video for Vimeo's 2024 product conference in Miami. It was a blast creating a product-focused animation using Vimeo's design language, with a splash of Miami sunshine throughout."},
-  {num:"04", label:"PRIME TIME", title:"Rak BeHatzbaa", file:"04-rak-behatzbaa.mp4", sub:"Kids TV title sequence", type:"project", aspect:"16/9", vimeoId:"477198214", vimeoUrl:"https://vimeo.com/477198214?share=copy&fl=sv&fe=ci",
-    palette:["#002052", "#60a9f2", "#0265d6", "#badaf3"],
+  {num:"04", label:"PRIME TIME", title:"Rak BeHatzbaa", sub:"Kids TV title sequence", type:"project", aspect:"16/9", file:"04-rak-behatzbaa.mp4", vimeoId:"477198214", vimeoUrl:"https://vimeo.com/477198214?share=copy&fl=sv&fe=ci",
+    palette:["#002052", "#60a9f2", "#0265d6"],
     desc:"The results are in! An opening title sequence from a full graphic package made for \"Only by Vote\", a kids TV show on Kan Educational channel about what today's kids really think, with fun surveys & polls. The package includes on-screen titles, supers, wipers, a timer and the polls themselves, integrated with Arti's AR studio."},
-  {num:"05", label:"PRIME TIME", title:"Noder", file:"05-noder.mp4", sub:"Wedding vows film", type:"project", aspect:"16/9", vimeoId:"841602064", vimeoUrl:"https://vimeo.com/841602064?share=copy&fl=sv&fe=ci",
+  {num:"05", label:"PRIME TIME", title:"Noder", sub:"Wedding vows film", type:"project", aspect:"16/9", file:"05-noder.mp4", vimeoId:"841602064", vimeoUrl:"https://vimeo.com/841602064?share=copy&fl=sv&fe=ci",
     palette:["#024bfb", "#ff60cc", "#00e5fc", "#fd0400"],
     desc:"For my and my partner's decade celebrations weddingish event, I decided to present my vows with a video, instead of reciting them with a shaky voice & sweaty palms. The color scheme of the entire event was inspired by my partner's favorite arcade game Pac-Man, and I had a blast experimenting with different animation techniques and design trends. That was the most passionate passion project I've had in a long time. Love you, Ba'alulu! ( ˘ ³˘)♥"},
-  {num:"06", label:"PRIME TIME", title:"WRC", file:"06-wrc.mp4", sub:"2017 Showreel", type:"project", aspect:"16/9", vimeoId:"476837478", vimeoUrl:"https://vimeo.com/476837478?share=copy&fl=sv&fe=ci",
+  {num:"06", label:"PRIME TIME", title:"WRC", sub:"2017 Showreel", type:"project", aspect:"16/9", file:"06-wrc.mp4", vimeoId:"476837478", vimeoUrl:"https://vimeo.com/476837478?share=copy&fl=sv&fe=ci",
     palette:["#787878", "#98ce33"],
     desc:"A little taste of the World Rally Championship rebrand we did in Promotheus, from real-time TV graphics & dynamic maps to social media integration and technical implementation. I was incharge of the motion theory, intros, bumpers, and other elements of the brand's tv & social package."},
-  {num:"07", label:"PRIME TIME", title:"PayBox", file:"07-paybox.mp4", sub:"Commercials", type:"project", aspect:"16/9", vimeoId:"477184602", vimeoUrl:"https://vimeo.com/477184602?share=copy&fl=sv&fe=ci",
+  {num:"07", label:"PRIME TIME", title:"PayBox", sub:"Commercials", type:"project", aspect:"16/9", file:"07-paybox.mp4", vimeoId:"477184602", vimeoUrl:"https://vimeo.com/477184602?share=copy&fl=sv&fe=ci",
     palette:["#24a5ed", "#ffcd35"],
     desc:"Promotional campaign for PayBox, a digital wallet and payment app, for TV and numerous social platforms. We had about 3 days per video - pretty stressful, but I'm happy with the end results."},
-  {num:"08", label:"PRIME TIME", title:"Kido", file:"08-kido.mp4", sub:"Agency sizzle reel", type:"project", aspect:"16/9", vimeoId:"1104142278", vimeoUrl:"https://vimeo.com/1104142278?share=copy&fl=sv&fe=ci",
-    palette:["#fe7145", "#ffdc03", "#23cfb2", "#a051ff"],
+  {num:"08", label:"PRIME TIME", title:"Kido", sub:"Agency sizzle reel", type:"project", aspect:"16/9", file:"08-kido.mp4", vimeoId:"1104142278", vimeoUrl:"https://vimeo.com/1104142278?share=copy&fl=sv&fe=ci",
+    palette:["#fe7145", "#ffdc03", "#23cfb2"],
     desc:"A sizzle video showcasing Kido's amazing and innovative projects. I absolutely loved my short time at Kido — thoughtful, seasoned design thinking leading to beautiful projects, all created by genuinely sweet people. ⸜(｡˃ ᵕ ˂ )⸝♡"},
-  {num:"09", label:"PRIME TIME", title:"Kan Kids", file:"09-kan-kids.mp4", sub:"TV Show Intro", type:"project", aspect:"16/9", vimeoId:"477141864", vimeoUrl:"https://vimeo.com/477141864?share=copy&fl=sv&fe=ci",
-    palette:["#028d89", "#243cd3", "#e2210b", "#f0e805"],
+  {num:"09", label:"PRIME TIME", title:"Shirat HaSticker", sub:"TV Show Intro", type:"project", aspect:"16/9", file:"09-shirat-hasticker.mp4", vimeoId:"477141864", vimeoUrl:"https://vimeo.com/477141864?share=copy&fl=sv&fe=ci",
+    palette:["#018d89", "#1c2ea6", "#af1908", "#beb804"],
     desc:"Opening sequence for a TV show package for \"The Bumper-Sticker Poetry\" on Kan Educational channel. A series of 10 minutes shorts, each one on the history and background of one iconic bumper-sticker."},
-  {num:"10", label:"PRIME TIME", title:"Aiways", file:"10-aiways.mp4", sub:"ID Video", type:"project", aspect:"16/9", vimeoId:"688440815", vimeoUrl:"https://vimeo.com/688440815?share=copy&fl=sv&fe=ci",
+  {num:"10", label:"PRIME TIME", title:"Aiways", sub:"ID Video", type:"project", aspect:"16/9", file:"10-aiways.mp4", vimeoId:"688440815", vimeoUrl:"https://vimeo.com/688440815?share=copy&fl=sv&fe=ci",
     palette:["#fba8af", "#fc86da", "#fde8e9"],
     desc:"A short ID for Aiways, a chinese electric car manufacturer. It was fun experimenting with reaction diffusion simulation for the first time! I can't wait to mess around with it again."},
-  {num:"11", label:"PRIME TIME", title:"Vimeo", file:"11-vimeo.mp4", sub:"2024 Recap", type:"project", aspect:"16/9", vimeoId:"1104693622", vimeoUrl:"https://vimeo.com/1104693622?share=copy&fl=sv&fe=ci",
+  {num:"11", label:"PRIME TIME", title:"Vimeo", sub:"2024 Recap", type:"project", aspect:"16/9", file:"11-vimeo.mp4", vimeoId:"1104693622", vimeoUrl:"https://vimeo.com/1104693622?share=copy&fl=sv&fe=ci",
     palette:["#787878"],
     desc:"A kind of showreel video, recapping all the standout projects I worked on in 2024 as part of the product creative team. Endless projects across a variety of content worlds, each with its own unique design and animation challenges."},
-  {num:"12", label:"PRIME TIME", title:"Knesset TV", file:"12-knesset-tv.mp4", sub:"Channel Package", type:"project", aspect:"16/9", vimeoId:"477640753", vimeoUrl:"https://vimeo.com/477640753?share=copy&fl=sv&fe=ci",
-    palette:["#03adff", "#ffffff"],
+  {num:"12", label:"PRIME TIME", title:"Knesset TV", sub:"Channel Package", type:"project", aspect:"16/9", file:"12-knesset-tv.mp4", vimeoId:"477640753", vimeoUrl:"https://vimeo.com/477640753?share=copy&fl=sv&fe=ci",
+    palette:["#03adff", "#0e191c"],
     desc:"I got the opportunity to design and animate for The Israeli parliament channel rebrand, after promotheus took part in designing the winning bid. With the new \"kaf\"/Knesset-plenary-hall logo design and the objective of making the Knesset feel more digital and connected in mind, I've worked on the news broadcast package, multiple shows intros and other knick knacks."},
-  {num:"13", label:"PRIME TIME", title:"Bizzabo", file:"13-bizzabo.mp4", sub:"Feature Announcement", type:"project", aspect:"16/9", vimeoId:"689180114", vimeoUrl:"https://vimeo.com/689180114?share=copy&fl=sv&fe=ci",
+  {num:"13", label:"PRIME TIME", title:"Bizzabo", sub:"Feature Announcement", type:"project", aspect:"16/9", file:"13-bizzabo.mp4", vimeoId:"689180114", vimeoUrl:"https://vimeo.com/689180114?share=copy&fl=sv&fe=ci",
     palette:["#c3bcfc", "#fff004", "#0386fc"],
     desc:"A video introducing Bizzabo's (an event experience OS) brand new app market. It was fun and exciting taking their latest rebrand and bringing it to life with movement and animation."},
-  {num:"14", label:"PRIME TIME", title:"Channel 10", file:"14-channel-10.mp4", sub:"TV Show Intro", type:"project", aspect:"16/9", vimeoId:"476829578", vimeoUrl:"https://vimeo.com/476829578?share=copy&fl=sv&fe=ci",
+  {num:"14", label:"PRIME TIME", title:"Nafalta Hazak", sub:"TV Show Intro", type:"project", aspect:"16/9", file:"14-nafalta-hazak.mp4", vimeoId:"476829578", vimeoUrl:"https://vimeo.com/476829578?share=copy&fl=sv&fe=ci",
     palette:["#d8032b", "#0c1b39"],
     desc:"An opening title sequence I made for the second season of the Israeli sitcom, \"Fallen Hard\". The bourgeoisie life is tumbling down!"},
-  {num:"15", label:"PRIME TIME", title:"Discount", file:"15-discount.mp4", sub:"Product Teaser Video", type:"project", aspect:"16/9", vimeoId:"476804797", vimeoUrl:"https://vimeo.com/476804797?share=copy&fl=sv&fe=ci",
+  {num:"15", label:"PRIME TIME", title:"Discount", sub:"Product Teaser Video", type:"project", aspect:"16/9", file:"15-discount.mp4", vimeoId:"476804797", vimeoUrl:"https://vimeo.com/476804797?share=copy&fl=sv&fe=ci",
     palette:["#1d1c22", "#6bab42", "#1c1c22", "#f9f088"],
     desc:"Explainer video for Israel Bank Discount's Open Banking platform, for promoting innovation and new financial services using API and other stuff that are beyond my understanding."},
-  {num:"16", label:"PRIME TIME", title:"Xealth", file:"16-xealth.mp4", sub:"Promotional Video", type:"project", aspect:"16/9", vimeoId:"688447594", vimeoUrl:"https://vimeo.com/688447594?share=copy&fl=sv&fe=ci",
+  {num:"16", label:"PRIME TIME", title:"Xealth", sub:"Promotional Video", type:"project", aspect:"16/9", file:"16-xealth.mp4", vimeoId:"688447594", vimeoUrl:"https://vimeo.com/688447594?share=copy&fl=sv&fe=ci",
     palette:["#0176d4", "#00aefe"],
     desc:"Promotional video for Xealth, a digital ordering and analytics platform for health vendors."},
-  {num:"17", label:"PRIME TIME", title:"Kan 11", file:"17-kan-11.mp4", sub:"Promo Kit", type:"project", aspect:"16/9", vimeoId:"688422750", vimeoUrl:"https://vimeo.com/688422750?share=copy&fl=sv&fe=ci",
+  {num:"17", label:"PRIME TIME", title:"Od Nipagesh", sub:"Kan 11 Promo Kit", type:"project", aspect:"16/9", file:"17-od-nipagesh.mp4", vimeoId:"688422750", vimeoUrl:"https://vimeo.com/688422750?share=copy&fl=sv&fe=ci",
     palette:["#849fb4", "#ead7d1"],
     desc:"Graphic promo kit for Kan's TV show \"We'll meet again\" about five secular people whose one of his/her family members have repented and are sent on a journey documenting the attempt to reconnect with that family member. Suuuper emotional."},
-  {num:"18", label:"PRIME TIME", title:"bizi", file:"18-bizi.mp4", sub:"Product Video", type:"project", aspect:"16/9", vimeoId:"1104141854", vimeoUrl:"https://vimeo.com/1104141854",
+  {num:"18", label:"PRIME TIME", title:"bizi", sub:"Product Video", type:"project", aspect:"16/9", file:"18-bizi.mp4", vimeoId:"1104141854", vimeoUrl:"https://vimeo.com/1104141854",
     palette:["#7d5ce9", "#00e6b7"],
     desc:"A video for bizi, a leading fintech company offering non-bank credit solutions for small businesses, showcasing the onboarding process in their app."},
 ];
@@ -1273,6 +1273,7 @@ class Component extends DCLogic {
     this._dvdRaf = requestAnimationFrame(step);
   }
   componentWillUnmount() {
+    this.stopGlowSampling();
     cancelAnimationFrame(this._kickRaf);
     ['muteAnim', 'infoAnim', 'prevAnim', 'nextAnim'].forEach((k) => {
       if (this[k]) { this[k].destroy(); this[k] = null; }
@@ -1609,6 +1610,7 @@ class Component extends DCLogic {
     // any unrelated setState triggers a React re-render, which reapplies this div's static
     // template style and would otherwise clobber the imperatively-driven opacity/background
     // for a frame — a hard, unintended flicker cut. Reassert them immediately after commit.
+    if (this.glowEl && this._glowBg) this.glowEl.style.backgroundImage = this._glowBg;
     if (this.vignetteEl) {
       if (this._vignetteOpacity != null) this.vignetteEl.style.opacity = String(this._vignetteOpacity);
       // the measured gradient is imperative too — without this the commit snaps back to the
@@ -1618,6 +1620,7 @@ class Component extends DCLogic {
   }
 
   componentDidMount() {
+    this.probeVideoCors();
     this._tagT1 = setTimeout(() => {
       this.setState({ taglineFlickering: true });
       this._tagT2 = setTimeout(this.showNextTagline, 350);
@@ -1713,6 +1716,7 @@ class Component extends DCLogic {
       cancelAnimationFrame(this._vignetteRaf); this._vignetteRaf = null;
       clearTimeout(this._flickerT);
       this.stopNoise();
+      this.stopGlowSampling();
     } else {
       this.startVignetteLoop();
       this.scheduleFlicker();
@@ -1883,7 +1887,13 @@ class Component extends DCLogic {
     const el = this._videoEl;
     if (!el) return;
     const c = CHANNELS[i];
-    if (c.type !== 'project' || !c.file) { el.pause(); return; }
+    if (c.type !== 'project' || !c.file) {
+      el.pause();
+      this.stopGlowSampling();
+      this._glowBg = null;
+      this._glowCur = null;
+      return;
+    }
 
     // a channel already tuned keeps running where it was, the way a real one does
     if (this._preparedFor === c.file) {
@@ -1912,8 +1922,110 @@ class Component extends DCLogic {
     el.addEventListener('loadedmetadata', onMeta);
 
     el.pause();
+    // Must be set before the src it applies to. Only ever set once the probe
+    // has confirmed the bucket sends CORS headers — set it blind and a bucket
+    // without them refuses to load the video at all.
+    if (this._corsOk && el.crossOrigin !== 'anonymous') {
+      el.crossOrigin = 'anonymous';
+      this._glowCur = null;
+    }
     el.src = this.videoUrl(c);
     el.load();
+  }
+
+  glowRef = (el) => { this.glowEl = el; if (el && this._glowBg) el.style.backgroundImage = this._glowBg; };
+
+  /** Does the bucket allow us to read its pixels?
+
+      Reading a frame into a canvas taints it unless the file arrives with CORS
+      headers AND the element was created with crossOrigin set. Setting
+      crossOrigin on a host that does not send those headers makes the video
+      fail to load outright — so this asks first, with a one-byte request, and
+      only then turns sampling on. If the answer is no, nothing breaks: the
+      channel plays and the glow stays on its palette. */
+  probeVideoCors() {
+    const first = CHANNELS.find((c) => c.type === 'project' && c.file);
+    if (!first) return;
+    fetch(VIDEO_BASE + '/' + first.file, { method: 'GET', mode: 'cors', headers: { Range: 'bytes=0-0' } })
+      .then((r) => { if (r.ok || r.status === 206) this._corsOk = true; })
+      .catch(() => { this._corsOk = false; });
+  }
+
+  /** The glow, taken from the picture itself.
+
+      Four columns of the frame are averaged into four colours and fed to the
+      same gradient the palette uses, so everything downstream — the drift, the
+      flicker, the vignette tint — is unchanged. The colours ease toward each
+      new sample rather than cutting, because a hard change reads as a strobe
+      once the layer is blurred this hard. */
+  startGlowSampling() {
+    if (this._glowRaf || this._glowDead) return;
+    const el = this._videoEl;
+    if (!el || !this.glowEl) return;
+    const W = 4, H = 2;
+    if (!this._glowCanvas) {
+      this._glowCanvas = document.createElement('canvas');
+      this._glowCanvas.width = W;
+      this._glowCanvas.height = H;
+      this._glowCtx = this._glowCanvas.getContext('2d', { willReadFrequently: true });
+      this._glowCur = null;
+    }
+    let last = 0;
+    const step = (now) => {
+      this._glowRaf = requestAnimationFrame(step);
+      if (now - last < 90) return;              // ~11 a second; the layer is blurred, nothing finer shows
+      last = now;
+      const v = this._videoEl;
+      if (!v || v.paused || v.readyState < 2 || document.hidden ||
+          this.state.infoOpen || !this.glowEl) return;
+      let target;
+      try {
+        this._glowCtx.drawImage(v, 0, 0, W, H);
+        target = this.framePalette(this._glowCtx.getImageData(0, 0, W, H).data, W, H);
+      } catch (e) {
+        // tainted after all — stop for good and leave the palette in charge
+        this.stopGlowSampling();
+        this._glowDead = true;
+        this._glowBg = null;
+        return;
+      }
+      if (!this._glowCur) this._glowCur = target.map((c) => c.slice());
+      else this._glowCur = this._glowCur.map((c, i) => c.map((ch, k) => ch + (target[i][k] - ch) * 0.16));
+      const stops = this._glowCur.map((c) => `rgb(${c.map((x) => Math.round(x)).join(',')})`);
+      this._glowBg = `linear-gradient(115deg, ${[...stops, stops[0]].join(', ')})`;
+      this.glowEl.style.backgroundImage = this._glowBg;
+    };
+    this._glowRaf = requestAnimationFrame(step);
+  }
+
+  stopGlowSampling() {
+    cancelAnimationFrame(this._glowRaf);
+    this._glowRaf = null;
+  }
+
+  /** Average each column of the sampled frame, then push the saturation back
+      up — averaging pixels together is what drains it. */
+  framePalette(d, W, H) {
+    const out = [];
+    for (let x = 0; x < W; x++) {
+      let r = 0, g = 0, b = 0;
+      for (let y = 0; y < H; y++) {
+        const o = (y * W + x) * 4;
+        r += d[o]; g += d[o + 1]; b += d[o + 2];
+      }
+      out.push(this.punchUp(r / H, g / H, b / H));
+    }
+    return out;
+  }
+
+  punchUp(r, g, b) {
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), mid = (mx + mn) / 2;
+    const k = 1.45;                                    // spread each channel away from its own mid-grey
+    const f = (c) => Math.max(0, Math.min(255, mid + (c - mid) * k));
+    // a frame that is nearly black gives the tube nothing to spill; lift it a
+    // little so dark channels still cast some light
+    const lift = mx < 40 ? 24 : 0;
+    return [f(r) + lift, f(g) + lift, f(b) + lift];
   }
 
   /** Bring the picture up — once, and only for the channel still tuned in. */
@@ -1922,6 +2034,9 @@ class Component extends DCLogic {
     clearTimeout(this._videoRevealT);
     this.stopLoadingSound();
     if (!this.state.videoReady) this.setState({ videoReady: true });
+    if (this._corsOk && this._videoEl && this._videoEl.crossOrigin === 'anonymous') {
+      this.startGlowSampling();
+    }
   }
 
   renderVals() {
@@ -1973,6 +2088,7 @@ class Component extends DCLogic {
       scanOpacity: Math.min(1, crt / 100),
       infoOpen: this.state.infoOpen,
       glowImage,
+      glowRef: this.glowRef,
       glowMode: palette.length >= 2 ? 'tv-ambient--pal' : '',
       // The room's vignette picks up a little of the channel's colour. Only a
       // chosen palette drives it — a poster frame would need blurring to avoid
