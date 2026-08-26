@@ -54,6 +54,7 @@
 
         <button onClick="{{ addProject }}" style="border:none;cursor:pointer;padding:11px 16px;border-radius:9px;background:#232b2d;color:#dbe6e7;font-size:11px;font-weight:700;letter-spacing:1.4px;box-shadow:0 3px 0 #151b1c;" style-hover="background:#2c3639;transform:translateY(-1px);box-shadow:0 4px 0 #151b1c;" style-active="transform:translateY(2px);box-shadow:0 1px 0 #151b1c;">+ NEW CHANNEL</button>
         <button onClick="{{ openIO }}" style="border:none;cursor:pointer;padding:11px 16px;border-radius:9px;background:#232b2d;color:#dbe6e7;font-size:11px;font-weight:700;letter-spacing:1.4px;box-shadow:0 3px 0 #151b1c;" style-hover="background:#2c3639;transform:translateY(-1px);box-shadow:0 4px 0 #151b1c;" style-active="transform:translateY(2px);box-shadow:0 1px 0 #151b1c;">IMPORT / EXPORT</button>
+        <button onClick="{{ downloadChannelsJson }}" title="Save channels.json, then upload it to the bucket — the site reads it on next load" style="border:none;cursor:pointer;padding:11px 16px;border-radius:9px;background:#232b2d;color:#dbe6e7;font-size:11px;font-weight:700;letter-spacing:1.2px;">↓ CHANNELS.JSON</button>
         <button onClick="{{ publish }}" style="{{ publishStyle }}">{{ publishLabel }}</button>
       </div>
     </div>
@@ -183,6 +184,26 @@
       </div>
     </div>
 
+    <!-- CLIENT LOGOS -->
+    <div style="margin-top:22px;padding:18px 20px;border-radius:12px;border:1px solid #232b2d;background:#161b1d;">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="font-size:10.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Client logos</div>
+        <div style="font-size:11px;color:#4f5c5e;flex:1;min-width:180px;">{{ coinNote }} — the bouncing coin in the CLIENTS box. Artwork lives in coins-data.js; hand me a new SVG to add one.</div>
+        <button onClick="{{ publishCoins }}" style="{{ coinPublishStyle }}">{{ coinPublishLabel }}</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:9px;">
+        <sc-for list="{{ coinRows }}" as="coin" hint-placeholder-count="{{ 6 }}">
+          <div style="{{ coin.rowStyle }}">
+            <div style="width:30px;height:30px;flex-shrink:0;color:{{ coin.color }};" data-coin-art="{{ coin.name }}"></div>
+            <div style="flex:1;min-width:0;font-size:12px;color:{{ coin.color }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ coin.name }}</div>
+            <button onClick="{{ onCoinMove }}" data-idx="{{ coin.i }}" data-dir="up" title="Move up" style="border:none;cursor:pointer;background:#1d2325;color:#6f8083;border-radius:6px;width:24px;height:24px;font-size:12px;line-height:1;">↑</button>
+            <button onClick="{{ onCoinMove }}" data-idx="{{ coin.i }}" data-dir="down" title="Move down" style="border:none;cursor:pointer;background:#1d2325;color:#6f8083;border-radius:6px;width:24px;height:24px;font-size:12px;line-height:1;">↓</button>
+            <button onClick="{{ onCoinToggle }}" data-idx="{{ coin.i }}" style="{{ coin.toggleStyle }}">{{ coin.toggleLabel }}</button>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
     <div style="margin-top:22px;padding:16px 18px;border-radius:12px;border:1px solid #232b2d;background:#161b1d;font-size:11.5px;line-height:1.7;color:#7d8f92;">
       Saved line-ups publish to this browser and the site picks them up on next load — the factory list stays in
       <span style="font-family:'VT323',monospace;font-size:15px;color:#9db0b3;">projects-data.js</span>.
@@ -226,9 +247,77 @@
 class Component extends DCLogic {
   KEY = 'noina_cms_projects_v1';
   ACCENT = 'oklch(0.78 0.15 205)';
-  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', palOpen: null, taglines: null, tagDirty: false };
+  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', palOpen: null, taglines: null, tagDirty: false, coins: null, coinArt: null, coinDirty: false };
 
   TAG_KEY = 'noina_cms_taglines_v1';
+  COIN_KEY = 'noina_cms_coins_v1';
+
+  // ---- client logo coins ------------------------------------------------
+  // The artwork lives in coins-data.js and is never edited here; this only
+  // decides which are on the shelf and in what order.
+  hydrateCoins() {
+    if (this.state.coins) return;
+    import('./coins-data.js').then((m) => {
+      const all = m.COINS || [];
+      let saved = null;
+      try {
+        const raw = localStorage.getItem(this.COIN_KEY);
+        if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) saved = a; }
+      } catch (e) {}
+      const byName = new Map(all.map((c) => [c.name, c]));
+      const ordered = (saved || [])
+        .filter((o) => o && byName.has(o.name))
+        .map((o) => ({ name: o.name, hidden: !!o.hidden }));
+      const seen = new Set(ordered.map((o) => o.name));
+      all.forEach((c) => { if (!seen.has(c.name)) ordered.push({ name: c.name, hidden: false }); });
+      this.setState({ coins: ordered, coinArt: Object.fromEntries(all.map((c) => [c.name, c])), coinDirty: false });
+    }).catch(() => this.setState({ coins: [], coinArt: {}, coinDirty: false }));
+  }
+  onCoinToggle = (e) => {
+    const i = +e.currentTarget.dataset.idx;
+    const coins = this.state.coins.slice();
+    coins[i] = { ...coins[i], hidden: !coins[i].hidden };
+    this.setState({ coins, coinDirty: true });
+  };
+  onCoinMove = (e) => {
+    const { idx, dir } = e.currentTarget.dataset;
+    const i = +idx, j = i + (dir === 'up' ? -1 : 1);
+    const coins = this.state.coins.slice();
+    if (j < 0 || j >= coins.length) return;
+    const [m] = coins.splice(i, 1); coins.splice(j, 0, m);
+    this.setState({ coins, coinDirty: true });
+  };
+  publishCoins = () => {
+    const on = (this.state.coins || []).filter((c) => !c.hidden);
+    if (!on.length) { this.flash('NEED AT LEAST ONE LOGO'); return; }
+    try {
+      localStorage.setItem(this.COIN_KEY, JSON.stringify(this.state.coins));
+      this.setState({ coinDirty: false });
+      this.flash('LOGOS PUBLISHED');
+    } catch (e) { this.flash('COULD NOT SAVE'); }
+  };
+
+  /** Everything the site needs, as one file to drop in the bucket. */
+  downloadChannelsJson = () => {
+    const payload = {
+      channels: (this.state.items || []).filter((p) => !p.hidden).map((p) => ({
+        label: p.label || 'PRIME TIME', title: p.title || '', sub: p.sub || '',
+        type: 'project', aspect: p.aspect || '16/9', file: p.file || '',
+        vimeoUrl: p.vimeoUrl || '', desc: p.desc || '',
+        palette: Array.isArray(p.palette) ? p.palette.filter(Boolean) : [],
+      })),
+      taglines: (this.state.taglines || []).map((t) => t.trim()).filter(Boolean),
+    };
+    const missing = payload.channels.filter((c) => !c.file).map((c) => c.title);
+    if (missing.length) { this.flash('NO VIDEO FILE ON: ' + missing.join(', ').toUpperCase()); return; }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'channels.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    this.flash('CHANNELS.JSON DOWNLOADED — UPLOAD IT TO THE BUCKET');
+  };
 
   /** Mirrors TAGLINES in index.html — the list the station falls back to when
       nothing has been published here. */
@@ -309,9 +398,25 @@ class Component extends DCLogic {
 
 
 
+  /** The coin artwork is raw SVG innards, so it is painted in after render
+      rather than bound — the same reason the channel thumbnails were. */
+  paintCoinArt() {
+    const art = this.state.coinArt;
+    if (!art) return;
+    document.querySelectorAll('[data-coin-art]').forEach((el) => {
+      const c = art[el.dataset.coinArt];
+      if (!c || el.dataset.painted === el.dataset.coinArt) return;
+      el.dataset.painted = el.dataset.coinArt;
+      el.innerHTML = '<svg viewBox="' + c.viewBox + '" fill="currentColor" style="width:100%;height:100%;display:block;">' + c.inner + '</svg>';
+    });
+  }
+
+  componentDidUpdate() { this.paintCoinArt(); }
+
   componentDidMount() {
     this.hydrate();
     this.hydrateTaglines();
+    this.hydrateCoins();
     this._t = setInterval(() => { if (!this.state.items) this.hydrate(); }, 200);
     this._sweepT = setInterval(this.sweepThumbs, 400);
   }
@@ -478,6 +583,23 @@ class Component extends DCLogic {
       previewSrc: this.state.previewId ? this.VIDEO_BASE + '/' + this.state.previewId : '',
       onPalette: this.onPalette, onPaletteClear: this.onPaletteClear, togglePalette: this.togglePalette,
       taglineRows: (this.state.taglines || []).map((t, i) => ({ text: t, i: String(i) })),
+      downloadChannelsJson: this.downloadChannelsJson,
+      coinRows: (this.state.coins || []).map((c, i) => ({
+        name: c.name, i: String(i),
+        color: c.hidden ? '#4d5a5c' : '#c9d6d8',
+        rowStyle: 'display:flex;align-items:center;gap:8px;background:#161c1e;border:1px solid #2c3639;border-radius:9px;padding:7px 9px;'
+          + (c.hidden ? 'opacity:.55;' : ''),
+        toggleLabel: c.hidden ? 'OFF' : 'ON',
+        toggleStyle: 'border:none;cursor:pointer;border-radius:6px;padding:4px 9px;font-size:9.5px;font-weight:800;letter-spacing:1px;'
+          + (c.hidden ? 'background:#242c2e;color:#6f8083;' : 'background:' + this.ACCENT + ';color:#04120f;'),
+      })),
+      coinNote: this.state.coins
+        ? String((this.state.coins || []).filter((c) => !c.hidden).length) + ' of ' + this.state.coins.length + ' showing'
+        : 'loading…',
+      onCoinToggle: this.onCoinToggle, onCoinMove: this.onCoinMove, publishCoins: this.publishCoins,
+      coinPublishLabel: this.state.coinDirty ? 'PUBLISH LOGOS' : 'PUBLISHED ✓',
+      coinPublishStyle: 'border:none;cursor:pointer;padding:9px 16px;border-radius:8px;font-size:10.5px;font-weight:800;letter-spacing:1.3px;'
+        + (this.state.coinDirty ? 'background:' + this.ACCENT + ';color:#04120f;' : 'background:#1d2325;color:#5d6c6e;'),
       onTagline: this.onTagline, onTagRemove: this.onTagRemove,
       addTagline: this.addTagline, publishTaglines: this.publishTaglines,
       tagPublishLabel: this.state.tagDirty ? 'PUBLISH SLOGANS' : 'PUBLISHED ✓',

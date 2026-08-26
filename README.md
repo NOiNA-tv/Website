@@ -97,14 +97,28 @@ overridden; entries marked `hidden: true` are dropped.
 The CMS must be served from the **same origin** as the site — `localStorage` is
 per-origin, so a CMS on a different host writes a key the site never sees.
 
-### Publishing is per-browser
+### Publishing, and the bucket
 
-This is the important limitation. **Publish writes to the publisher's own
-browser and nothing else.** Visitors get whatever `CHANNELS_BUILTIN` says; they
-do not see a published line-up. Treat the CMS as an authoring and preview tool.
+The line-up has three sources, in order of authority:
 
-To make a line-up permanent for everyone: use **Import / Export** in the CMS to
-copy the JSON out, then bake it into the source.
+1. **`channels.json` in the bucket** — what every visitor sees.
+2. **`localStorage`** — what *this* browser sees, from the CMS's Publish button.
+3. **`CHANNELS_BUILTIN`** — the floor, if the fetch fails.
+
+So Publish is a preview: it changes the publisher's own browser and nobody
+else's. To change the site for everyone, use **↓ CHANNELS.JSON** in the CMS and
+upload that file to the bucket. No deploy, no git — the next visitor gets it.
+
+The fetch carries a per-minute timestamp, because R2 caches hard and an edit
+that takes an hour to show is worse than none. Worst case the site is a minute
+behind.
+
+Slogans and client logos work the same way: the CMS publishes them to
+`noina_cms_taglines_v1` and `noina_cms_coins_v1` for this browser, and
+`channels.json` carries the slogans for everyone. Logo *artwork* is never stored
+in either — that lives in `coins-data.js`, and the CMS only decides which are on
+the shelf and in what order. A name it no longer recognises is dropped, so
+deleting artwork can't leave a hole.
 
 ### The remote's buttons
 

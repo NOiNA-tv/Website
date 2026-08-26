@@ -470,6 +470,14 @@
   /* paint the page's own background behind the phone's navigation bar rather
      than leaving the browser's white default showing under it */
   html{background:oklch(0.60 0.013 205);}
+  /* Android paints a translucent box over whatever you tap, and desktop draws a
+     focus ring on click. Neither belongs on a television. Keyboard focus is left
+     alone — :focus-visible still shows, so the site stays operable without a
+     mouse. */
+  html{-webkit-tap-highlight-color:transparent;}
+  button,[data-remote-btn],video{-webkit-tap-highlight-color:transparent;}
+  button:focus:not(:focus-visible),[data-remote-btn]:focus:not(:focus-visible){outline:none;}
+  button::-moz-focus-inner{border:0;}
   .info-page{position:absolute;inset:0;background:#000;
     padding:var(--info-m) calc(var(--info-m) * 0.6) calc(var(--info-m) * 2 + 40px);
     z-index:8;display:flex;font-family:'VT323',monospace;color:oklch(0.8 0.17 205);}
@@ -877,6 +885,24 @@ const CHANNELS_BUILTIN = [
 // Channel numbers are always derived from list order, so reordering in the CMS renumbers the dial.
 const CMS_KEY = 'noina_cms_projects_v1';
 const CMS_TAGLINE_KEY = 'noina_cms_taglines_v1';
+const CMS_COIN_KEY = 'noina_cms_coins_v1';
+
+/** Which client logos are in play, and in what order.
+
+    The CMS stores only names and a hidden flag — never the artwork, which stays
+    in coins-data.js. A name it no longer recognises is dropped, so removing a
+    logo from the file can't leave a hole on the shelf. */
+function buildCoins(all) {
+  let order = null;
+  try {
+    const raw = localStorage.getItem(CMS_COIN_KEY);
+    if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) order = a; }
+  } catch (e) {}
+  if (!order) return all;
+  const byName = new Map(all.map((c) => [c.name, c]));
+  const picked = order.filter((o) => o && !o.hidden && byName.has(o.name)).map((o) => byName.get(o.name));
+  return picked.length ? picked : all;
+}
 function buildChannels() {
   let saved = null;
   try {
@@ -884,7 +910,8 @@ function buildChannels() {
     if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) saved = a; }
   } catch (e) {}
   const station = CHANNELS_BUILTIN.find(c => c.type === 'station');
-  const projects = (saved || CHANNELS_BUILTIN.filter(c => c.type === 'project')).filter(p => !p.hidden);
+  const published = (typeof window !== 'undefined' && window.__NOINA_PUBLISHED) || null;
+  const projects = (published || saved || CHANNELS_BUILTIN.filter(c => c.type === 'project')).filter(p => !p.hidden);
   const n = projects.length;
   return [station, ...projects.map((p, i) => ({
     ...p,
@@ -897,11 +924,41 @@ function buildChannels() {
 }
 let CHANNELS = buildChannels();
 
+/** The published line-up, fetched from the bucket.
+
+    Order of authority: a channels.json in the bucket wins, then whatever the CMS
+    published in this browser, then the built-in list. That makes the bucket the
+    one place to update the site — drop a file in and every visitor sees it, with
+    no deploy — while the built-in list stays as the floor if the fetch fails.
+
+    The URL carries a timestamp because R2 caches aggressively and an edit that
+    takes an hour to appear is worse than no edit at all. */
+function fetchPublishedChannels(onReady) {
+  if (typeof fetch !== 'function') return;
+  fetch(VIDEO_BASE + '/channels.json?t=' + Math.floor(Date.now() / 60000), { mode: 'cors', cache: 'no-cache' })
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error('http ' + r.status))))
+    .then((data) => {
+      const list = Array.isArray(data) ? data : (data && data.channels);
+      const clean = (Array.isArray(list) ? list : [])
+        .filter((p) => p && p.title && p.file && !p.hidden);
+      if (!clean.length) return;
+      window.__NOINA_PUBLISHED = clean;
+      CHANNELS = buildChannels();
+      if (Array.isArray(data) ? false : (data && Array.isArray(data.taglines) && data.taglines.length)) {
+        window.__NOINA_PUBLISHED_TAGLINES = data.taglines.map((t) => String(t).trim()).filter(Boolean);
+      }
+      if (onReady) onReady();
+    })
+    .catch(() => {});
+}
+
 // The station's rotating slogans, same contract as the channels: whatever the
 // CMS published in this browser wins, otherwise the built-in list.
 function buildTaglines(builtin) {
   try {
     const raw = localStorage.getItem(CMS_TAGLINE_KEY);
+    const pub = typeof window !== 'undefined' && window.__NOINA_PUBLISHED_TAGLINES;
+    if (pub && pub.length) return pub;
     if (raw) {
       const a = JSON.parse(raw);
       const clean = Array.isArray(a) ? a.map((t) => String(t).trim()).filter(Boolean) : [];
@@ -958,6 +1015,7 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     const startIdx = CHANNELS.findIndex(c => c.title === (props.startChannel ?? 'NOiNA'));
+    this._bootChannelFile = null;
     this.state.index = startIdx >= 0 ? startIdx : 0;
     this.state.muted = props.startMuted ?? true;
     this.TAGLINES = buildTaglines(this.TAGLINES);
@@ -1231,7 +1289,7 @@ class Component extends DCLogic {
   coinIdx = 0;
   loadCoins() {
     import('./coins-data.js').then((m) => {
-      this.coins = m.COINS;
+      this.coins = buildCoins(m.COINS);
       this.drawCoin(0);
     }).catch(() => {});
   }
@@ -1507,6 +1565,16 @@ class Component extends DCLogic {
   // via sc-if each time — a fresh mount has to start its network fetch from scratch, which
   // was the black-screen delay; a persistent element can have the clip already buffered.
   startInfoTransition(target) {
+    // SYS. INFO is a terminal, not a channel — nothing should still be playing
+    // under it. Remember whether the set was muted so closing the page hands
+    // the sound back exactly as it was.
+    if (target) {
+      this._mutedBeforeInfo = this.state.muted;
+      if (!this.state.muted) this.setMuted(true);
+    } else if (this._mutedBeforeInfo === false) {
+      this._mutedBeforeInfo = null;
+      this.setMuted(false);
+    }
     this.setState({ infoTransitioning: true, infoTransitionTarget: target });
     const el = this.transitionVideoEl;
     clearTimeout(this._infoTransT);
@@ -1681,6 +1749,17 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this.probeVideoCors();
+    fetchPublishedChannels(() => {
+      this.TAGLINES = buildTaglines(this.TAGLINES);
+      // the ticker would otherwise keep showing the built-in line until its
+      // next turn, which reads as the published list having been ignored
+      this.setState({ tagline: this.TAGLINES[0] });
+      // hold the tuned channel by identity, not by index — the published line-up
+      // may be a different length or order than the one we started with
+      const cur = this._bootChannelFile;
+      const at = cur ? CHANNELS.findIndex((c) => c.file === cur) : -1;
+      this.setState({ index: at >= 0 ? at : Math.min(this.state.index, CHANNELS.length - 1) });
+    });
     this._tagT1 = setTimeout(() => {
       this.setState({ taglineFlickering: true });
       this._tagT2 = setTimeout(this.showNextTagline, 350);
@@ -1872,6 +1951,7 @@ class Component extends DCLogic {
 
   go(i) {
     if (i === this.state.index) return;
+    this._bootChannelFile = CHANNELS[i] && CHANNELS[i].file;
     // switching to the station (no video, no Vimeo 'play' event) meant stopLoadingSound()
     // — which only fires from the player's 'play' event — never ran, so the loading loop
     // kept playing forever underneath the station screen. Stop it unconditionally here.
@@ -1896,7 +1976,18 @@ class Component extends DCLogic {
     this._loadEl.play().catch(() => {});
   }
 
-  /** Point every non-Vimeo sound at the current mute state. */
+  /** The single place mute is applied, so the button and the info page can
+      never end up disagreeing about it. */
+  setMuted(muted) {
+    if (this.state.muted === muted) return;
+    if (this._videoEl) this._videoEl.muted = muted;
+    this.applyMuteToSfx(muted);
+    if (!muted) this.flashVolume();
+    this.playMuteAnim(muted);
+    this.setState({ muted });
+  }
+
+  /** Point every non-video sound at the current mute state. */
   applyMuteToSfx(muted) {
     if (this._loadEl) this._loadEl.muted = muted;
     if (this._staticSfx) this._staticSfx.muted = muted;
@@ -2219,15 +2310,7 @@ class Component extends DCLogic {
       taglineAnim: this.state.taglineFlickering ? 'tagline-flicker .35s steps(8, end) forwards' : 'none',
       transitionVideoRef: this.transitionVideoRef,
       onTransitionEnded: this.onTransitionEnded,
-      onToggleMute: () => this.setState(s => {
-        const muted = !s.muted;
-        this.playMuteAnim(muted);
-        this.kickRemote();
-        if (this._videoEl) this._videoEl.muted = muted;
-        this.applyMuteToSfx(muted);
-        if (!muted) this.flashVolume();
-        return { muted };
-      }),
+      onToggleMute: () => { this.kickRemote(); this.setMuted(!this.state.muted); },
       remoteRef: this.remoteRef,
       screenRef: this.screenRef,
       clipPathRef: this.clipPathRef,
