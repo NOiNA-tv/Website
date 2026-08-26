@@ -127,6 +127,10 @@
                   <input value="{{ row.vimeoId }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="vimeoId" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:oklch(0.82 0.13 175);padding:10px 12px;font-family:'VT323',monospace;font-size:17px;letter-spacing:1px;" />
                 </label>
                 <label style="display:flex;flex-direction:column;gap:6px;">
+                  <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Video file</span>
+                  <input value="{{ row.file }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="file" placeholder="01-folo.mp4" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:oklch(0.82 0.13 175);padding:10px 12px;font-family:'VT323',monospace;font-size:17px;letter-spacing:1px;" />
+                </label>
+                <label style="display:flex;flex-direction:column;gap:6px;">
                   <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Vimeo URL</span>
                   <input value="{{ row.vimeoUrl }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="vimeoUrl" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#9db0b3;padding:10px 12px;font-size:12px;" />
                 </label>
@@ -317,7 +321,7 @@ class Component extends DCLogic {
   };
 
   addProject = () => {
-    const items = [{ _id: 'p_' + Math.random().toString(36).slice(2, 8), label: 'PRIME TIME', title: 'New Project', sub: 'Subtitle', type: 'project', aspect: '16/9', vimeoId: '', vimeoUrl: '', desc: '' }, ...(this.state.items || [])];
+    const items = [{ _id: 'p_' + Math.random().toString(36).slice(2, 8), label: 'PRIME TIME', title: 'New Project', sub: 'Subtitle', type: 'project', aspect: '16/9', file: '', vimeoId: '', vimeoUrl: '', desc: '' }, ...(this.state.items || [])];
     this.setState({ items, dirty: true, openId: items[0]._id });
   };
 
@@ -388,7 +392,7 @@ class Component extends DCLogic {
       const dragging = this.state.dragIdx === i;
       return {
         ...p, i, num, isOpen,
-        title: p.title || '', sub: p.sub || '', desc: p.desc || '', vimeoId: p.vimeoId || '', vimeoUrl: p.vimeoUrl || '', label: p.label || '',
+        title: p.title || '', sub: p.sub || '', desc: p.desc || '', file: p.file || '', vimeoId: p.vimeoId || '', vimeoUrl: p.vimeoUrl || '', label: p.label || '',
         thumb: thumbs[p.vimeoId] || '',
         hasThumb: !!thumbs[p.vimeoId],
         thumbOpacity: p.hidden ? '0.4' : '1',

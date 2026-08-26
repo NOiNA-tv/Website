@@ -53,12 +53,32 @@ Do not hand-edit `support.js` or `image-slot.js`; both are generated upstream.
 Fetched from the network at load time, so the page needs internet:
 
 - React + ReactDOM 18.3.1 (unpkg, SRI-pinned)
-- Vimeo Player API (`player.vimeo.com`)
 - Google Fonts: Poppins, VT323, Jersey 10
+- The channel videos, from the R2 bucket named by `VIDEO_BASE` in `index.html`
 
 React can be self-hosted instead by setting `window.__resources` to a map of
 CDN URL → local path in a script tag **before** `support.js` loads; the runtime
 checks it and prefers the local copy.
+
+## The channel videos
+
+Each channel plays a plain MP4 from our own bucket, in the browser's own
+`<video>` element — there is no third-party player. `VIDEO_BASE` in `index.html`
+holds the bucket URL; each channel's `file` field holds its filename.
+
+**The filename is data, not derived from the title.** Renaming a project must
+never break its video, so the two are kept independent. The CMS has a *Video
+file* field so a publish round-trip carries it.
+
+A channel change is: load, wait for the file's index, seek to a random point,
+play — and only then is the picture revealed. Seeking *before* playback matters:
+start playing first and the browser fills its buffer from frame zero, then
+throws all of it away the moment the playhead moves. One fill, not two, and no
+visible jump. The screen stays black through the wait, which is the point.
+
+Files are encoded 960x540, H.264, ~800 kbps, AAC 96 kbps, keyframes every 2s,
+and **must** be exported "web optimized" (the index at the front of the file).
+Without that the browser has to download the whole file before showing a frame.
 
 ## The channel line-up
 
@@ -127,7 +147,7 @@ channel in the CMS:
 |---|---|
 | 2–4 | Drifts through them in a seamless loop |
 | 1 | Steady wash in that colour |
-| none | Falls back to the channel's Vimeo poster frame |
+| none | Falls back to the station's own wash |
 
 The drift slides `background-position` across a gradient — no images, no canvas,
 no per-frame JavaScript. Values are validated against a strict six-digit hex
@@ -140,10 +160,11 @@ and never updates. It works because the *browser* reads the pixel and hands over
 only the result — the page never gets pixel access. Chromium only; elsewhere the
 button is disabled and the colour input beside it is used instead.
 
-> A glow that tracks the video frame by frame is not possible while the player
-> is a Vimeo `<iframe>`. Canvas sampling needs a `<video>` element, and there is
-> no API that lets a page read pixels out of a cross-origin iframe. It would
-> require self-hosting the video files.
+> A glow that tracks the video frame by frame used to be impossible, because the
+> player was a cross-origin `<iframe>` and no API can read pixels out of one.
+> Now that the channels are our own `<video>` elements, canvas sampling becomes
+> possible — it would need CORS headers on the bucket so the canvas isn't
+> tainted, and it costs per-frame work on the main thread.
 
 ### Two copies of the line-up
 
