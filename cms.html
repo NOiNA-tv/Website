@@ -17,12 +17,12 @@
   *{box-sizing:border-box;}
   ::-webkit-scrollbar{width:12px;height:12px;}
   ::-webkit-scrollbar-track{background:#15191b;}
-  ::-webkit-scrollbar-thumb{background:oklch(0.55 0.10 175);border:3px solid #15191b;border-radius:8px;}
-  ::-webkit-scrollbar-thumb:hover{background:oklch(0.78 0.15 175);}
+  ::-webkit-scrollbar-thumb{background:oklch(0.55 0.10 205);border:3px solid #15191b;border-radius:8px;}
+  ::-webkit-scrollbar-thumb:hover{background:oklch(0.78 0.15 205);}
   input,textarea,select,button{font-family:'Poppins',sans-serif;}
-  input:focus,textarea:focus{outline:2px solid oklch(0.78 0.15 175);outline-offset:0;}
-  a{color:oklch(0.78 0.15 175);}
-  a:hover{color:oklch(0.88 0.13 175);}
+  input:focus,textarea:focus{outline:2px solid oklch(0.78 0.15 205);outline-offset:0;}
+  a{color:oklch(0.78 0.15 205);}
+  a:hover{color:oklch(0.88 0.13 205);}
   @keyframes cms-blink{0%,49%{opacity:1;}50%,100%{opacity:0.15;}}
 </style>
 </helmet>
@@ -44,7 +44,7 @@
 
       <div style="display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap;">
         <div style="display:flex;flex-direction:column;align-items:flex-end;margin-right:6px;">
-          <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:oklch(0.78 0.15 175);">{{ onAirCount }}</div>
+          <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:oklch(0.78 0.15 205);">{{ onAirCount }}</div>
           <div style="font-size:9px;letter-spacing:2px;color:#6f8083;">ON AIR</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;margin-right:14px;">
@@ -72,7 +72,7 @@
   <div style="max-width:1180px;margin:0 auto;padding:26px 24px 0;">
 
     <div style="display:grid;grid-template-columns:26px 68px 104px 1fr 118px 100px 128px;gap:13px;align-items:center;padding:0 16px 10px;font-size:9.5px;letter-spacing:2px;color:#5f6f72;text-transform:uppercase;">
-      <span></span><span>CH</span><span>Frame</span><span>Title / subtitle</span><span>Vimeo ID</span><span>Status</span><span style="text-align:right;">Actions</span>
+      <span></span><span>CH</span><span>Frame</span><span>Title / subtitle</span><span>Video file</span><span>Status</span><span style="text-align:right;">Actions</span>
     </div>
 
     <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;margin-bottom:10px;border-radius:12px;background:linear-gradient(90deg,#1e2325 0%,#191e20 100%);border:1px dashed #333d3f;opacity:0.75;">
@@ -91,7 +91,7 @@
             <div style="font-family:'Segment7Standard',monospace;font-size:26px;line-height:1;color:{{ row.numColor }};text-shadow:0 0 12px {{ row.numGlow }};">{{ row.num }}</div>
             <div onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="preview" style="position:relative;width:104px;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:#0d1112;box-shadow:inset 0 0 0 1px #2b3336;cursor:pointer;flex-shrink:0;">
               <sc-if value="{{ row.hasThumb }}" hint-placeholder-val="{{ false }}">
-                <img data-thumb="{{ row.thumb }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;opacity:{{ row.thumbOpacity }};transition:opacity .3s;" />
+                <video src="{{ row.thumb }}" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;display:block;"></video>
               </sc-if>
               <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.22) 0 1px,transparent 1px 3px);"></div>
               <div style="position:absolute;bottom:3px;right:4px;color:#dfeaec;font-size:8px;letter-spacing:1px;text-shadow:0 1px 3px #000;">{{ row.thumbNote }}</div>
@@ -100,14 +100,14 @@
               <div style="font-weight:600;font-size:14.5px;color:#f0f5f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ row.title }}</div>
               <div style="font-size:11.5px;color:#849699;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ row.sub }}</div>
             </div>
-            <div style="font-family:'VT323',monospace;font-size:16px;color:#7f9295;letter-spacing:0.5px;">{{ row.vimeoId }}</div>
+            <div style="font-family:'VT323',monospace;font-size:16px;color:#7f9295;letter-spacing:0.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ row.file }}</div>
             <div>
               <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="toggleHidden" style="{{ row.statusStyle }}">{{ row.statusLabel }}</button>
             </div>
             <div style="display:flex;gap:6px;justify-content:flex-end;">
               <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="up" title="Move up" style="border:none;cursor:pointer;width:28px;height:28px;border-radius:7px;background:#242c2e;color:#9fb0b3;font-size:12px;" style-hover="background:#2f393b;color:#fff;">▲</button>
               <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="down" title="Move down" style="border:none;cursor:pointer;width:28px;height:28px;border-radius:7px;background:#242c2e;color:#9fb0b3;font-size:12px;" style-hover="background:#2f393b;color:#fff;">▼</button>
-              <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="toggleOpen" title="Edit" style="border:none;cursor:pointer;height:28px;padding:0 10px;border-radius:7px;background:#242c2e;color:oklch(0.78 0.15 175);font-size:10px;font-weight:700;letter-spacing:1.2px;" style-hover="background:#2f393b;">{{ row.editLabel }}</button>
+              <button onClick="{{ onAction }}" data-idx="{{ row.i }}" data-act="toggleOpen" title="Edit" style="border:none;cursor:pointer;height:28px;padding:0 10px;border-radius:7px;background:#242c2e;color:oklch(0.78 0.15 205);font-size:10px;font-weight:700;letter-spacing:1.2px;" style-hover="background:#2f393b;">{{ row.editLabel }}</button>
             </div>
           </div>
 
@@ -123,32 +123,13 @@
                   <input value="{{ row.sub }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="sub" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#f0f5f6;padding:10px 12px;font-size:14px;" />
                 </label>
                 <label style="display:flex;flex-direction:column;gap:6px;">
-                  <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Vimeo ID</span>
-                  <input value="{{ row.vimeoId }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="vimeoId" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:oklch(0.82 0.13 175);padding:10px 12px;font-family:'VT323',monospace;font-size:17px;letter-spacing:1px;" />
-                </label>
-                <label style="display:flex;flex-direction:column;gap:6px;">
-                  <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Video file</span>
-                  <input value="{{ row.file }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="file" placeholder="01-folo.mp4" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:oklch(0.82 0.13 175);padding:10px 12px;font-family:'VT323',monospace;font-size:17px;letter-spacing:1px;" />
+                  <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Video file <span style="color:#4f5c5e;text-transform:none;letter-spacing:0;">— the name in the bucket, e.g. 01-folo.mp4</span></span>
+                  <input value="{{ row.file }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="file" placeholder="01-folo.mp4" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:oklch(0.82 0.13 205);padding:10px 12px;font-family:'VT323',monospace;font-size:17px;letter-spacing:1px;" />
                 </label>
                 <label style="display:flex;flex-direction:column;gap:6px;">
                   <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Vimeo URL</span>
                   <input value="{{ row.vimeoUrl }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="vimeoUrl" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#9db0b3;padding:10px 12px;font-size:12px;" />
                 </label>
-                <div style="display:flex;flex-direction:column;gap:8px;grid-column:1 / -1;">
-                  <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Glow palette
-                    <span style="color:#4f5c5e;">— up to four colours, leave any empty. Two or more drift between each other; none falls back to the video's poster frame.</span></span>
-                  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-                    <sc-for list="{{ row.swatches }}" as="sw" hint-placeholder-count="{{ 4 }}">
-                      <div style="display:flex;align-items:center;gap:6px;background:#161c1e;border:1px solid #2c3639;border-radius:9px;padding:6px 8px;">
-                        <input type="color" value="{{ sw.value }}" onChange="{{ onPalette }}" data-idx="{{ row.i }}" data-slot="{{ sw.slot }}" title="Pick a colour" style="width:34px;height:26px;border:none;background:none;padding:0;cursor:pointer;" />
-                        <span style="font-family:'VT323',monospace;font-size:15px;letter-spacing:.5px;color:{{ sw.labelColor }};min-width:66px;">{{ sw.label }}</span>
-                        <button onClick="{{ onEyedrop }}" data-idx="{{ row.i }}" data-slot="{{ sw.slot }}" title="{{ eyedropperTitle }}" style="{{ eyedropperStyle }}">⌖</button>
-                        <button onClick="{{ onPaletteClear }}" data-idx="{{ row.i }}" data-slot="{{ sw.slot }}" title="Clear this colour" style="border:none;cursor:pointer;background:none;color:#5f6d70;font-size:15px;line-height:1;padding:2px 3px;" style-hover="color:#c9d6d8;">×</button>
-                      </div>
-                    </sc-for>
-                    <div style="flex:1;min-width:120px;height:34px;border-radius:9px;border:1px solid #2c3639;background:{{ row.paletteSwatch }};" title="How the glow will read"></div>
-                  </div>
-                </div>
                 <label style="display:flex;flex-direction:column;gap:6px;grid-column:1 / -1;">
                   <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Description <span style="color:#4f5c5e;">— shown in the channel info drawer</span></span>
                   <textarea onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="desc" rows="5" value="{{ row.desc }}" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#dde7e8;padding:12px;font-size:13px;line-height:1.6;resize:vertical;"></textarea>
@@ -175,7 +156,7 @@
   <sc-if value="{{ previewId }}" hint-placeholder-val="{{ false }}">
     <div onClick="{{ closePreview }}" style="position:fixed;inset:0;z-index:60;background:rgba(8,10,11,0.86);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:40px;">
       <div style="width:min(980px,100%);aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.6);border:1px solid #2c3639;">
-        <iframe src="https://player.vimeo.com/video/{{ previewId }}?autoplay=1&loop=1&muted=1&controls=1&title=0&byline=0&portrait=0" style="width:100%;height:100%;border:none;" allow="autoplay; fullscreen"></iframe>
+        <video src="{{ previewSrc }}" autoplay loop controls playsinline style="width:100%;height:100%;display:block;background:#000;"></video>
       </div>
     </div>
   </sc-if>
@@ -191,7 +172,7 @@
         <div style="display:flex;gap:8px;align-items:center;">
           <button onClick="{{ copyIO }}" style="border:none;cursor:pointer;padding:11px 16px;border-radius:9px;background:#232b2d;color:#dbe6e7;font-size:11px;font-weight:700;letter-spacing:1.4px;box-shadow:0 3px 0 #151b1c;" style-hover="background:#2c3639;">COPY</button>
           <button onClick="{{ downloadIO }}" style="border:none;cursor:pointer;padding:11px 16px;border-radius:9px;background:#232b2d;color:#dbe6e7;font-size:11px;font-weight:700;letter-spacing:1.4px;box-shadow:0 3px 0 #151b1c;" style-hover="background:#2c3639;">DOWNLOAD .JSON</button>
-          <button onClick="{{ applyIO }}" style="border:none;cursor:pointer;margin-left:auto;padding:11px 18px;border-radius:9px;background:oklch(0.78 0.15 175);color:#0d1213;font-size:11px;font-weight:800;letter-spacing:1.4px;box-shadow:0 3px 0 oklch(0.55 0.14 175);" style-hover="transform:translateY(-1px);box-shadow:0 4px 0 oklch(0.55 0.14 175);">LOAD THIS TAPE</button>
+          <button onClick="{{ applyIO }}" style="border:none;cursor:pointer;margin-left:auto;padding:11px 18px;border-radius:9px;background:oklch(0.78 0.15 205);color:#0d1213;font-size:11px;font-weight:800;letter-spacing:1.4px;box-shadow:0 3px 0 oklch(0.55 0.14 205);" style-hover="transform:translateY(-1px);box-shadow:0 4px 0 oklch(0.55 0.14 205);">LOAD THIS TAPE</button>
         </div>
         <div style="font-size:11px;color:#7d8f92;">{{ ioNote }}</div>
       </div>
@@ -199,7 +180,7 @@
   </sc-if>
 
   <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:70;padding:12px 20px;border-radius:10px;background:#1d2426;border:1px solid #33403f;color:oklch(0.85 0.12 175);font-size:12px;letter-spacing:1.4px;box-shadow:0 14px 40px rgba(0,0,0,0.5);">{{ toast }}</div>
+    <div style="position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:70;padding:12px 20px;border-radius:10px;background:#1d2426;border:1px solid #33403f;color:oklch(0.85 0.12 205);font-size:12px;letter-spacing:1.4px;box-shadow:0 14px 40px rgba(0,0,0,0.5);">{{ toast }}</div>
   </sc-if>
 </div>
 
@@ -207,8 +188,8 @@
 <script type="text/x-dc" data-dc-script data-props="{&quot;compact&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Line-up&quot;}}">
 class Component extends DCLogic {
   KEY = 'noina_cms_projects_v1';
-  ACCENT = 'oklch(0.78 0.15 175)';
-  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', thumbs: {} };
+  ACCENT = 'oklch(0.78 0.15 205)';
+  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '' };
 
   sweepThumbs = () => {
     document.querySelectorAll('img[data-thumb]').forEach(el => {
@@ -221,18 +202,11 @@ class Component extends DCLogic {
     this._thumbRaf = requestAnimationFrame(() => { this._thumbRaf = null; this.sweepThumbs(); });
   }
 
-  fetchThumbs(items) {
-    (items || []).forEach(p => {
-      const id = p.vimeoId;
-      if (!id || this.state.thumbs[id] || this._pending?.[id]) return;
-      this._pending = this._pending || {};
-      this._pending[id] = true;
-      fetch('https://vimeo.com/api/oembed.json?url=https://vimeo.com/' + id + '&width=480')
-        .then(r => r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)))
-        .then(d => this.setState(s => ({ thumbs: { ...s.thumbs, [id]: d.thumbnail_url || '' } })))
-        .catch(() => this.setState(s => ({ thumbs: { ...s.thumbs, [id]: '' } })));
-    });
-  }
+  /** The bucket base the site plays from. Kept in step with VIDEO_BASE in
+      index.html — change one, change the other. */
+  VIDEO_BASE = 'https://pub-5b672117a09a448c8adcce01bccabfc1.r2.dev';
+
+
 
   componentDidMount() {
     this.hydrate();
@@ -252,7 +226,6 @@ class Component extends DCLogic {
     if (!base.length) return;
     clearInterval(this._t);
     this.setState({ items: base.map((p, i) => ({ ...p, _id: p._id || 'p' + i + '_' + Math.random().toString(36).slice(2, 7) })), dirty: false });
-    this.fetchThumbs(base);
   }
 
   update(items, dirty = true) { this.setState({ items, dirty }); }
@@ -263,50 +236,11 @@ class Component extends DCLogic {
     const v = e.target.value;
     const items = this.state.items.slice();
     items[+idx] = { ...items[+idx], [field]: v };
-    if (field === 'vimeoId') { items[+idx].vimeoUrl = 'https://vimeo.com/' + v; this.fetchThumbs([items[+idx]]); }
     this.update(items);
   };
 
   /** Write one palette slot, keeping the array compact (no holes) so the site
    *  can just count entries. */
-  setPaletteSlot(idx, slot, hex) {
-    const items = this.state.items.slice();
-    const cur = Array.isArray(items[idx].palette) ? items[idx].palette.slice() : [];
-    while (cur.length < 4) cur.push('');
-    cur[slot] = hex || '';
-    const palette = cur.filter(Boolean);
-    items[idx] = { ...items[idx], palette };
-    this.update(items);
-  }
-
-  onPalette = (e) => {
-    const { idx, slot } = e.target.dataset;
-    this.setPaletteSlot(+idx, +slot, e.target.value);
-  };
-
-  onPaletteClear = (e) => {
-    const { idx, slot } = e.currentTarget.dataset;
-    this.setPaletteSlot(+idx, +slot, '');
-  };
-
-  /** The browser's own eyedropper. It is a MANUAL, one-shot sample: the cursor
-   *  becomes a picker, you click anywhere on screen — including a playing
-   *  video — and it returns the single colour under the cursor at that moment.
-   *  It does not track or update afterwards. The page never gets pixel access;
-   *  the browser does the reading, which is why it can sample a cross-origin
-   *  video the page itself cannot touch. Chromium only, hence the fallback to
-   *  the colour input sitting next to it. */
-  onEyedrop = (e) => {
-    const { idx, slot } = e.currentTarget.dataset;
-    if (typeof window.EyeDropper !== 'function') {
-      this.flash('EYEDROPPER NEEDS CHROME OR EDGE — USE THE SWATCH');
-      return;
-    }
-    new window.EyeDropper().open()
-      .then((r) => { if (r && r.sRGBHex) this.setPaletteSlot(+idx, +slot, r.sRGBHex); })
-      .catch(() => {});   // the user pressing Escape lands here
-  };
-
   onAction = (e) => {
     const btn = e.currentTarget;
     const i = +btn.dataset.idx, act = btn.dataset.act;
@@ -317,7 +251,7 @@ class Component extends DCLogic {
     if (act === 'down' && i < items.length - 1) { const [m] = items.splice(i, 1); items.splice(i + 1, 0, m); this.update(items); return; }
     if (act === 'duplicate') { const c = { ...items[i], _id: 'p_' + Math.random().toString(36).slice(2, 8), title: items[i].title + ' (copy)' }; items.splice(i + 1, 0, c); this.update(items); return; }
     if (act === 'delete') { items.splice(i, 1); this.update(items); this.flash('CHANNEL REMOVED'); return; }
-    if (act === 'preview') { this.setState({ previewId: items[i].vimeoId }); return; }
+    if (act === 'preview') { this.setState({ previewId: items[i].file || null }); return; }
   };
 
   addProject = () => {
@@ -381,7 +315,6 @@ class Component extends DCLogic {
     const items = this.state.items || [];
     const desc = false;
     const accent = this.ACCENT;
-    const thumbs = this.state.thumbs;
     const compact = this.props.compact ?? false;
     const visible = items.filter(p => !p.hidden);
     let vi = 0;
@@ -393,27 +326,16 @@ class Component extends DCLogic {
       return {
         ...p, i, num, isOpen,
         title: p.title || '', sub: p.sub || '', desc: p.desc || '', file: p.file || '', vimeoId: p.vimeoId || '', vimeoUrl: p.vimeoUrl || '', label: p.label || '',
-        thumb: thumbs[p.vimeoId] || '',
-        hasThumb: !!thumbs[p.vimeoId],
+        thumb: p.file ? this.VIDEO_BASE + '/' + p.file + '#t=2' : '',
+        hasThumb: !!p.file,
         thumbOpacity: p.hidden ? '0.4' : '1',
-        thumbNote: p.vimeoId ? (thumbs[p.vimeoId] === undefined ? '…' : (thumbs[p.vimeoId] ? '' : 'NO SIGNAL')) : 'NO ID',
+        thumbNote: p.file ? '' : 'NO FILE',
         numColor: p.hidden ? '#4d5a5c' : accent,
-        numGlow: p.hidden ? 'transparent' : 'oklch(0.6 0.12 175 / 0.45)',
-        swatches: [0, 1, 2, 3].map((slot) => {
-          const v = (Array.isArray(p.palette) ? p.palette : [])[slot] || '';
-          return { slot: String(slot), value: v || '#000000', label: v ? v.toUpperCase() : 'empty',
-                   labelColor: v ? '#c9d6d8' : '#4f5c5e' };
-        }),
-        paletteSwatch: (() => {
-          const set = (Array.isArray(p.palette) ? p.palette : []).filter(Boolean);
-          if (set.length >= 2) return `linear-gradient(115deg, ${[...set, set[0]].join(', ')})`;
-          if (set.length === 1) return set[0];
-          return 'repeating-linear-gradient(45deg,#1b2224 0 8px,#161c1e 8px 16px)';
-        })(),
+        numGlow: p.hidden ? 'transparent' : 'oklch(0.6 0.12 205 / 0.45)',
         editLabel: isOpen ? 'CLOSE' : 'EDIT',
         statusLabel: p.hidden ? 'OFF AIR' : 'ON AIR',
         statusStyle: 'border:none;cursor:pointer;padding:6px 10px;border-radius:20px;font-size:9.5px;font-weight:800;letter-spacing:1.4px;'
-          + (p.hidden ? 'background:#242c2e;color:#7d8f92;' : 'background:oklch(0.3 0.06 175);color:' + accent + ';box-shadow:inset 0 0 0 1px oklch(0.45 0.09 175);'),
+          + (p.hidden ? 'background:#242c2e;color:#7d8f92;' : 'background:oklch(0.3 0.06 205);color:' + accent + ';box-shadow:inset 0 0 0 1px oklch(0.45 0.09 205);'),
         wrapStyle: 'border-radius:12px;border:1px solid ' + (isOpen ? '#37464a' : '#232b2d')
           + ';background:' + (isOpen ? '#1a2123' : '#171c1e')
           + ';opacity:' + (dragging ? '0.45' : p.hidden ? '0.6' : '1')
@@ -426,20 +348,13 @@ class Component extends DCLogic {
       onAirCount: String(visible.length).padStart(2, '0'),
       offAirCount: String(items.length - visible.length).padStart(2, '0'),
       onField: this.onField, onAction: this.onAction, addProject: this.addProject,
-      onPalette: this.onPalette, onPaletteClear: this.onPaletteClear, onEyedrop: this.onEyedrop,
-      eyedropperTitle: typeof window !== 'undefined' && typeof window.EyeDropper === 'function'
-        ? 'Pick a colour from anywhere on screen — play the video first'
-        : 'Screen eyedropper needs Chrome or Edge',
-      eyedropperStyle: 'border:none;border-radius:6px;cursor:pointer;padding:4px 7px;font-size:13px;line-height:1;'
-        + (typeof window !== 'undefined' && typeof window.EyeDropper === 'function'
-            ? 'background:#242c2e;color:oklch(0.78 0.15 175);'
-            : 'background:#1d2325;color:#4f5c5e;'),
+      previewSrc: this.state.previewId ? this.VIDEO_BASE + '/' + this.state.previewId : '',
       onDragStart: this.onDragStart, onDragOver: this.onDragOver, onDrop: this.onDrop, onDragEnd: this.onDragEnd,
       publish: this.publish, resetFactory: this.resetFactory,
       publishLabel: this.state.dirty ? 'PUBLISH CHANGES' : 'PUBLISHED ✓',
       publishStyle: 'border:none;cursor:pointer;padding:11px 20px;border-radius:9px;font-size:11px;font-weight:800;letter-spacing:1.4px;'
         + (this.state.dirty
-          ? 'background:' + accent + ';color:#0d1213;box-shadow:0 3px 0 oklch(0.55 0.14 175);'
+          ? 'background:' + accent + ';color:#0d1213;box-shadow:0 3px 0 oklch(0.55 0.14 205);'
           : 'background:#1e2527;color:#6f8083;box-shadow:0 3px 0 #141a1b;'),
       openIO: this.openIO, closeIO: this.closeIO, copyIO: this.copyIO, downloadIO: this.downloadIO, applyIO: this.applyIO,
       ioRef: this.ioRef, ioOpen: this.state.ioOpen, ioNote: this.state.ioNote,

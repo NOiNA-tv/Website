@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>NOiNA | Motion Designer &amp; Broadcast Animation</title>
 <meta name="description" content="Interrupting your regular programming with playful concepts, polished motion design systems, and brands brought to life — one keyframe at a time.">
 <meta name="author" content="Noi Navve">
@@ -461,7 +461,15 @@
   /* --info-m is the margin unit; the bottom gets two of them plus enough room
      for the BACK control itself, which lives in that band. Both rules read the
      same variable, so the frame can never crowd the button. */
-  :root{--info-m:clamp(26px,5vw,60px);}
+  :root{--info-m:clamp(16px,3vw,34px);}
+  /* Chrome paints its own cast button over any video it thinks is castable.
+     The attribute covers most builds; this reaches the ones it doesn't. */
+  video::-webkit-media-controls-overlay-play-button,
+  video::-internal-media-controls-overlay-cast-button,
+  video::-webkit-media-controls{display:none !important;-webkit-appearance:none;}
+  /* paint the page's own background behind the phone's navigation bar rather
+     than leaving the browser's white default showing under it */
+  html{background:oklch(0.60 0.013 205);}
   .info-page{position:absolute;inset:0;background:#000;
     padding:var(--info-m) var(--info-m) calc(var(--info-m) * 2 + 40px);
     z-index:8;display:flex;font-family:'VT323',monospace;color:oklch(0.8 0.17 205);}
@@ -557,7 +565,7 @@
              and the element is never unmounted — the station hides this layer
              rather than removing it, so coming back costs nothing. -->
         <div style="{{ videoLayerStyle }}">
-          <video ref="{{ videoRef }}" playsinline loop preload="auto" disablepictureinpicture style="width:100%;height:100%;display:block;object-fit:cover;background:#000;"></video>
+          <video ref="{{ videoRef }}" playsinline loop preload="auto" disablepictureinpicture disableremoteplayback controlslist="nodownload noplaybackrate noremoteplayback" style="width:100%;height:100%;display:block;object-fit:cover;background:#000;"></video>
         </div>
         </div>
 
@@ -656,7 +664,7 @@
                 <div style="position:absolute;top:-10px;left:34px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:10px solid oklch(0.8 0.17 205);"></div>
                 <div style="position:absolute;top:-6px;left:36px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:8px solid #020402;"></div>
                 <div style="border:2px solid oklch(0.8 0.17 205);border-radius:4px;padding:8px 10px;background:#020402;">
-                  <div data-type-line="true" data-fast="true" style="color:oklch(0.85 0.1 205);font-size:19px;line-height:1.2;">"Experienced in building motion design systems, crafting creative concepts, and bringing brands to life through design and animation. Aims for playful, purposeful, polished motion — nudges keyframes into the night to get it just right!"</div>
+                  <div data-type-line="true" data-fast="true" data-kaomoji="true" style="color:oklch(0.85 0.1 205);font-size:19px;line-height:1.2;">Experienced in building motion design systems, crafting creative concepts, and bringing brands to life through design and animation. Aims for playful, purposeful, polished motion — nudges keyframes into the night to get it just right! o(^^o)</div>
                 </div>
               </div>
               <div ref="{{ clientsBoxRef }}" style="opacity:0;">
@@ -742,8 +750,13 @@
 
     <!-- PROJECT DESCRIPTION -->
     <sc-if value="{{ descVisible }}" hint-placeholder-val="{{ false }}">
-      <div ref="{{ descRef }}" style="background:#060706;border-radius:12px;padding:12px 16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), inset 0 2px 10px rgba(0,0,0,.6);opacity:0;position:relative;z-index:35;">
+      <div ref="{{ descRef }}" style="width:100%;max-width:620px;margin-left:auto;margin-right:auto;background:#060706;border-radius:12px;padding:12px 16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), inset 0 2px 10px rgba(0,0,0,.6);opacity:0;position:relative;z-index:35;">
         <div style="font-family:'Poppins',sans-serif;font-size:13px;line-height:1.5;color:oklch(0.75 0.01 205);">{{ channel.desc }}</div>
+        <!-- same pill, same blink as SYS. INFO, but laid out along the row -->
+        <div onclick="{{ onWatchTape }}" style="margin-top:10px;display:flex;align-items:center;justify-content:flex-end;gap:9px;cursor:pointer;">
+          <div style="font-family:'VT323',monospace;font-size:13px;color:oklch(0.5 0.02 205);letter-spacing:.04em;">WATCH FULL TAPE</div>
+          <button style="width:32px;height:8px;border-radius:9999px;background:oklch(0.40 0.09 205);border:none;padding:0;cursor:pointer;animation:sysinfo-blink 3s ease-in-out infinite;"></button>
+        </div>
       </div>
     </sc-if>
 
@@ -1039,8 +1052,8 @@ class Component extends DCLogic {
     cancelAnimationFrame(this._kickRaf);
     // Handoff values, with damping raised from 4 so the shell stops ringing
     // (at 4 it bounced seven times over ~2.7s).
-    let t = 0, v = 160;
-    const stiffness = 80, damping = 8, to = 0;
+    let t = 0, v = 290;
+    const stiffness = 220, damping = 13, to = 0;
     const step = () => {
       const dt = 1 / 60;
       v += (-stiffness * (t - to) - damping * v) * dt;
@@ -1273,6 +1286,7 @@ class Component extends DCLogic {
     this._dvdRaf = requestAnimationFrame(step);
   }
   componentWillUnmount() {
+    clearInterval(this._kaomojiInt);
     this.stopGlowSampling();
     cancelAnimationFrame(this._kickRaf);
     ['muteAnim', 'infoAnim', 'prevAnim', 'nextAnim'].forEach((k) => {
@@ -1308,6 +1322,30 @@ class Component extends DCLogic {
     if (!el) this._infoInited = false;
   };
 
+  KAOMOJI = ['o(^^o)', '(o^^)o'];
+
+  /** Flip the little face at the end of the bio, one second on each side.
+
+      It cannot be its own element: the typewriter rewrites the line's
+      textContent character by character and would wipe it. So the swap works on
+      the text, and matching the trailing face is also what keeps it in step —
+      mid-typing there is nothing to match, so it starts itself the moment the
+      line finishes. */
+  startKaomoji(root) {
+    clearInterval(this._kaomojiInt);
+    const el = root && root.querySelector('[data-kaomoji]');
+    if (!el) return;
+    let flip = 0;
+    this._kaomojiInt = setInterval(() => {
+      if (!el.isConnected) { clearInterval(this._kaomojiInt); return; }
+      const t = el.textContent;
+      const now = this.KAOMOJI.find((k) => t.endsWith(k));
+      if (!now) return;
+      flip = 1 - this.KAOMOJI.indexOf(now);
+      el.textContent = t.slice(0, -now.length) + this.KAOMOJI[flip];
+    }, 1000);
+  }
+
   prepareTypewriter(el) {
     const lines = Array.from(el.querySelectorAll('[data-type-line]'));
     if (!lines.length) { requestAnimationFrame(() => this.prepareTypewriter(el)); return; }
@@ -1320,6 +1358,7 @@ class Component extends DCLogic {
       else { l.textContent = ''; }
     });
     this.startTypewriter(lines);
+    this.startKaomoji(el);
   }
 
   startTypewriter(lines) {
@@ -2128,6 +2167,10 @@ class Component extends DCLogic {
       descOpen: this.state.descOpen,
       descVisible: this.state.descRendered && channel.isProject,
       descRef: this.descRef,
+      onWatchTape: () => {
+        const url = CHANNELS[this.state.index].vimeoUrl;
+        if (url) window.open(url, '_blank', 'noopener,noreferrer');
+      },
       onToggleDesc: this.onToggleDesc,
       muted: this.state.muted,
       showMuteIcon: this.state.muted && !channel.isStation && !this.state.infoOpen,
