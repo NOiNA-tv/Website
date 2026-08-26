@@ -177,8 +177,9 @@
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:9px;">
         <sc-for list="{{ taglineRows }}" as="tag" hint-placeholder-count="{{ 4 }}">
           <div style="display:flex;align-items:center;gap:8px;">
-            <input value="{{ tag.text }}" onChange="{{ onTagline }}" data-idx="{{ tag.i }}" style="flex:1;min-width:0;background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:oklch(0.82 0.13 205);padding:9px 11px;font-family:'VT323',monospace;font-size:16px;letter-spacing:1px;" />
-            <button onClick="{{ onTagRemove }}" data-idx="{{ tag.i }}" title="Remove" style="border:none;cursor:pointer;background:#1d2325;color:#6f8083;border-radius:7px;width:28px;height:28px;font-size:15px;line-height:1;">×</button>
+            <input value="{{ tag.text }}" onChange="{{ onTagline }}" data-idx="{{ tag.i }}" style="{{ tag.inputStyle }}" />
+            <button onClick="{{ onTagToggle }}" data-idx="{{ tag.i }}" title="Show or hide this line" style="{{ tag.toggleStyle }}">{{ tag.toggleLabel }}</button>
+            <button onClick="{{ onTagRemove }}" data-idx="{{ tag.i }}" title="Remove for good" style="border:none;cursor:pointer;background:#1d2325;color:#6f8083;border-radius:7px;width:28px;height:28px;font-size:15px;line-height:1;">×</button>
           </div>
         </sc-for>
       </div>
@@ -189,8 +190,27 @@
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
         <div style="font-size:10.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Client logos</div>
         <div style="font-size:11px;color:#4f5c5e;flex:1;min-width:180px;">{{ coinNote }} — the bouncing coin in the CLIENTS box. Artwork lives in coins-data.js; hand me a new SVG to add one.</div>
+        <button onClick="{{ addCoin }}" style="border:none;cursor:pointer;padding:9px 14px;border-radius:8px;background:#232b2d;color:#dbe6e7;font-size:10.5px;font-weight:700;letter-spacing:1.3px;">+ ADD LOGO</button>
         <button onClick="{{ publishCoins }}" style="{{ coinPublishStyle }}">{{ coinPublishLabel }}</button>
       </div>
+      <sc-if value="{{ coinEditOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-bottom:16px;padding:14px 16px;border-radius:10px;border:1px solid #2c3639;background:#12181a;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+            <div style="width:44px;height:44px;color:#c9d6d8;flex-shrink:0;" data-coin-preview="1"></div>
+            <label style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px;">
+              <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Name</span>
+              <input value="{{ coinEditName }}" onChange="{{ onCoinName }}" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#dbe6e7;padding:8px 11px;font-size:13px;" />
+            </label>
+            <button onClick="{{ coinEditApply }}" style="border:none;cursor:pointer;padding:9px 16px;border-radius:8px;background:oklch(0.78 0.15 205);color:#04120f;font-size:10.5px;font-weight:800;letter-spacing:1.3px;">APPLY</button>
+            <button onClick="{{ coinEditCancel }}" style="border:none;cursor:pointer;padding:9px 14px;border-radius:8px;background:#242c2e;color:#9db0b3;font-size:10.5px;font-weight:700;letter-spacing:1.2px;">CANCEL</button>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:5px;">
+            <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">SVG <span style="color:#4f5c5e;text-transform:none;letter-spacing:0;">— paste a whole &lt;svg&gt;…&lt;/svg&gt;. Colour is stripped so the coin takes the site's own; scripts and links are removed.</span></span>
+            <textarea onChange="{{ onCoinSvg }}" rows="5" value="{{ coinEditSvg }}" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#9db0b3;padding:10px 12px;font-family:'VT323',monospace;font-size:14px;line-height:1.5;resize:vertical;"></textarea>
+          </label>
+          <div style="margin-top:8px;font-size:11px;color:{{ coinEditNoteColor }};">{{ coinEditNote }}</div>
+        </div>
+      </sc-if>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:9px;">
         <sc-for list="{{ coinRows }}" as="coin" hint-placeholder-count="{{ 6 }}">
           <div style="{{ coin.rowStyle }}">
@@ -198,6 +218,7 @@
             <div style="flex:1;min-width:0;font-size:12px;color:{{ coin.color }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ coin.name }}</div>
             <button onClick="{{ onCoinMove }}" data-idx="{{ coin.i }}" data-dir="up" title="Move up" style="border:none;cursor:pointer;background:#1d2325;color:#6f8083;border-radius:6px;width:24px;height:24px;font-size:12px;line-height:1;">↑</button>
             <button onClick="{{ onCoinMove }}" data-idx="{{ coin.i }}" data-dir="down" title="Move down" style="border:none;cursor:pointer;background:#1d2325;color:#6f8083;border-radius:6px;width:24px;height:24px;font-size:12px;line-height:1;">↓</button>
+            <button onClick="{{ onCoinEdit }}" data-idx="{{ coin.i }}" title="Edit artwork" style="border:none;cursor:pointer;background:#1d2325;color:#8a9b9e;border-radius:6px;width:24px;height:24px;font-size:11px;line-height:1;">✎</button>
             <button onClick="{{ onCoinToggle }}" data-idx="{{ coin.i }}" style="{{ coin.toggleStyle }}">{{ coin.toggleLabel }}</button>
           </div>
         </sc-for>
@@ -247,7 +268,7 @@
 class Component extends DCLogic {
   KEY = 'noina_cms_projects_v1';
   ACCENT = 'oklch(0.78 0.15 205)';
-  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', palOpen: null, taglines: null, tagDirty: false, coins: null, coinArt: null, coinDirty: false };
+  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', palOpen: null, taglines: null, tagDirty: false, coins: null, coinArt: null, coinDirty: false, coinEdit: null, coinEditName: '', coinEditSvg: '' };
 
   TAG_KEY = 'noina_cms_taglines_v1';
   COIN_KEY = 'noina_cms_coins_v1';
@@ -266,13 +287,83 @@ class Component extends DCLogic {
       } catch (e) {}
       const byName = new Map(all.map((c) => [c.name, c]));
       const ordered = (saved || [])
-        .filter((o) => o && byName.has(o.name))
-        .map((o) => ({ name: o.name, hidden: !!o.hidden }));
+        .filter((o) => o && (o.inner || byName.has(o.name)))
+        .map((o) => (o.inner
+          ? { name: o.name, hidden: !!o.hidden, inner: o.inner, viewBox: o.viewBox || '0 0 180 180' }
+          : { name: o.name, hidden: !!o.hidden }));
       const seen = new Set(ordered.map((o) => o.name));
       all.forEach((c) => { if (!seen.has(c.name)) ordered.push({ name: c.name, hidden: false }); });
       this.setState({ coins: ordered, coinArt: Object.fromEntries(all.map((c) => [c.name, c])), coinDirty: false });
     }).catch(() => this.setState({ coins: [], coinArt: {}, coinDirty: false }));
   }
+  /** Take a pasted <svg> down to something safe to inject.
+
+      Only the innards are kept, and only after scripts, event handlers, links
+      and external references are stripped — this markup is written into the page
+      as HTML, so anything executable in it would run. Colour is dropped too, so
+      every coin picks up the site's own. */
+  parseSvg(raw) {
+    const txt = String(raw || '').trim();
+    if (!txt) return { error: 'Paste an <svg> to see it here.' };
+    let doc;
+    try { doc = new DOMParser().parseFromString(txt, 'image/svg+xml'); } catch (e) { return { error: 'Could not read that as SVG.' }; }
+    const svg = doc.querySelector('svg');
+    if (!svg || doc.querySelector('parsererror')) return { error: 'That does not look like a complete <svg> element.' };
+    svg.querySelectorAll('script,foreignObject,image,use,a,animate,set,iframe,style').forEach((n) => n.remove());
+    svg.querySelectorAll('*').forEach((n) => {
+      [...n.attributes].forEach((a) => {
+        const name = a.name.toLowerCase();
+        if (name.startsWith('on')) n.removeAttribute(a.name);
+        else if (/^(fill|stroke|class|style|id)$/.test(name)) n.removeAttribute(a.name);
+        else if (/url\(|javascript:/i.test(a.value)) n.removeAttribute(a.name);
+      });
+    });
+    const inner = svg.innerHTML.trim();
+    if (!inner) return { error: 'Nothing drawable left after cleaning — is it an embedded image rather than paths?' };
+    let viewBox = svg.getAttribute('viewBox');
+    if (!viewBox) {
+      const w = parseFloat(svg.getAttribute('width')) || 180;
+      const h = parseFloat(svg.getAttribute('height')) || 180;
+      viewBox = '0 0 ' + w + ' ' + h;
+    }
+    return { inner, viewBox, note: 'Looks good — ' + inner.length + ' characters of path data.' };
+  }
+
+  onCoinEdit = (e) => {
+    const i = +e.currentTarget.dataset.idx;
+    const c = this.state.coins[i];
+    const art = (c.inner ? c : (this.state.coinArt || {})[c.name]) || {};
+    this.setState({
+      coinEdit: i, coinEditName: c.name,
+      coinEditSvg: art.inner ? '<svg viewBox="' + (art.viewBox || '0 0 180 180') + '">' + art.inner + '</svg>' : '',
+    });
+  };
+  addCoin = () => this.setState({
+    coins: [...(this.state.coins || []), { name: 'new logo', hidden: true }],
+    coinEdit: (this.state.coins || []).length, coinEditName: 'new logo', coinEditSvg: '', coinDirty: true,
+  });
+  onCoinName = (e) => this.setState({ coinEditName: e.target.value });
+  onCoinSvg = (e) => this.setState({ coinEditSvg: e.target.value });
+  coinEditCancel = () => this.setState({ coinEdit: null, coinEditSvg: '', coinEditName: '' });
+  coinEditApply = () => {
+    const i = this.state.coinEdit;
+    if (i == null) return;
+    const name = (this.state.coinEditName || '').trim();
+    if (!name) { this.flash('THE LOGO NEEDS A NAME'); return; }
+    const coins = this.state.coins.slice();
+    const parsed = this.state.coinEditSvg.trim() ? this.parseSvg(this.state.coinEditSvg) : null;
+    if (parsed && parsed.error) { this.flash(parsed.error.toUpperCase()); return; }
+    coins[i] = parsed
+      ? { name, hidden: coins[i].hidden, inner: parsed.inner, viewBox: parsed.viewBox }
+      : { ...coins[i], name };
+    const art = { ...(this.state.coinArt || {}) };
+    if (parsed) art[name] = { name, inner: parsed.inner, viewBox: parsed.viewBox };
+    // repaint: the preview keys off the name, so a rename must not show the old art
+    document.querySelectorAll('[data-coin-art]').forEach((el) => { el.dataset.painted = ''; });
+    this.setState({ coins, coinArt: art, coinEdit: null, coinEditSvg: '', coinEditName: '', coinDirty: true });
+    this.flash('LOGO UPDATED — PUBLISH TO APPLY');
+  };
+
   onCoinToggle = (e) => {
     const i = +e.currentTarget.dataset.idx;
     const coins = this.state.coins.slice();
@@ -291,7 +382,9 @@ class Component extends DCLogic {
     const on = (this.state.coins || []).filter((c) => !c.hidden);
     if (!on.length) { this.flash('NEED AT LEAST ONE LOGO'); return; }
     try {
-      localStorage.setItem(this.COIN_KEY, JSON.stringify(this.state.coins));
+      localStorage.setItem(this.COIN_KEY, JSON.stringify(this.state.coins.map((c) => (
+        c.inner ? { name: c.name, hidden: !!c.hidden, inner: c.inner, viewBox: c.viewBox }
+                : { name: c.name, hidden: !!c.hidden }))));
       this.setState({ coinDirty: false });
       this.flash('LOGOS PUBLISHED');
     } catch (e) { this.flash('COULD NOT SAVE'); }
@@ -306,7 +399,7 @@ class Component extends DCLogic {
         vimeoUrl: p.vimeoUrl || '', desc: p.desc || '',
         palette: Array.isArray(p.palette) ? p.palette.filter(Boolean) : [],
       })),
-      taglines: (this.state.taglines || []).map((t) => t.trim()).filter(Boolean),
+      taglines: this.liveTaglines(),
     };
     const missing = payload.channels.filter((c) => !c.file).map((c) => c.title);
     if (missing.length) { this.flash('NO VIDEO FILE ON: ' + missing.join(', ').toUpperCase()); return; }
@@ -358,11 +451,19 @@ class Component extends DCLogic {
       const raw = localStorage.getItem(this.TAG_KEY);
       if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) saved = a; }
     } catch (e) {}
-    this.setState({ taglines: saved || this.FACTORY_TAGLINES.slice() });
+    // stored as plain strings before this; keep reading those
+    const src = saved || this.FACTORY_TAGLINES;
+    this.setState({ taglines: src.map((t) => (typeof t === 'string' ? { text: t, hidden: false } : { text: t.text || '', hidden: !!t.hidden })) });
   }
   onTagline = (e) => {
     const t = this.state.taglines.slice();
-    t[+e.target.dataset.idx] = e.target.value;
+    t[+e.target.dataset.idx] = { ...t[+e.target.dataset.idx], text: e.target.value };
+    this.setState({ taglines: t, tagDirty: true });
+  };
+  onTagToggle = (e) => {
+    const i = +e.currentTarget.dataset.idx;
+    const t = this.state.taglines.slice();
+    t[i] = { ...t[i], hidden: !t[i].hidden };
     this.setState({ taglines: t, tagDirty: true });
   };
   onTagRemove = (e) => {
@@ -370,13 +471,17 @@ class Component extends DCLogic {
     t.splice(+e.currentTarget.dataset.idx, 1);
     this.setState({ taglines: t, tagDirty: true });
   };
-  addTagline = () => this.setState({ taglines: [...(this.state.taglines || []), ''], tagDirty: true });
+  addTagline = () => this.setState({ taglines: [...(this.state.taglines || []), { text: '', hidden: false }], tagDirty: true });
+  /** The site only ever sees the lines that are on; the off ones are kept here
+      so switching one back on doesn't mean retyping it. */
+  liveTaglines() {
+    return (this.state.taglines || []).filter((t) => !t.hidden).map((t) => t.text.trim()).filter(Boolean);
+  }
   publishTaglines = () => {
-    const clean = (this.state.taglines || []).map((t) => t.trim()).filter(Boolean);
-    if (!clean.length) { this.flash('NEED AT LEAST ONE SLOGAN'); return; }
+    if (!this.liveTaglines().length) { this.flash('NEED AT LEAST ONE SLOGAN ON'); return; }
     try {
-      localStorage.setItem(this.TAG_KEY, JSON.stringify(clean));
-      this.setState({ taglines: clean, tagDirty: false });
+      localStorage.setItem(this.TAG_KEY, JSON.stringify(this.liveTaglines()));
+      this.setState({ tagDirty: false });
       this.flash('SLOGANS PUBLISHED');
     } catch (e) { this.flash('COULD NOT SAVE'); }
   };
@@ -402,13 +507,27 @@ class Component extends DCLogic {
       rather than bound — the same reason the channel thumbnails were. */
   paintCoinArt() {
     const art = this.state.coinArt;
-    if (!art) return;
-    document.querySelectorAll('[data-coin-art]').forEach((el) => {
-      const c = art[el.dataset.coinArt];
-      if (!c || el.dataset.painted === el.dataset.coinArt) return;
-      el.dataset.painted = el.dataset.coinArt;
+    const draw = (el, c) => {
       el.innerHTML = '<svg viewBox="' + c.viewBox + '" fill="currentColor" style="width:100%;height:100%;display:block;">' + c.inner + '</svg>';
-    });
+    };
+    if (art) {
+      const own = new Map((this.state.coins || []).filter((c) => c.inner).map((c) => [c.name, c]));
+      document.querySelectorAll('[data-coin-art]').forEach((el) => {
+        const c = own.get(el.dataset.coinArt) || art[el.dataset.coinArt];
+        if (!c || el.dataset.painted === el.dataset.coinArt) return;
+        el.dataset.painted = el.dataset.coinArt;
+        draw(el, c);
+      });
+    }
+    const prev = document.querySelector('[data-coin-preview]');
+    if (prev) {
+      const r = this.state.coinEditSvg && this.state.coinEditSvg.trim() ? this.parseSvg(this.state.coinEditSvg) : null;
+      const key = r && !r.error ? r.inner.length + ':' + r.viewBox : 'none';
+      if (prev.dataset.painted !== key) {
+        prev.dataset.painted = key;
+        if (r && !r.error) draw(prev, r); else prev.innerHTML = '';
+      }
+    }
   }
 
   componentDidUpdate() { this.paintCoinArt(); }
@@ -582,8 +701,30 @@ class Component extends DCLogic {
       onField: this.onField, onAction: this.onAction, addProject: this.addProject,
       previewSrc: this.state.previewId ? this.VIDEO_BASE + '/' + this.state.previewId : '',
       onPalette: this.onPalette, onPaletteClear: this.onPaletteClear, togglePalette: this.togglePalette,
-      taglineRows: (this.state.taglines || []).map((t, i) => ({ text: t, i: String(i) })),
+      taglineRows: (this.state.taglines || []).map((t, i) => ({
+        text: t.text, i: String(i),
+        toggleLabel: t.hidden ? 'OFF' : 'ON',
+        inputStyle: "flex:1;min-width:0;background:#161c1e;border:1px solid #2c3639;border-radius:8px;padding:9px 11px;font-family:'VT323',monospace;font-size:16px;letter-spacing:1px;"
+          + (t.hidden ? 'color:#5d6c6e;' : 'color:oklch(0.82 0.13 205);'),
+        toggleStyle: 'border:none;cursor:pointer;border-radius:6px;padding:5px 9px;font-size:9.5px;font-weight:800;letter-spacing:1px;'
+          + (t.hidden ? 'background:#242c2e;color:#6f8083;' : 'background:' + this.ACCENT + ';color:#04120f;'),
+      })),
+      onTagToggle: this.onTagToggle,
       downloadChannelsJson: this.downloadChannelsJson,
+      coinEditOpen: this.state.coinEdit != null,
+      coinEditName: this.state.coinEditName || '',
+      coinEditSvg: this.state.coinEditSvg || '',
+      coinEditNote: (() => {
+        if (!this.state.coinEditSvg || !this.state.coinEditSvg.trim()) return 'Leave the box empty to keep the current artwork and only rename.';
+        const r = this.parseSvg(this.state.coinEditSvg);
+        return r.error || r.note;
+      })(),
+      coinEditNoteColor: (() => {
+        if (!this.state.coinEditSvg || !this.state.coinEditSvg.trim()) return '#4f5c5e';
+        return this.parseSvg(this.state.coinEditSvg).error ? 'oklch(0.72 0.16 25)' : '#6f9b8a';
+      })(),
+      onCoinEdit: this.onCoinEdit, addCoin: this.addCoin, onCoinName: this.onCoinName,
+      onCoinSvg: this.onCoinSvg, coinEditApply: this.coinEditApply, coinEditCancel: this.coinEditCancel,
       coinRows: (this.state.coins || []).map((c, i) => ({
         name: c.name, i: String(i),
         color: c.hidden ? '#4d5a5c' : '#c9d6d8',

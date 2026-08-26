@@ -191,6 +191,30 @@ The project list currently lives in two places, and they must be kept in step:
 They are identical today (verified field by field). When you bake in an exported
 line-up, update **both**, or the CMS and the live site will drift apart.
 
+## Interaction
+
+| Key | Does |
+|---|---|
+| ↑ / ↓ | Change channel |
+| Space | Raise or lower the remote |
+| i | Open / close the description drawer |
+| m | Mute |
+
+Tapping the chassis knocks the set from the side you hit — only the dominant
+axis moves, so the edge you touch decides whether it rocks side to side or up
+and down. Tapping the glass plays a one-shot Lottie at that point, from
+`assets/lottie/screen-tap.json`; if the file isn't there the tap is simply
+inert. Each has an optional sound (`assets/tv-knock.mp3`, `assets/screen-tap.mp3`)
+which is skipped while the set is muted.
+
+### Picture brightness
+
+`--screen-lift` and `--scanline` in the stylesheet are the two knobs. Measured
+against a flat grey card behind the whole effect stack: it used to pass 81% of
+the light at the centre and 76% at the edges; it now passes 98% and 84%. Raise
+`--screen-lift` for a brighter tube, set it to 1 and `--scanline` to 0.25 for
+exactly the old look.
+
 ## Status
 
 Both pages are fully wired and verified in a browser: channel changes, the

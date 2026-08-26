@@ -461,6 +461,15 @@
   /* --info-m is the margin unit; the bottom gets two of them plus enough room
      for the BACK control itself, which lives in that band. Both rules read the
      same variable, so the frame can never crowd the button. */
+    /* the label under SYS. INFO, BACK and WATCH FULL TAPE — one value, so the
+     three always read as the same control */
+  :root{--btn-label:oklch(0.78 0.06 205);}
+  /* Measured: the effect stack was passing only 81% of the picture's light at
+     the centre and 76% at the edges. This is the one knob for that — raise it
+     for a brighter tube, drop it to 1 for exactly the old look. The scanlines
+     are the other half of the story: they cover every other row, so their alpha
+     costs half of itself off the whole picture. */
+  :root{--screen-lift:1.09;--scanline:0.16;}
   :root{--info-m:clamp(16px,3vw,34px);}
   /* Chrome paints its own cast button over any video it thinks is castable.
      The attribute covers most builds; this reaches the ones it doesn't. */
@@ -491,7 +500,7 @@
     cursor:pointer;background:oklch(0.86 0.17 205);
     box-shadow:0 0 14px oklch(0.86 0.17 205 / .5);}
   .info-back div{font-family:'VT323',monospace;font-size:15px;letter-spacing:.12em;
-    color:oklch(0.6 0.02 205);}
+    color:var(--btn-label);}
 </style>
 </helmet>
 <div ref="{{ rootRef }}" style="height:100dvh;width:100%;display:flex;justify-content:center;align-items:flex-start;padding:16px 14px;font-family:'Poppins',sans-serif;background:linear-gradient(135deg, oklch(0.73 0.012 205), oklch(0.60 0.013 205));overflow:hidden;position:relative;">
@@ -542,7 +551,7 @@
   <div ref="{{ contentColRef }}" style="width:100%;max-width:428px;--tv-max:1004px;display:flex;flex-direction:column;gap:12px;min-height:0;position:relative;">
 
     <!-- TV BEZEL -->
-    <div style="{{ tvBezelStyle }}">
+    <div ref="{{ tvBezelRef }}" onpointerdown="{{ onTvTap }}" style="{{ tvBezelStyle }}">
 
       <!-- SCREEN -->
       <div style="{{ screenWrapStyle }}">
@@ -634,7 +643,7 @@
         <div style="position:absolute;inset:0;z-index:9;pointer-events:none;">
         <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%, transparent 70%, rgba(0,0,0,0.5) 100%);"></div>
         <!-- CRT effect (lbebber/aleclownes technique): horizontal scanlines + RGB aperture-grille color separation -->
-        <div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,0.25) 50%),linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));background-size:100% 2px, 3px 100%;"></div>
+        <div style="position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,var(--scanline,0.25)) 50%),linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));background-size:100% 2px, 3px 100%;"></div>
         <sc-if value="{{ !infoOpen }}" hint-placeholder-val="{{ true }}">
         <div ref="{{ noiseRef }}" style="position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:0.2;background-image:url(./assets/static-noise-tile.png);background-repeat:repeat;background-size:180px;"></div>
         <div style="position:absolute;left:0;right:0;height:32%;--bh:32%;pointer-events:none;opacity:0.4;background:rgba(255,255,255,.45);mix-blend-mode:screen;-webkit-mask-image:linear-gradient(to bottom, transparent, #fff 35%, #fff 65%, transparent);mask-image:linear-gradient(to bottom, transparent, #fff 35%, #fff 65%, transparent);animation:crt-roll 6s linear infinite;"></div>
@@ -665,7 +674,9 @@
                 <div style="text-align:left;letter-spacing:-.02em;">
                   <div data-type-line="true">OPERATOR....NOI NAVVE</div>
                   <div data-type-line="true">ROLE........MOTION DESIGNER</div>
-                  <div data-type-line="true">UPTIME......12 YEARS</div>
+                  <div data-type-line="true">UPTIME......{{ uptime }}</div>
+                  <div data-type-line="true">SIGNAL_SRC..GIV'ATAYIM, IL</div>
+                  <div data-type-line="true">STATUS......SEEKING FREELANCE</div>
                 </div>
               </div>
               <div ref="{{ logBoxRef }}" style="position:relative;margin:16px 0 24px;opacity:0;">
@@ -748,7 +759,7 @@
         <div style="display:flex;align-items:center;justify-content:center;align-self:stretch;margin-right:calc(14px * var(--dec, 1));">
           <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(6px * var(--dec, 1));">
             <button onclick="{{ onToggleInfo }}" style="width:calc(32px * var(--dec, 1));height:calc(8px * var(--dec, 1));border-radius:9999px;background:oklch(0.40 0.09 205);border:none;padding:0;cursor:pointer;animation:sysinfo-blink 3s ease-in-out infinite;"></button>
-            <div onclick="{{ onToggleInfo }}" style="font-family:'VT323',monospace;font-size:calc(9px * var(--dec, 1));color:oklch(0.5 0.02 205);letter-spacing:.04em;text-align:center;padding-right:.1em;margin-left:calc(2px * var(--dec, 1));cursor:pointer;">SYS. INFO</div>
+            <div onclick="{{ onToggleInfo }}" style="font-family:'VT323',monospace;font-size:calc(9px * var(--dec, 1));color:var(--btn-label);letter-spacing:.04em;text-align:center;padding-right:.1em;margin-left:calc(2px * var(--dec, 1));cursor:pointer;">SYS. INFO</div>
           </div>
         </div>
         </div>
@@ -758,11 +769,11 @@
 
     <!-- PROJECT DESCRIPTION -->
     <sc-if value="{{ descVisible }}" hint-placeholder-val="{{ false }}">
-      <div ref="{{ descRef }}" style="width:100%;max-width:620px;margin-left:auto;margin-right:auto;background:#060706;border-radius:12px;padding:14px 20px 16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), inset 0 2px 10px rgba(0,0,0,.6);opacity:0;position:relative;z-index:35;">
+      <div ref="{{ descRef }}" style="width:100%;max-width:620px;margin-left:auto;margin-right:auto;max-height:34vh;overflow-y:auto;background:#060706;border-radius:12px;padding:14px 20px 16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), inset 0 2px 10px rgba(0,0,0,.6);opacity:0;position:relative;z-index:35;">
         <div style="font-family:'Poppins',sans-serif;font-size:13px;line-height:1.5;color:oklch(0.75 0.01 205);">{{ channel.desc }}</div>
         <!-- same pill, same blink as SYS. INFO, but laid out along the row -->
         <div onclick="{{ onWatchTape }}" style="margin-top:18px;display:flex;align-items:center;justify-content:flex-end;gap:12px;cursor:pointer;">
-          <div style="font-family:'VT323',monospace;font-size:13px;color:oklch(0.5 0.02 205);letter-spacing:.04em;">WATCH FULL TAPE</div>
+          <div style="font-family:'VT323',monospace;font-size:13px;color:var(--btn-label);letter-spacing:.04em;">WATCH FULL TAPE</div>
           <button style="width:32px;height:8px;border-radius:9999px;background:oklch(0.40 0.09 205);border:none;padding:0;cursor:pointer;animation:sysinfo-blink 3s ease-in-out infinite;"></button>
         </div>
       </div>
@@ -786,7 +797,10 @@
            path is scaled non-uniformly to fill the remote's tall silhouette. -->
       <svg style="position:absolute;left:0;right:0;top:0;aspect-ratio:298.71/549.1;pointer-events:none;z-index:1;overflow:visible;clip-path:url(#remote-clip);"><path ref="{{ remoteOutlineRef }}" d="M0.02960,0.14252 C0.01610,0.22546 0,0.35480 0,0.50000 s0.01610,0.27448 0.02960,0.35755 c0.00984,0.06039 0.07626,0.10910 0.16542,0.12119 c0.10385,0.01412 0.20649,0.02127 0.30507,0.02127 s0.20123,-0.00716 0.30507,-0.02127 c0.08908,-0.01211 0.15550,-0.06081 0.16542,-0.12119 c0.01349,-0.08299 0.02960,-0.21243 0.02960,-0.35755 s-0.01610,-0.27447 -0.02960,-0.35755 c-0.00984,-0.06039 -0.07626,-0.10910 -0.16542,-0.12119 C0.70123,0.00716 0.59860,0 0.50017,0 s-0.20123,0.00716 -0.30507,0.02127 C0.10589,0.03337 0.03944,0.08209 0.02960,0.14252 Z" fill="none" stroke="oklch(0.62 0.135 205)" stroke-width="18" vector-effect="non-scaling-stroke"></path></svg>
 
-      <div style="position:relative;padding:28px 46px 20px;display:flex;flex-direction:column;align-items:center;gap:0;">
+      <div style="position:relative;padding:14px 46px 20px;display:flex;flex-direction:column;align-items:center;gap:0;">
+      <!-- Says "drag me" without a label. Not a button: it must fall through to
+           the shell's own pointer handler, which is what does the dragging. -->
+      <div aria-hidden="true" style="width:58px;height:5px;border-radius:9999px;background:oklch(0.72 0.13 205);opacity:.75;flex-shrink:0;margin-bottom:22px;"></div>
       <!-- mute / info. Each hitbox is the exact clickable size; the Lottie player
            inside is larger and centred, so squash-and-stretch never clips. It
            carries pointer-events:none so its transparent margin can't swallow a
@@ -801,11 +815,12 @@
       </div>
 
       <!-- channel rocker -->
-      <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:-16px;">
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:-20px;">
         <div data-remote-btn onclick="{{ onNext }}" style="position:relative;width:200px;height:120px;cursor:pointer;z-index:1;">
           <div ref="{{ prevRef }}" style="position:absolute;left:50%;top:50%;width:242px;height:194px;transform:translate(-50%,-50%);pointer-events:none;"></div>
         </div>
         <div data-remote-btn onclick="{{ onPrev }}" style="position:relative;width:200px;height:120px;cursor:pointer;z-index:2;">
+          <div aria-hidden="true" style="position:absolute;left:-14px;right:-14px;top:60px;height:340px;"></div>
           <div ref="{{ nextRef }}" style="position:absolute;left:50%;top:50%;width:242px;height:194px;transform:translate(-50%,-50%);pointer-events:none;"></div>
         </div>
       </div>
@@ -900,7 +915,12 @@ function buildCoins(all) {
   } catch (e) {}
   if (!order) return all;
   const byName = new Map(all.map((c) => [c.name, c]));
-  const picked = order.filter((o) => o && !o.hidden && byName.has(o.name)).map((o) => byName.get(o.name));
+  // An entry carries its own artwork when it was drawn or replaced in the CMS;
+  // otherwise it points at the copy in coins-data.js. A name with neither is
+  // dropped rather than leaving a hole on the shelf.
+  const picked = order
+    .filter((o) => o && !o.hidden && (o.inner || byName.has(o.name)))
+    .map((o) => (o.inner ? { name: o.name, viewBox: o.viewBox || '0 0 180 180', inner: o.inner } : byName.get(o.name)));
   return picked.length ? picked : all;
 }
 function buildChannels() {
@@ -1365,6 +1385,8 @@ class Component extends DCLogic {
     this._dvdRaf = requestAnimationFrame(step);
   }
   componentWillUnmount() {
+    cancelAnimationFrame(this._tvRaf);
+    window.removeEventListener('keydown', this.onKeyDown);
     clearInterval(this._kaomojiInt);
     this.stopGlowSampling();
     cancelAnimationFrame(this._kickRaf);
@@ -1402,6 +1424,27 @@ class Component extends DCLogic {
   };
 
   KAOMOJI = ['o(^^o)', '(o^^)o'];
+
+  /** Time on air, from the 8th of July 2014.
+
+      Counted by walking whole years and whole months off the start date rather
+      than dividing elapsed milliseconds, because months are not a fixed length —
+      the arithmetic would drift by days. What is left over splits cleanly into
+      weeks and days. */
+  uptime(now) {
+    const start = new Date(2014, 6, 8);
+    const end = now || new Date();
+    let y = end.getFullYear() - start.getFullYear();
+    let m = end.getMonth() - start.getMonth();
+    let d = end.getDate() - start.getDate();
+    if (d < 0) {
+      m -= 1;
+      d += new Date(end.getFullYear(), end.getMonth(), 0).getDate();  // days in the month before
+    }
+    if (m < 0) { y -= 1; m += 12; }
+    const w = Math.floor(d / 7);
+    return 'Y' + y + 'M' + m + 'W' + w + 'D' + (d - w * 7);
+  }
 
   /** Flip the little face at the end of the bio, one second on each side.
 
@@ -1739,6 +1782,7 @@ class Component extends DCLogic {
     // template style and would otherwise clobber the imperatively-driven opacity/background
     // for a frame — a hard, unintended flicker cut. Reassert them immediately after commit.
     if (this.glowEl && this._glowBg) this.glowEl.style.backgroundImage = this._glowBg;
+    if (this.tvBezelEl && this._tvShake) this.tvBezelEl.style.transform = this._tvShake;
     if (this.vignetteEl) {
       if (this._vignetteOpacity != null) this.vignetteEl.style.opacity = String(this._vignetteOpacity);
       // the measured gradient is imperative too — without this the commit snaps back to the
@@ -1747,7 +1791,27 @@ class Component extends DCLogic {
     }
   }
 
+  /** Arrow keys change channel, space works the handle, i and m are the two
+      toggles. Ignored while typing, and while the info page is up — there the
+      only sensible key is the one that closes it. */
+  onKeyDown = (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const t = e.target;
+    if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    const k = e.key.toLowerCase();
+    if (this.state.infoOpen) {
+      if (k === 'i' || k === 'escape') { e.preventDefault(); this.startInfoTransition(false); }
+      return;
+    }
+    if (k === 'arrowup') { e.preventDefault(); this.onPrevPress(); }
+    else if (k === 'arrowdown') { e.preventDefault(); this.onNextPress(); }
+    else if (k === ' ' || k === 'spacebar') { e.preventDefault(); this.animateRemoteTo(!this.remoteOpenTarget()); }
+    else if (k === 'i') { e.preventDefault(); this.onInfoDown(); }
+    else if (k === 'm') { e.preventDefault(); this.kickRemote(); this.setMuted(!this.state.muted); }
+  };
+
   componentDidMount() {
+    window.addEventListener('keydown', this.onKeyDown);
     this.probeVideoCors();
     fetchPublishedChannels(() => {
       this.TAGLINES = buildTaglines(this.TAGLINES);
@@ -1795,10 +1859,16 @@ class Component extends DCLogic {
     if (!col || this.state.infoOpen) return;
     const availW = window.innerWidth - 28;                 // root padding, 14 a side
     const availH = window.innerHeight - 32 - (85 + 12 + 8); // root padding, remote peek, breathing room
+    // The description drawer is left out of the sum. Its height depends on how
+    // the text wraps, which depends on the width the fit is trying to decide —
+    // so including it made the loop land somewhere different for every channel,
+    // and the picture visibly changed size as you zapped. The drawer scrolls
+    // inside itself instead.
+    const drawer = () => (this.descEl ? this.descEl.offsetHeight + 12 : 0);
     let w = Math.min(1004, availW);
     col.style.maxWidth = w + 'px';
     for (let i = 0; i < 3; i++) {
-      const h = col.offsetHeight;
+      const h = col.offsetHeight - drawer();
       if (h <= availH) break;
       w = Math.max(280, Math.floor(w * (availH / h)));
       col.style.maxWidth = w + 'px';
@@ -2084,6 +2154,93 @@ class Component extends DCLogic {
     el.load();
   }
 
+  tvBezelRef = (el) => { this.tvBezelEl = el; if (el && this._tvShake) el.style.transform = this._tvShake; };
+
+  /** A tap on the chassis knocks the set; a tap on the glass leaves a mark.
+
+      Which one it is comes from the target: anything inside the screen wrapper
+      is the picture, everything else is the plastic around it. */
+  onTvTap = (e) => {
+    if (this.state.infoOpen) return;
+    const screen = this.screenEl;
+    if (screen && (e.target === screen || screen.contains(e.target))) {
+      this.screenBurst(e.clientX, e.clientY);
+    } else {
+      this.knockTv(e.clientX, e.clientY);
+    }
+  };
+
+  /** Knock the set from the side that was hit.
+
+      Only the dominant axis moves, so a tap on the right rocks it left-right and
+      a tap underneath rocks it up-down. Same spring as the remote's kick, on the
+      chassis' own transform — nothing else writes to it. */
+  knockTv(x, y) {
+    const el = this.tvBezelEl;
+    if (!el) return;
+    cancelAnimationFrame(this._tvRaf);
+    const r = el.getBoundingClientRect();
+    const dx = (x - (r.left + r.width / 2)) / (r.width / 2);
+    const dy = (y - (r.top + r.height / 2)) / (r.height / 2);
+    const horizontal = Math.abs(dx) >= Math.abs(dy);
+    const dir = horizontal ? Math.sign(dx) || 1 : Math.sign(dy) || 1;
+    const axis = horizontal ? 'X' : 'Y';
+    let t = 0, v = -dir * 190;                 // away from the hand, then back
+    const stiffness = 260, damping = 12;
+    const step = () => {
+      const dt = 1 / 60;
+      v += (-stiffness * t - damping * v) * dt;
+      t += v * dt;
+      if (Math.abs(t) < 0.06 && Math.abs(v) < 0.6) {
+        this._tvShake = '';
+        el.style.transform = '';
+        return;
+      }
+      this._tvShake = `translate${axis}(${t.toFixed(2)}px)`;
+      el.style.transform = this._tvShake;
+      this._tvRaf = requestAnimationFrame(step);
+    };
+    step();
+    this.playSfx('./assets/tv-knock.mp3', 0.5);
+  }
+
+  /** A one-shot Lottie where the glass was tapped.
+
+      Built and destroyed per tap, so nothing accumulates. If the file isn't
+      there the tap is simply inert — no error, no gap. */
+  screenBurst(x, y) {
+    const host = this.screenEl;
+    if (!host || typeof lottie === 'undefined') return;
+    const r = host.getBoundingClientRect();
+    const box = document.createElement('div');
+    const SIZE = Math.round(Math.min(r.width, r.height) * 0.42);
+    box.style.cssText = 'position:absolute;pointer-events:none;z-index:14;width:' + SIZE +
+      'px;height:' + SIZE + 'px;left:' + (x - r.left - SIZE / 2) + 'px;top:' + (y - r.top - SIZE / 2) + 'px;';
+    host.appendChild(box);
+    let anim = null;
+    const clean = () => { try { if (anim) anim.destroy(); } catch (e) {} box.remove(); };
+    try {
+      anim = lottie.loadAnimation({
+        container: box, renderer: 'svg', loop: false, autoplay: true,
+        path: './assets/lottie/screen-tap.json',
+      });
+      anim.addEventListener('complete', clean);
+      anim.addEventListener('data_failed', clean);
+      setTimeout(clean, 4000);              // never leave one behind
+    } catch (e) { clean(); return; }
+    this.playSfx('./assets/screen-tap.mp3', 0.45);
+  }
+
+  /** Fire-and-forget one-shot sound, silent while the set is muted. */
+  playSfx(src, volume) {
+    if (this.state.muted) return;
+    try {
+      const a = new Audio(src);
+      a.volume = volume == null ? 0.5 : volume;
+      a.play().catch(() => {});
+    } catch (e) {}
+  }
+
   glowRef = (el) => { this.glowEl = el; if (el && this._glowBg) el.style.backgroundImage = this._glowBg; };
 
   /** Does the bucket allow us to read its pixels?
@@ -2248,6 +2405,9 @@ class Component extends DCLogic {
       infoOpen: this.state.infoOpen,
       glowImage,
       glowRef: this.glowRef,
+      tvBezelRef: this.tvBezelRef,
+      onTvTap: this.onTvTap,
+      uptime: this.uptime(),
       // ?debug=glow — is the glow reading frames, or on its palette fallback?
       showGlowDebug: typeof location !== 'undefined' && /[?&]debug=glow\b/.test(location.search),
       glowSource: this.state.glowSource,
@@ -2268,7 +2428,7 @@ class Component extends DCLogic {
         : "background:linear-gradient(135deg, oklch(0.24 0.016 205), oklch(0.14 0.018 205));border-radius:32px;padding:18px 18px 14px;border:4px solid oklch(0.40 0.09 205);box-shadow:0 8px 18px -8px rgba(0,0,0,.45);position:relative;",
       screenStyle: this.state.infoOpen
         ? "position:absolute;inset:0;overflow:hidden;background:#000;"
-        : "position:absolute;inset:0;overflow:hidden;background:#050505;clip-path:url(#tv-screen-clip);box-shadow:inset 0 0 0 3px rgba(255,255,255,.04), inset 0 0 40px rgba(0,0,0,.9);animation:screen-flicker 6s ease-in-out infinite;",
+        : "position:absolute;inset:0;overflow:hidden;background:#050505;clip-path:url(#tv-screen-clip);box-shadow:inset 0 0 0 3px rgba(255,255,255,.04), inset 0 0 40px rgba(0,0,0,.62);animation:screen-flicker 6s ease-in-out infinite;",
       screenWrapStyle: this.state.infoOpen
         ? "margin-top:0;position:relative;width:100%;height:100%;flex:1;"
         : `margin-top:0;position:relative;aspect-ratio:${channel.aspect};`,
@@ -2287,7 +2447,7 @@ class Component extends DCLogic {
       dvdBallRef: this.dvdBallRef,
       coinInnerRef: this.coinInnerRef,
       onCoinClick: this.onCoinClick,
-      flickerFilter: this.state.infoOpen ? 'none' : 'saturate(1.25) contrast(1.2) hue-rotate(-9deg) blur(0px)',
+      flickerFilter: this.state.infoOpen ? 'none' : 'brightness(var(--screen-lift, 1)) saturate(1.25) contrast(1.2) hue-rotate(-9deg) blur(0px)',
       descOpen: this.state.descOpen,
       descVisible: this.state.descRendered && channel.isProject,
       descRef: this.descRef,
