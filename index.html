@@ -11,11 +11,11 @@
 <meta name="theme-color" content="#0d1418">
 <!-- SEO: canonical domain is noina.tv — also referenced in robots.txt and sitemap.xml -->
 <link rel="canonical" href="https://noina.tv/">
-<link rel="icon" href="./assets/favicon-small.svg" type="image/svg+xml">
-<link rel="icon" href="./assets/favicon-48.png" sizes="48x48" type="image/png">
-<link rel="icon" href="./assets/favicon-32.png" sizes="32x32" type="image/png">
-<link rel="icon" href="./assets/favicon-16.png" sizes="16x16" type="image/png">
-<link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png">
+<link rel="icon" href="./assets/favicon-small.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="./assets/favicon-48.png?v=2" sizes="48x48" type="image/png">
+<link rel="icon" href="./assets/favicon-32.png?v=2" sizes="32x32" type="image/png">
+<link rel="icon" href="./assets/favicon-16.png?v=2" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=2">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NOiNA">
 <meta property="og:title" content="NOiNA | Motion Designer &amp; Broadcast Animation">
@@ -1450,9 +1450,8 @@ class Component extends DCLogic {
     }
     if (m < 0) { y -= 1; m += 12; }
     const w = Math.floor(d / 7);
-    const p2 = (n) => String(n).padStart(2, '0');
-    return 'Y' + p2(y) + ':M' + p2(m) + ':W' + w + ':D' + (d - w * 7) +
-           ':H' + p2(hh) + ':M' + p2(mi) + ':S' + p2(ss);
+    return y + 'Y:' + m + 'M:' + w + 'W:' + (d - w * 7) + 'D:' +
+           hh + 'H:' + mi + 'M:' + ss + 'S';
   }
 
   /** Flip the little face at the end of the bio, one second on each side.
@@ -2237,7 +2236,7 @@ class Component extends DCLogic {
       this._tvRaf = requestAnimationFrame(step);
     };
     step();
-    this.playSfx('./assets/tv-knock.mp3', 0.5);
+    this.playSfx('./assets/tv-knock.mp3', 1);
   }
 
   /** A one-shot Lottie where the glass was tapped.
@@ -2255,6 +2254,10 @@ class Component extends DCLogic {
     host.appendChild(box);
     // a different angle every time, so repeated taps don't stamp the same mark
     box.style.transform = 'rotate(' + Math.floor(Math.random() * 360) + 'deg)';
+    // The exported gradient runs white to BLACK, not white to transparent —
+    // the alpha stops did not survive the export. Screen blending makes black
+    // contribute nothing, which is the same result on screen.
+    box.style.mixBlendMode = 'screen';
     let anim = null;
     const clean = () => { try { if (anim) anim.destroy(); } catch (e) {} box.remove(); };
     try {
@@ -2267,16 +2270,20 @@ class Component extends DCLogic {
       setTimeout(clean, 4000);              // never leave one behind
     } catch (e) { clean(); return; }
     const n = 1 + Math.floor(Math.random() * 4);
-    this.playSfx('./assets/screen-tap-0' + n + '.mp3', 0.45);
+    this.playSfx('./assets/screen-tap-0' + n + '.mp3', 1);
   }
 
-  /** Fire-and-forget one-shot sound, silent while the *button* says muted.
+  /** Fire-and-forget one-shot sound.
+
+      Deliberately deaf to the mute button: that button is the television's
+      volume, and these are the sounds of the room — the set being knocked, a
+      finger on the glass, the switch into SYS. INFO. They answer to the
+      visitor's own device volume instead.
 
       A fresh element each time: reusing one and rewinding it drops the sound
       whenever the previous play() is still resolving, which is what made the
       transition static come and go. */
   playSfx(src, volume) {
-    if (this.userMuted()) return;
     try {
       const a = new Audio(src);
       a.volume = volume == null ? 0.5 : volume;
