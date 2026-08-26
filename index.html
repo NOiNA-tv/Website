@@ -674,9 +674,9 @@
                 <div style="text-align:left;letter-spacing:-.02em;">
                   <div data-type-line="true">OPERATOR....NOI NAVVE</div>
                   <div data-type-line="true">ROLE........MOTION DESIGNER</div>
-                  <div data-type-line="true">UPTIME......{{ uptime }}</div>
+                  <div data-type-line="true" data-uptime="true">UPTIME......{{ uptime }}</div>
                   <div data-type-line="true">SIGNAL_SRC..GIV'ATAYIM, IL</div>
-                  <div data-type-line="true">STATUS......SEEKING FREELANCE</div>
+                  <div data-type-line="true">STATUS......OPEN TO WORK</div>
                 </div>
               </div>
               <div ref="{{ logBoxRef }}" style="position:relative;margin:16px 0 24px;opacity:0;">
@@ -787,7 +787,7 @@
 
     <!-- REMOTE -->
     <svg width="0" height="0" style="position:absolute;"><defs><clipPath id="remote-clip" clipPathUnits="objectBoundingBox"><path d="M0.02960,0.14252 C0.01610,0.22546 0,0.35480 0,0.50000 s0.01610,0.27448 0.02960,0.35755 c0.00984,0.06039 0.07626,0.10910 0.16542,0.12119 c0.10385,0.01412 0.20649,0.02127 0.30507,0.02127 s0.20123,-0.00716 0.30507,-0.02127 c0.08908,-0.01211 0.15550,-0.06081 0.16542,-0.12119 c0.01349,-0.08299 0.02960,-0.21243 0.02960,-0.35755 s-0.01610,-0.27447 -0.02960,-0.35755 c-0.00984,-0.06039 -0.07626,-0.10910 -0.16542,-0.12119 C0.70123,0.00716 0.59860,0 0.50017,0 s-0.20123,0.00716 -0.30507,0.02127 C0.10589,0.03337 0.03944,0.08209 0.02960,0.14252 Z"></path></clipPath></defs></svg>
-    <div ref="{{ remoteRef }}" onpointerdown="{{ onHandleDown }}" style="position:fixed;left:50%;bottom:12px;transform:{{ remoteTransform }};transition:{{ remoteTransition }};width:fit-content;touch-action:none;z-index:40;cursor:grab;">
+    <div ref="{{ remoteRef }}" onpointerdown="{{ onHandleDown }}" style="position:fixed;left:50%;bottom:12px;transform:{{ remoteTransform }};transition:{{ remoteTransition }};width:fit-content;touch-action:none;z-index:40;cursor:grab;will-change:transform;backface-visibility:hidden;">
       <!-- The kick layer owns its own transform. The outer div's transform is
            driven by the open/close drag, so the press-recoil needs a separate
            element or the two animations overwrite each other. -->
@@ -795,12 +795,12 @@
       <div style="position:absolute;left:0;right:0;top:0;aspect-ratio:298.71/549.1;background:linear-gradient(135deg, oklch(0.50 0.115 205), oklch(0.40 0.09 205));clip-path:url(#remote-clip);box-shadow:0 -10px 40px -10px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.05);"></div>
       <!-- vector-effect keeps the stroke a true 6px on screen even though the
            path is scaled non-uniformly to fill the remote's tall silhouette. -->
-      <svg style="position:absolute;left:0;right:0;top:0;aspect-ratio:298.71/549.1;pointer-events:none;z-index:1;overflow:visible;clip-path:url(#remote-clip);"><path ref="{{ remoteOutlineRef }}" d="M0.02960,0.14252 C0.01610,0.22546 0,0.35480 0,0.50000 s0.01610,0.27448 0.02960,0.35755 c0.00984,0.06039 0.07626,0.10910 0.16542,0.12119 c0.10385,0.01412 0.20649,0.02127 0.30507,0.02127 s0.20123,-0.00716 0.30507,-0.02127 c0.08908,-0.01211 0.15550,-0.06081 0.16542,-0.12119 c0.01349,-0.08299 0.02960,-0.21243 0.02960,-0.35755 s-0.01610,-0.27447 -0.02960,-0.35755 c-0.00984,-0.06039 -0.07626,-0.10910 -0.16542,-0.12119 C0.70123,0.00716 0.59860,0 0.50017,0 s-0.20123,0.00716 -0.30507,0.02127 C0.10589,0.03337 0.03944,0.08209 0.02960,0.14252 Z" fill="none" stroke="oklch(0.62 0.135 205)" stroke-width="18" vector-effect="non-scaling-stroke"></path></svg>
+      <svg style="position:absolute;left:0;right:0;top:0;aspect-ratio:298.71/549.1;pointer-events:none;z-index:1;overflow:visible;clip-path:url(#remote-clip);transform:translateZ(0);"><path ref="{{ remoteOutlineRef }}" d="M0.02960,0.14252 C0.01610,0.22546 0,0.35480 0,0.50000 s0.01610,0.27448 0.02960,0.35755 c0.00984,0.06039 0.07626,0.10910 0.16542,0.12119 c0.10385,0.01412 0.20649,0.02127 0.30507,0.02127 s0.20123,-0.00716 0.30507,-0.02127 c0.08908,-0.01211 0.15550,-0.06081 0.16542,-0.12119 c0.01349,-0.08299 0.02960,-0.21243 0.02960,-0.35755 s-0.01610,-0.27447 -0.02960,-0.35755 c-0.00984,-0.06039 -0.07626,-0.10910 -0.16542,-0.12119 C0.70123,0.00716 0.59860,0 0.50017,0 s-0.20123,0.00716 -0.30507,0.02127 C0.10589,0.03337 0.03944,0.08209 0.02960,0.14252 Z" fill="none" stroke="oklch(0.62 0.135 205)" stroke-width="18" vector-effect="non-scaling-stroke"></path></svg>
 
       <div style="position:relative;padding:14px 46px 20px;display:flex;flex-direction:column;align-items:center;gap:0;">
       <!-- Says "drag me" without a label. Not a button: it must fall through to
            the shell's own pointer handler, which is what does the dragging. -->
-      <div aria-hidden="true" style="width:58px;height:5px;border-radius:9999px;background:oklch(0.72 0.13 205);opacity:.75;flex-shrink:0;margin-bottom:22px;"></div>
+      <div aria-hidden="true" style="width:58px;height:5px;border-radius:9999px;background:oklch(0.72 0.13 205);opacity:.75;flex-shrink:0;margin-top:8px;margin-bottom:14px;"></div>
       <!-- mute / info. Each hitbox is the exact clickable size; the Lottie player
            inside is larger and centred, so squash-and-stretch never clips. It
            carries pointer-events:none so its transparent margin can't swallow a
@@ -1385,6 +1385,7 @@ class Component extends DCLogic {
     this._dvdRaf = requestAnimationFrame(step);
   }
   componentWillUnmount() {
+    clearInterval(this._uptimeInt);
     cancelAnimationFrame(this._tvRaf);
     window.removeEventListener('keydown', this.onKeyDown);
     clearInterval(this._kaomojiInt);
@@ -1437,13 +1438,21 @@ class Component extends DCLogic {
     let y = end.getFullYear() - start.getFullYear();
     let m = end.getMonth() - start.getMonth();
     let d = end.getDate() - start.getDate();
+    let hh = end.getHours() - start.getHours();
+    let mi = end.getMinutes() - start.getMinutes();
+    let ss = end.getSeconds() - start.getSeconds();
+    if (ss < 0) { ss += 60; mi -= 1; }
+    if (mi < 0) { mi += 60; hh -= 1; }
+    if (hh < 0) { hh += 24; d -= 1; }
     if (d < 0) {
       m -= 1;
       d += new Date(end.getFullYear(), end.getMonth(), 0).getDate();  // days in the month before
     }
     if (m < 0) { y -= 1; m += 12; }
     const w = Math.floor(d / 7);
-    return 'Y' + y + 'M' + m + 'W' + w + 'D' + (d - w * 7);
+    const p2 = (n) => String(n).padStart(2, '0');
+    return 'Y' + p2(y) + ':M' + p2(m) + ':W' + w + ':D' + (d - w * 7) +
+           ':H' + p2(hh) + ':M' + p2(mi) + ':S' + p2(ss);
   }
 
   /** Flip the little face at the end of the bio, one second on each side.
@@ -1465,6 +1474,21 @@ class Component extends DCLogic {
       if (!now) return;
       flip = 1 - this.KAOMOJI.indexOf(now);
       el.textContent = t.slice(0, -now.length) + this.KAOMOJI[flip];
+    }, 1000);
+    this.startUptime(root);
+  }
+
+  /** Keep the seconds moving, but only once the line has finished typing —
+      rewriting it mid-type would jump the effect to the end. */
+  startUptime(root) {
+    clearInterval(this._uptimeInt);
+    const el = root && root.querySelector('[data-uptime]');
+    if (!el) return;
+    const full = el.dataset.full || el.textContent;
+    this._uptimeInt = setInterval(() => {
+      if (!el.isConnected) { clearInterval(this._uptimeInt); return; }
+      if (el.textContent.length < full.length) return;
+      el.textContent = 'UPTIME......' + this.uptime();
     }, 1000);
   }
 
@@ -1633,9 +1657,7 @@ class Component extends DCLogic {
     // let 'ended' drive the switch, with only a short safety deadline behind it.
     el.loop = false;
     el.volume = 0.85;
-    if (!this._staticSfx) { this._staticSfx = new Audio('./assets/static-click.mp3'); this._staticSfx.volume = 0.65; }
-    this._staticSfx.muted = this.state.muted;
-    try { this._staticSfx.currentTime = 0; this._staticSfx.play().catch(() => {}); } catch (e) {}
+    this.playSfx('./assets/static-click.mp3', 0.65);
     // stays muted forever: unmuting mid-playback makes the autoplay policy pause the element the
     // instant it becomes audible, which killed playback ~20ms in and froze it on one frame.
     // The sound comes from the _staticSfx Audio above, which the click gesture authorizes.
@@ -1807,7 +1829,7 @@ class Component extends DCLogic {
     else if (k === 'arrowdown') { e.preventDefault(); this.onNextPress(); }
     else if (k === ' ' || k === 'spacebar') { e.preventDefault(); this.animateRemoteTo(!this.remoteOpenTarget()); }
     else if (k === 'i') { e.preventDefault(); this.onInfoDown(); }
-    else if (k === 'm') { e.preventDefault(); this.kickRemote(); this.setMuted(!this.state.muted); }
+    else if (k === 'm') { e.preventDefault(); this.kickRemote(); this.setMuted(!this.state.muted, true); }
   };
 
   componentDidMount() {
@@ -2046,9 +2068,17 @@ class Component extends DCLogic {
     this._loadEl.play().catch(() => {});
   }
 
+  /** What the mute button says, ignoring the mute SYS. INFO applies to itself. */
+  userMuted() {
+    return this._userMuted == null ? this.state.muted : this._userMuted;
+  }
+
   /** The single place mute is applied, so the button and the info page can
       never end up disagreeing about it. */
-  setMuted(muted) {
+  setMuted(muted, byUser) {
+    // The button's setting is remembered separately: SYS. INFO mutes the set
+    // while it is open, and that must not silence the site's own UI sounds.
+    if (byUser) this._userMuted = muted;
     if (this.state.muted === muted) return;
     if (this._videoEl) this._videoEl.muted = muted;
     this.applyMuteToSfx(muted);
@@ -2060,7 +2090,6 @@ class Component extends DCLogic {
   /** Point every non-video sound at the current mute state. */
   applyMuteToSfx(muted) {
     if (this._loadEl) this._loadEl.muted = muted;
-    if (this._staticSfx) this._staticSfx.muted = muted;
   }
 
   stopLoadingSound() {
@@ -2088,6 +2117,12 @@ class Component extends DCLogic {
   videoRef = (el) => {
     if (!el || this._videoEl === el) return;
     this._videoEl = el;
+    // These are boolean *properties*. Written as bare attributes in the
+    // template they arrive as empty strings, which React treats as false — the
+    // channels were playing once and stopping. Set on the element itself.
+    el.loop = true;
+    el.playsInline = true;
+    el.disableRemotePlayback = true;
     el.muted = this.state.muted;
     // 'playing' is the browser saying frames are going out — the honest moment
     // to lift the black screen. 'error' does the same so a missing file shows
@@ -2143,6 +2178,7 @@ class Component extends DCLogic {
     el.addEventListener('loadedmetadata', onMeta);
 
     el.pause();
+    el.loop = true;                       // survives a src swap, but be explicit
     // Must be set before the src it applies to. Only ever set once the probe
     // has confirmed the bucket sends CORS headers — set it blind and a bucket
     // without them refuses to load the video at all.
@@ -2185,7 +2221,7 @@ class Component extends DCLogic {
     const horizontal = Math.abs(dx) >= Math.abs(dy);
     const dir = horizontal ? Math.sign(dx) || 1 : Math.sign(dy) || 1;
     const axis = horizontal ? 'X' : 'Y';
-    let t = 0, v = -dir * 190;                 // away from the hand, then back
+    let t = 0, v = -dir * 380;                 // away from the hand, then back
     const stiffness = 260, damping = 12;
     const step = () => {
       const dt = 1 / 60;
@@ -2213,10 +2249,12 @@ class Component extends DCLogic {
     if (!host || typeof lottie === 'undefined') return;
     const r = host.getBoundingClientRect();
     const box = document.createElement('div');
-    const SIZE = Math.round(Math.min(r.width, r.height) * 0.42);
+    const SIZE = Math.round(Math.min(r.width, r.height) * 0.3);
     box.style.cssText = 'position:absolute;pointer-events:none;z-index:14;width:' + SIZE +
       'px;height:' + SIZE + 'px;left:' + (x - r.left - SIZE / 2) + 'px;top:' + (y - r.top - SIZE / 2) + 'px;';
     host.appendChild(box);
+    // a different angle every time, so repeated taps don't stamp the same mark
+    box.style.transform = 'rotate(' + Math.floor(Math.random() * 360) + 'deg)';
     let anim = null;
     const clean = () => { try { if (anim) anim.destroy(); } catch (e) {} box.remove(); };
     try {
@@ -2228,12 +2266,17 @@ class Component extends DCLogic {
       anim.addEventListener('data_failed', clean);
       setTimeout(clean, 4000);              // never leave one behind
     } catch (e) { clean(); return; }
-    this.playSfx('./assets/screen-tap.mp3', 0.45);
+    const n = 1 + Math.floor(Math.random() * 4);
+    this.playSfx('./assets/screen-tap-0' + n + '.mp3', 0.45);
   }
 
-  /** Fire-and-forget one-shot sound, silent while the set is muted. */
+  /** Fire-and-forget one-shot sound, silent while the *button* says muted.
+
+      A fresh element each time: reusing one and rewinding it drops the sound
+      whenever the previous play() is still resolving, which is what made the
+      transition static come and go. */
   playSfx(src, volume) {
-    if (this.state.muted) return;
+    if (this.userMuted()) return;
     try {
       const a = new Audio(src);
       a.volume = volume == null ? 0.5 : volume;
@@ -2470,7 +2513,7 @@ class Component extends DCLogic {
       taglineAnim: this.state.taglineFlickering ? 'tagline-flicker .35s steps(8, end) forwards' : 'none',
       transitionVideoRef: this.transitionVideoRef,
       onTransitionEnded: this.onTransitionEnded,
-      onToggleMute: () => { this.kickRemote(); this.setMuted(!this.state.muted); },
+      onToggleMute: () => { this.kickRemote(); this.setMuted(!this.state.muted, true); },
       remoteRef: this.remoteRef,
       screenRef: this.screenRef,
       clipPathRef: this.clipPathRef,
