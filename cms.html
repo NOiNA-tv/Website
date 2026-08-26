@@ -130,6 +130,25 @@
                   <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Vimeo URL</span>
                   <input value="{{ row.vimeoUrl }}" onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="vimeoUrl" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#9db0b3;padding:10px 12px;font-size:12px;" />
                 </label>
+                <div style="grid-column:1 / -1;">
+                  <button onClick="{{ togglePalette }}" data-id="{{ row.id }}" style="border:1px solid #2c3639;background:#161c1e;color:#8a9b9e;border-radius:8px;cursor:pointer;padding:8px 12px;font-size:9.5px;letter-spacing:2px;text-transform:uppercase;">{{ row.palLabel }}</button>
+                  <sc-if value="{{ row.palOpen }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+                      <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Glow palette
+                        <span style="color:#4f5c5e;text-transform:none;letter-spacing:0;">— only used when the glow can't read the video: on channel 00, or if the bucket has no CORS rule. Up to four colours.</span></span>
+                      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                        <sc-for list="{{ row.swatches }}" as="sw" hint-placeholder-count="{{ 4 }}">
+                          <div style="display:flex;align-items:center;gap:6px;background:#161c1e;border:1px solid #2c3639;border-radius:9px;padding:6px 8px;">
+                            <input type="color" value="{{ sw.value }}" onChange="{{ onPalette }}" data-idx="{{ row.i }}" data-slot="{{ sw.slot }}" style="width:34px;height:26px;border:none;background:none;padding:0;cursor:pointer;" />
+                            <span style="font-family:'VT323',monospace;font-size:15px;letter-spacing:.5px;color:{{ sw.labelColor }};min-width:66px;">{{ sw.label }}</span>
+                            <button onClick="{{ onPaletteClear }}" data-idx="{{ row.i }}" data-slot="{{ sw.slot }}" title="Clear" style="border:none;cursor:pointer;background:none;color:#6f8083;font-size:15px;line-height:1;padding:2px 4px;">×</button>
+                          </div>
+                        </sc-for>
+                        <div style="flex:1;min-width:120px;height:34px;border-radius:9px;border:1px solid #2c3639;background:{{ row.paletteSwatch }};" title="How the glow will read"></div>
+                      </div>
+                    </div>
+                  </sc-if>
+                </div>
                 <label style="display:flex;flex-direction:column;gap:6px;grid-column:1 / -1;">
                   <span style="font-size:9.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Description <span style="color:#4f5c5e;">— shown in the channel info drawer</span></span>
                   <textarea onChange="{{ onField }}" data-idx="{{ row.i }}" data-field="desc" rows="5" value="{{ row.desc }}" style="background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#dde7e8;padding:12px;font-size:13px;line-height:1.6;resize:vertical;"></textarea>
@@ -144,6 +163,24 @@
           </sc-if>
         </div>
       </sc-for>
+    </div>
+
+    <!-- STATION SLOGANS -->
+    <div style="margin-top:22px;padding:18px 20px;border-radius:12px;border:1px solid #232b2d;background:#161b1d;">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="font-size:10.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Station slogans</div>
+        <div style="font-size:11px;color:#4f5c5e;flex:1;min-width:180px;">The lines that cycle under the logo on channel 00.</div>
+        <button onClick="{{ addTagline }}" style="border:none;cursor:pointer;padding:9px 14px;border-radius:8px;background:#232b2d;color:#dbe6e7;font-size:10.5px;font-weight:700;letter-spacing:1.3px;">+ ADD</button>
+        <button onClick="{{ publishTaglines }}" style="{{ tagPublishStyle }}">{{ tagPublishLabel }}</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:9px;">
+        <sc-for list="{{ taglineRows }}" as="tag" hint-placeholder-count="{{ 4 }}">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input value="{{ tag.text }}" onChange="{{ onTagline }}" data-idx="{{ tag.i }}" style="flex:1;min-width:0;background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:oklch(0.82 0.13 205);padding:9px 11px;font-family:'VT323',monospace;font-size:16px;letter-spacing:1px;" />
+            <button onClick="{{ onTagRemove }}" data-idx="{{ tag.i }}" title="Remove" style="border:none;cursor:pointer;background:#1d2325;color:#6f8083;border-radius:7px;width:28px;height:28px;font-size:15px;line-height:1;">×</button>
+          </div>
+        </sc-for>
+      </div>
     </div>
 
     <div style="margin-top:22px;padding:16px 18px;border-radius:12px;border:1px solid #232b2d;background:#161b1d;font-size:11.5px;line-height:1.7;color:#7d8f92;">
@@ -189,7 +226,71 @@
 class Component extends DCLogic {
   KEY = 'noina_cms_projects_v1';
   ACCENT = 'oklch(0.78 0.15 205)';
-  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '' };
+  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', palOpen: null, taglines: null, tagDirty: false };
+
+  TAG_KEY = 'noina_cms_taglines_v1';
+
+  /** Mirrors TAGLINES in index.html — the list the station falls back to when
+      nothing has been published here. */
+  FACTORY_TAGLINES = [
+    'FEINSCHMECKER MOTION DESIGNER',
+    'LATE NIGHT PIXEL WRANGLER',
+    'BINGE-WORTHY MOTION DESIGN',
+    'TEACHING KEYFRAMES NEW TRICKS',
+    'TOON-SHADED STATE OF MIND',
+    'THE EASING WHISPERER',
+    'RENDERING BETWEEN MUNCHIES',
+    'YOUR LOCAL GRAPH EDITOR ENTHUSIAST',
+    'FINE-TUNING VECTORS LIKE A BOSS',
+    'TAMING ROWDY BEZIER CURVES',
+    'PARENTING NULL OBJECTS SINCE 2014',
+  ];
+
+  setPaletteSlot(idx, slot, hex) {
+    const items = this.state.items.slice();
+    const cur = Array.isArray(items[idx].palette) ? items[idx].palette.slice() : [];
+    while (cur.length < 4) cur.push('');
+    cur[slot] = hex || '';
+    items[idx] = { ...items[idx], palette: cur.filter(Boolean) };
+    this.update(items);
+  }
+  onPalette = (e) => { const { idx, slot } = e.target.dataset; this.setPaletteSlot(+idx, +slot, e.target.value); };
+  onPaletteClear = (e) => { const { idx, slot } = e.currentTarget.dataset; this.setPaletteSlot(+idx, +slot, ''); };
+  togglePalette = (e) => {
+    const id = e.currentTarget.dataset.id;
+    this.setState({ palOpen: this.state.palOpen === id ? null : id });
+  };
+
+  // ---- the station's rotating slogans ----------------------------------
+  hydrateTaglines() {
+    if (this.state.taglines) return;
+    let saved = null;
+    try {
+      const raw = localStorage.getItem(this.TAG_KEY);
+      if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) saved = a; }
+    } catch (e) {}
+    this.setState({ taglines: saved || this.FACTORY_TAGLINES.slice() });
+  }
+  onTagline = (e) => {
+    const t = this.state.taglines.slice();
+    t[+e.target.dataset.idx] = e.target.value;
+    this.setState({ taglines: t, tagDirty: true });
+  };
+  onTagRemove = (e) => {
+    const t = this.state.taglines.slice();
+    t.splice(+e.currentTarget.dataset.idx, 1);
+    this.setState({ taglines: t, tagDirty: true });
+  };
+  addTagline = () => this.setState({ taglines: [...(this.state.taglines || []), ''], tagDirty: true });
+  publishTaglines = () => {
+    const clean = (this.state.taglines || []).map((t) => t.trim()).filter(Boolean);
+    if (!clean.length) { this.flash('NEED AT LEAST ONE SLOGAN'); return; }
+    try {
+      localStorage.setItem(this.TAG_KEY, JSON.stringify(clean));
+      this.setState({ taglines: clean, tagDirty: false });
+      this.flash('SLOGANS PUBLISHED');
+    } catch (e) { this.flash('COULD NOT SAVE'); }
+  };
 
   sweepThumbs = () => {
     document.querySelectorAll('img[data-thumb]').forEach(el => {
@@ -210,6 +311,7 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this.hydrate();
+    this.hydrateTaglines();
     this._t = setInterval(() => { if (!this.state.items) this.hydrate(); }, 200);
     this._sweepT = setInterval(this.sweepThumbs, 400);
   }
@@ -225,7 +327,18 @@ class Component extends DCLogic {
     const base = saved || this.factory();
     if (!base.length) return;
     clearInterval(this._t);
-    this.setState({ items: base.map((p, i) => ({ ...p, _id: p._id || 'p' + i + '_' + Math.random().toString(36).slice(2, 7) })), dirty: false });
+    this.setState({
+      items: base.map((p, i) => ({
+        ...p,
+        // A line-up published before the site self-hosted its video has no file
+        // name, which would leave every channel silent. Fill it in from the
+        // position and title, which is how the files were named.
+        file: p.file || (String(i + 1).padStart(2, '0') + '-' +
+          String(p.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.mp4'),
+        _id: p._id || 'p' + i + '_' + Math.random().toString(36).slice(2, 7),
+      })),
+      dirty: false,
+    });
   }
 
   update(items, dirty = true) { this.setState({ items, dirty }); }
@@ -332,6 +445,20 @@ class Component extends DCLogic {
         thumbNote: p.file ? '' : 'NO FILE',
         numColor: p.hidden ? '#4d5a5c' : accent,
         numGlow: p.hidden ? 'transparent' : 'oklch(0.6 0.12 205 / 0.45)',
+        id: p._id,
+        palOpen: this.state.palOpen === p._id,
+        palLabel: this.state.palOpen === p._id ? '▾ GLOW PALETTE (FALLBACK)' : '▸ GLOW PALETTE (FALLBACK)',
+        swatches: [0, 1, 2, 3].map((slot) => {
+          const v = (Array.isArray(p.palette) ? p.palette : [])[slot] || '';
+          return { slot: String(slot), value: v || '#000000', label: v ? v.toUpperCase() : 'empty',
+                   labelColor: v ? '#c9d6d8' : '#4f5c5e' };
+        }),
+        paletteSwatch: (() => {
+          const set = (Array.isArray(p.palette) ? p.palette : []).filter(Boolean);
+          if (set.length >= 2) return `linear-gradient(115deg, ${[...set, set[0]].join(', ')})`;
+          if (set.length === 1) return set[0];
+          return 'repeating-linear-gradient(45deg,#1b2224 0 8px,#161c1e 8px 16px)';
+        })(),
         editLabel: isOpen ? 'CLOSE' : 'EDIT',
         statusLabel: p.hidden ? 'OFF AIR' : 'ON AIR',
         statusStyle: 'border:none;cursor:pointer;padding:6px 10px;border-radius:20px;font-size:9.5px;font-weight:800;letter-spacing:1.4px;'
@@ -349,6 +476,13 @@ class Component extends DCLogic {
       offAirCount: String(items.length - visible.length).padStart(2, '0'),
       onField: this.onField, onAction: this.onAction, addProject: this.addProject,
       previewSrc: this.state.previewId ? this.VIDEO_BASE + '/' + this.state.previewId : '',
+      onPalette: this.onPalette, onPaletteClear: this.onPaletteClear, togglePalette: this.togglePalette,
+      taglineRows: (this.state.taglines || []).map((t, i) => ({ text: t, i: String(i) })),
+      onTagline: this.onTagline, onTagRemove: this.onTagRemove,
+      addTagline: this.addTagline, publishTaglines: this.publishTaglines,
+      tagPublishLabel: this.state.tagDirty ? 'PUBLISH SLOGANS' : 'PUBLISHED ✓',
+      tagPublishStyle: 'border:none;cursor:pointer;padding:9px 16px;border-radius:8px;font-size:10.5px;font-weight:800;letter-spacing:1.3px;'
+        + (this.state.tagDirty ? 'background:' + this.ACCENT + ';color:#04120f;' : 'background:#1d2325;color:#5d6c6e;'),
       onDragStart: this.onDragStart, onDragOver: this.onDragOver, onDrop: this.onDrop, onDragEnd: this.onDragEnd,
       publish: this.publish, resetFactory: this.resetFactory,
       publishLabel: this.state.dirty ? 'PUBLISH CHANGES' : 'PUBLISHED ✓',
