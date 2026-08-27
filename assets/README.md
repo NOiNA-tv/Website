@@ -9,7 +9,8 @@ project is `../coins-data.js` (see below).
 |---|---|
 | `noina-logo.gif` | Animated logo on the station channel (00) — 648×200, 200 frames |
 | `noina-logo-static.png` | Static logo under the TV bezel — 648×200, transparent |
-| `portrait-1..3.png` | The three SYS. INFO portraits — tap to cycle; each is revealed by the pixel wipe and erased by the same wipe reversed |
+| `portrait-1.png` | The SYS. INFO portrait, revealed by the pixel wipe |
+| `portrait-anim.mp4` | Plays over the portrait when it is tapped — 640×852, 1.6s, with sound |
 | `terrazzo-random.png` | Floor + wall texture, tiled at 270px |
 | `static-noise-tile.png` | CRT static grain over the screen, tiled at 180px |
 | `og-share.png` | Social share card — 1200×630, as declared in the OG tags |
@@ -18,7 +19,12 @@ project is `../coins-data.js` (see below).
 | `segment7.woff2` | 7-segment LCD face for the channel number in the decoder |
 | `static-noise-transition.mp4` | Full-screen static burst entering/leaving SYS. INFO (0.250s @ 60fps) |
 | `static-click.mp3` | Channel-change click |
-| `loading-loop.mp3` | Loop while a Vimeo channel buffers |
+| `loading-loop.mp3` | Loop while a channel buffers |
+| `tv-knock.mp3` | The set knocked on its chassis |
+| `screen-tap-01..04.mp3` | A finger on the glass, picked at random |
+| `remote-mute/info/channel-up/channel-down.mp3` | Each remote button's own click, named for its button |
+| `lottie/fingerprint-01..04.json` | The four prints left on the glass, picked at random |
+| `lottie/mute, info, channel-up, channel-down.json` | The remote's four buttons |
 
 Both logo files carry real alpha, which matters: the page renders them through
 `brightness(0) invert(1)`, so any opaque background would come out as a solid

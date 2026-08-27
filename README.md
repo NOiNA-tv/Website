@@ -1,7 +1,7 @@
 # NOiNA — noina.tv
 
 Portfolio site for Noi Navve: a retro CRT television you change channels on.
-Channel 00 is the station ID; channels 01–17 each play a project from Vimeo.
+Channel 00 is the station ID; channels 01–17 each play a project video.
 The remote drags up and down, the decoder strip shows what's tuned in, and
 SYS. INFO opens a terminal-style about page.
 
@@ -45,7 +45,7 @@ Do not hand-edit `support.js` or `image-slot.js`; both are generated upstream.
 | `projects-data.js` | Factory line-up the CMS seeds itself from |
 | `coins-data.js` | The 37 client logos for the bouncing coin in the CLIENTS box |
 | `assets/` | Artwork, fonts, audio, video — see `assets/README.md` |
-| `assets/lottie/` | The remote's four button animations |
+| `assets/lottie/` | The remote's four button animations, and the four fingerprints left on the glass |
 | `vendor/lottie_light.min.js` | Lottie player 5.12.2, self-hosted |
 
 ### Runtime dependencies
@@ -127,7 +127,7 @@ CSS. Each is loaded once from `assets/lottie/` and driven by frame range:
 
 | Button | Behaviour | Segments |
 |---|---|---|
-| Mute | Toggle, idles at frame 0 (muted) or 60 (unmuted) | `[61,120]` to mute, `[1,60]` to unmute |
+| Mute | Toggle, idles at frame 0 (unmuted) or 60 (muted) | `[61,120]` to mute, `[1,60]` to unmute |
 | Info | Toggle, idles at 0 (closed) or 60 (open) | `[61,120]` to open, `[1,60]` to close |
 | Channel up / down | Momentary — starts and ends at idle | `[0,60]` |
 
@@ -149,13 +149,28 @@ controls, so they don't depend on a third-party CDN staying up.
 
 ### The ambient glow, and its palette
 
-The television casts light onto its own chassis. That layer is the poster image
-itself — solid colour edge to edge, shaped like the tube and blurred hard —
-sitting *under* the matte, so the picture hides its centre and only the spill
-reads. It blends with `screen`, so it adds light rather than tinting.
+The television casts light onto its own chassis. The layer sits *under* the
+matte, so the picture hides its centre and only the spill reads, and it blends
+with `screen`, so it adds light rather than tinting.
 
-Each channel can carry a `palette` of **up to four hex colours**, set per
-channel in the CMS:
+Its colour is **sampled from the picture itself**. The video is drawn to a 4×2
+canvas about eleven times a second, each column averaged, the result saturated
+back up and eased toward, then written as a gradient. Add `?debug=glow` to the
+URL for a badge saying which source is live.
+
+That needs two things at once: CORS headers on the bucket *and* `crossOrigin`
+on the `<video>`. Setting `crossOrigin` against a host that sends no headers
+makes the video fail to load outright, so the page sends a one-byte range
+request first and only opts in if that comes back with the headers. If it does
+not — or the canvas ends up tainted anyway — the glow falls back to the palette
+below, and the picture still plays.
+
+**So the bucket's CORS policy must list every origin the site is served from:
+`https://noina.tv` and any Vercel preview URL.** Miss one and the glow quietly
+drops to the palette there.
+
+Each channel can also carry a `palette` of **up to four hex colours**, set per
+channel in the CMS, used as that fallback:
 
 | Colours | What the glow does |
 |---|---|
@@ -174,11 +189,9 @@ and never updates. It works because the *browser* reads the pixel and hands over
 only the result — the page never gets pixel access. Chromium only; elsewhere the
 button is disabled and the colour input beside it is used instead.
 
-> A glow that tracks the video frame by frame used to be impossible, because the
-> player was a cross-origin `<iframe>` and no API can read pixels out of one.
-> Now that the channels are our own `<video>` elements, canvas sampling becomes
-> possible — it would need CORS headers on the bucket so the canvas isn't
-> tainted, and it costs per-frame work on the main thread.
+> Sampling was impossible while the player was a cross-origin `<iframe>` — no
+> API can read pixels out of one. It only became available once the channels
+> became our own `<video>` elements.
 
 ### Two copies of the line-up
 
@@ -200,7 +213,11 @@ line-up, update **both**, or the CMS and the live site will drift apart.
 | i | Open / close the description drawer |
 | m | Mute |
 
-Tapping the SYS. INFO portrait cuts straight to the next of four.
+Tapping the SYS. INFO portrait plays a short clip over it, with sound, and the
+still returns when the clip ends. The video is mounted with the page and
+pre-decoded, and `play()` is called straight from the click — both because the
+tap should be answered instantly and because iOS only allows a video with sound
+to start inside the gesture itself.
 
 The page is pinned to the viewport — `position:fixed`, `overflow:hidden`,
 `touch-action:none` — and pinch gestures are refused outright, because iOS
@@ -226,10 +243,19 @@ recombines to the original, so the filter is free when idle.
 
 It is driven by the knock's own spring — by its *energy*, which starts full at
 the impact and only falls. Position and velocity both cross zero on every swing,
-which made the picture heal and break again four times over. Tapping the glass plays a one-shot Lottie at that point, from
-`assets/lottie/screen-tap.json`; if the file isn't there the tap is simply
-inert. Each has an optional sound (`assets/tv-knock.mp3`, `assets/screen-tap.mp3`)
-which is skipped while the set is muted.
+which made the picture heal and break again four times over.
+
+Tapping the glass leaves a fingerprint at that point: one of the four clips in
+`assets/lottie/`, at a random angle, screen-blended because the exported
+gradient runs white to black rather than to transparent. If the file isn't
+there the tap is simply inert.
+
+Every one of these has a sound, and they all **ignore the mute button** on
+purpose. That button is the television's volume; these are the sounds of the
+room — the set knocked (`assets/tv-knock.mp3`), a finger on the glass
+(`assets/screen-tap-0N.mp3`), and each remote button's own click
+(`assets/remote-*.mp3`, named for the button it belongs to). They answer to the
+visitor's device volume instead.
 
 ### Picture brightness
 
@@ -242,7 +268,7 @@ exactly the old look.
 ## Status
 
 Both pages are fully wired and verified in a browser: channel changes, the
-Vimeo embeds, the description panel, mute, and the SYS. INFO page (typewriter,
+video player, the description panel, mute, and the SYS. INFO page (typewriter,
 pixel-reveal photo, bouncing client logos, BACK). The CMS round-trip is
 verified too — hiding a channel and publishing drops it from the dial and
 renumbers the remaining channels, and a palette set in the CMS reaches the glow

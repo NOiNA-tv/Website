@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
 
+# the channel manager is a tool, not a page
+Disallow: /cms.html
+
 Sitemap: https://noina.tv/sitemap.xml
