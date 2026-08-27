@@ -38,12 +38,7 @@ favicon therefore show one colourway and everything else shows the other. If
 that should be consistent, rasterize `favicon-small.svg` to 16/32/48/180 and
 replace the PNGs (or recolour the SVG to match them).
 
-## Present but not referenced
-
-`icon-512.png`, `mute-screen-icon.svg` and `terrazzo-pattern.svg` ship with the
-brand set but nothing in `index.html` points at them. `icon-512.png` is the
-right size for a PWA manifest icon and `terrazzo-pattern.svg` is the vector
-source for the floor texture, so they are kept rather than dropped.
+Nothing here is unreferenced: every file is used by `index.html`.
 
 ## Client logos
 
