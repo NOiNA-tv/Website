@@ -166,6 +166,16 @@
       </sc-for>
     </div>
 
+    <!-- CHANNEL 00 -->
+    <div style="margin-top:22px;padding:18px 20px;border-radius:12px;border:1px solid #232b2d;background:#161b1d;">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px;">
+        <div style="font-size:10.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Channel 00 description</div>
+        <div style="font-size:11px;color:#4f5c5e;flex:1;min-width:180px;">The blurb behind the station ID, in the same drawer as the projects'.</div>
+        <button onClick="{{ publishStation }}" style="{{ stationPublishStyle }}">{{ stationPublishLabel }}</button>
+      </div>
+      <textarea onChange="{{ onStationDesc }}" rows="4" value="{{ stationDesc }}" style="width:100%;background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#9db0b3;padding:10px 12px;font-size:12.5px;line-height:1.6;resize:vertical;"></textarea>
+    </div>
+
     <!-- STATION SLOGANS -->
     <div style="margin-top:22px;padding:18px 20px;border-radius:12px;border:1px solid #232b2d;background:#161b1d;">
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
@@ -268,10 +278,38 @@
 class Component extends DCLogic {
   KEY = 'noina_cms_projects_v1';
   ACCENT = 'oklch(0.78 0.15 205)';
-  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', palOpen: null, taglines: null, tagDirty: false, coins: null, coinArt: null, coinDirty: false, coinEdit: null, coinEditName: '', coinEditSvg: '' };
+  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', palOpen: null, taglines: null, tagDirty: false, coins: null, coinArt: null, coinDirty: false, coinEdit: null, coinEditName: '', coinEditSvg: '', stationDesc: null, stationDirty: false };
 
   TAG_KEY = 'noina_cms_taglines_v1';
   COIN_KEY = 'noina_cms_coins_v1';
+  STATION_KEY = 'noina_cms_station_v1';
+
+  // ---- channel 00's blurb ------------------------------------------------
+  // The station is never part of the project list, so its description lives in
+  // its own store rather than riding along with the channels.
+  FACTORY_STATION_DESC = 'Interrupting your regular programming with the NOiNA Broadcasting Network. ' +
+    'You\u2019ve successfully tuned in to my motion design portfolio. Grab the remote control ' +
+    'below to flip through the channels and explore my work. Feel free to poke around!';
+
+  hydrateStation() {
+    if (this.state.stationDesc != null) return;
+    let saved = null;
+    try {
+      const raw = localStorage.getItem(this.STATION_KEY);
+      if (raw) { const o = JSON.parse(raw); if (o && typeof o.desc === 'string') saved = o.desc; }
+    } catch (e) {}
+    this.setState({ stationDesc: saved == null ? this.FACTORY_STATION_DESC : saved });
+  }
+  onStationDesc = (e) => this.setState({ stationDesc: e.target.value, stationDirty: true });
+  publishStation = () => {
+    const d = (this.state.stationDesc || '').trim();
+    if (!d) { this.flash('CHANNEL 00 NEEDS A DESCRIPTION'); return; }
+    try {
+      localStorage.setItem(this.STATION_KEY, JSON.stringify({ desc: d }));
+      this.setState({ stationDirty: false });
+      this.flash('CHANNEL 00 PUBLISHED');
+    } catch (e) { this.flash('COULD NOT SAVE'); }
+  };
 
   // ---- client logo coins ------------------------------------------------
   // The artwork lives in coins-data.js and is never edited here; this only
@@ -400,6 +438,7 @@ class Component extends DCLogic {
         palette: Array.isArray(p.palette) ? p.palette.filter(Boolean) : [],
       })),
       taglines: this.liveTaglines(),
+      station: { desc: (this.state.stationDesc || '').trim() },
     };
     const missing = payload.channels.filter((c) => !c.file).map((c) => c.title);
     if (missing.length) { this.flash('NO VIDEO FILE ON: ' + missing.join(', ').toUpperCase()); return; }
@@ -536,6 +575,7 @@ class Component extends DCLogic {
     this.hydrate();
     this.hydrateTaglines();
     this.hydrateCoins();
+    this.hydrateStation();
     this._t = setInterval(() => { if (!this.state.items) this.hydrate(); }, 200);
     this._sweepT = setInterval(this.sweepThumbs, 400);
   }
@@ -701,6 +741,11 @@ class Component extends DCLogic {
       onField: this.onField, onAction: this.onAction, addProject: this.addProject,
       previewSrc: this.state.previewId ? this.VIDEO_BASE + '/' + this.state.previewId : '',
       onPalette: this.onPalette, onPaletteClear: this.onPaletteClear, togglePalette: this.togglePalette,
+      stationDesc: this.state.stationDesc || '',
+      onStationDesc: this.onStationDesc, publishStation: this.publishStation,
+      stationPublishLabel: this.state.stationDirty ? 'PUBLISH CHANNEL 00' : 'PUBLISHED ✓',
+      stationPublishStyle: 'border:none;cursor:pointer;padding:9px 16px;border-radius:8px;font-size:10.5px;font-weight:800;letter-spacing:1.3px;'
+        + (this.state.stationDirty ? 'background:' + this.ACCENT + ';color:#04120f;' : 'background:#1d2325;color:#5d6c6e;'),
       taglineRows: (this.state.taglines || []).map((t, i) => ({
         text: t.text, i: String(i),
         toggleLabel: t.hidden ? 'OFF' : 'ON',

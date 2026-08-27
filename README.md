@@ -202,6 +202,13 @@ line-up, update **both**, or the CMS and the live site will drift apart.
 
 Tapping the SYS. INFO portrait cuts straight to the next of four.
 
+The page is pinned to the viewport — `position:fixed`, `overflow:hidden`,
+`touch-action:none` — and pinch gestures are refused outright, because iOS
+stopped honouring `user-scalable` years ago. A television does not pan or zoom,
+and the document scrolling underneath was what stole the drag from the SYS. INFO
+panel. The two places that genuinely scroll, that panel and the description
+drawer, opt back in with `touch-action:pan-y` and contain their own overscroll.
+
 Tapping the chassis knocks the set from the side you hit — only the dominant
 axis moves, so the edge you touch decides whether it rocks side to side or up
 and down — and breaks the picture while it wobbles.

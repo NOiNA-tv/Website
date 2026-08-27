@@ -389,7 +389,18 @@
 <script src="./image-slot.js"></script>
 <style>
   @font-face{font-family:'Segment7Standard';src:url('./assets/segment7.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
-  body{margin:0;background:linear-gradient(135deg, oklch(0.73 0.012 205), oklch(0.60 0.013 205));}
+  /* A television doesn't pan or pinch. The page is pinned to the viewport so
+     iOS has nothing to rubber-band, which is also what was stealing the drag
+     from the SYS. INFO page: the browser was scrolling the document instead of
+     the panel. touch-action:none refuses every gesture by default, and the one
+     place that legitimately scrolls opts back in with pan-y. */
+  html,body{margin:0;height:100%;width:100%;overflow:hidden;position:fixed;
+    overscroll-behavior:none;touch-action:none;}
+  body{background:linear-gradient(135deg, oklch(0.73 0.012 205), oklch(0.60 0.013 205));}
+  /* The set is an object, not a document — selecting its text breaks the
+     illusion. Inputs keep their own selection, so the CMS is unaffected. */
+  #dc-root,#dc-root *{-webkit-user-select:none;user-select:none;}
+  input,textarea{-webkit-user-select:text;user-select:text;}
   *{box-sizing:border-box;}
   a{color:inherit;text-decoration:none;}
   @keyframes led-pulse{0%,100%{opacity:1;box-shadow:0 0 6px 1px currentColor;}50%{opacity:.4;box-shadow:0 0 2px 0 currentColor;}}
@@ -599,7 +610,7 @@
           <div style="position:absolute;inset:0;background:#050505;">
             <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
               <img src="./assets/noina-logo.gif" alt="NOiNA logo" style="width:34%;max-width:130px;filter:brightness(0) invert(96%) drop-shadow(0 0 6px rgba(60,196,220,.45)) drop-shadow(0 0 16px rgba(60,196,220,.25));animation:soft-bob 4s ease-in-out infinite;">
-              <div style="font-family:'Poppins',sans-serif;font-weight:600;font-size:9px;letter-spacing:.16em;color:#3CC4DC;text-shadow:0 0 10px rgba(60,196,220,.5);animation:{{ taglineAnim }};">{{ tagline }}</div>
+              <div style="font-family:'Poppins',sans-serif;font-weight:600;font-size:9px;letter-spacing:.16em;color:#3CC4DC;text-shadow:0 0 10px rgba(60,196,220,.5);animation:{{ taglineAnim }};-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;">{{ tagline }}</div>
             </div>
           </div>
         </sc-if>
@@ -684,7 +695,7 @@
             <div class="info-frame">
               <div style="position:absolute;top:6px;bottom:6px;right:5px;width:5px;background:oklch(0.8 0.17 205 / .15);z-index:2;"></div>
               <div ref="{{ infoScrollThumbRef }}" style="position:absolute;top:6px;right:5px;width:5px;height:40px;background:oklch(0.8 0.17 205);box-shadow:0 0 6px oklch(0.8 0.17 205 / .5);z-index:2;"></div>
-              <div ref="{{ infoScrollRef }}" onscroll="{{ onInfoScroll }}" data-no-scrollbar="true" style="position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:16px 26px 16px 16px;font-size:clamp(16px,1.5vw + 11px,23px);line-height:1.55;letter-spacing:.03em;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
+              <div ref="{{ infoScrollRef }}" onscroll="{{ onInfoScroll }}" data-no-scrollbar="true" style="position:absolute;inset:0;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;scrollbar-width:none;padding:16px 26px 16px 16px;font-size:clamp(16px,1.5vw + 11px,23px);line-height:1.55;letter-spacing:.03em;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;">
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
                 <div style="flex:1;overflow:hidden;white-space:nowrap;font-family:'Jersey 10',monospace;font-size:27px;letter-spacing:.1em;">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</div>
                 <div data-type-line="true" style="font-family:'Jersey 10',monospace;font-size:27px;text-align:center;letter-spacing:.1em;text-shadow:0 0 6px oklch(0.8 0.17 205 / .4);white-space:nowrap;">SYSTEM INFO</div>
@@ -698,12 +709,31 @@
                     <canvas ref="{{ pixelRevealRef }}" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
                   </div>
                 </div>
+                <!-- Label over value, both left-aligned, so the dotted leaders
+                     that used to carry the eye across are no longer needed.
+                     Each half is its own typed line, which keeps the terminal
+                     cadence: the label types, then its answer. -->
                 <div style="text-align:left;letter-spacing:-.02em;">
-                  <div data-type-line="true">OPERATOR....NOI NAVVE</div>
-                  <div data-type-line="true">ROLE........MOTION DESIGNER</div>
-                  <div data-type-line="true" data-uptime="true">UPTIME......{{ uptime }}</div>
-                  <div data-type-line="true">SIGNAL_SRC..GIV'ATAYIM, IL</div>
-                  <div data-type-line="true">STATUS......OPEN TO WORK</div>
+                  <div style="margin-bottom:.5em;">
+                    <div data-type-line="true" style="font-size:.72em;letter-spacing:.08em;color:oklch(0.85 0.1 205);">OPERATOR</div>
+                    <div data-type-line="true" style="font-size:1.12em;line-height:1.1;">NOI NAVVE</div>
+                  </div>
+                  <div style="margin-bottom:.5em;">
+                    <div data-type-line="true" style="font-size:.72em;letter-spacing:.08em;color:oklch(0.85 0.1 205);">ROLE</div>
+                    <div data-type-line="true" style="font-size:1.12em;line-height:1.1;">MOTION DESIGNER</div>
+                  </div>
+                  <div style="margin-bottom:.5em;">
+                    <div data-type-line="true" style="font-size:.72em;letter-spacing:.08em;color:oklch(0.85 0.1 205);">UPTIME</div>
+                    <div data-type-line="true" style="font-size:1.12em;line-height:1.1;">{{ uptime }}</div>
+                  </div>
+                  <div style="margin-bottom:.5em;">
+                    <div data-type-line="true" style="font-size:.72em;letter-spacing:.08em;color:oklch(0.85 0.1 205);">SIGNAL_SRC</div>
+                    <div data-type-line="true" style="font-size:1.12em;line-height:1.1;">GIV'ATAYIM, IL</div>
+                  </div>
+                  <div>
+                    <div data-type-line="true" style="font-size:.72em;letter-spacing:.08em;color:oklch(0.85 0.1 205);">STATUS</div>
+                    <div data-type-line="true" style="font-size:1.12em;line-height:1.1;">OPEN TO WORK</div>
+                  </div>
                 </div>
               </div>
               <div ref="{{ logBoxRef }}" style="position:relative;margin:16px 0 24px;opacity:0;">
@@ -796,13 +826,16 @@
 
     <!-- PROJECT DESCRIPTION -->
     <sc-if value="{{ descVisible }}" hint-placeholder-val="{{ false }}">
-      <div ref="{{ descRef }}" style="width:100%;max-width:620px;margin-left:auto;margin-right:auto;max-height:34vh;overflow-y:auto;background:#060706;border-radius:12px;padding:14px 20px 16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), inset 0 2px 10px rgba(0,0,0,.6);opacity:0;position:relative;z-index:35;">
+      <div ref="{{ descRef }}" style="width:100%;max-width:620px;margin-left:auto;margin-right:auto;max-height:34vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;background:#060706;border-radius:12px;padding:14px 20px 16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), inset 0 2px 10px rgba(0,0,0,.6);opacity:0;position:relative;z-index:35;">
         <div style="font-family:'Poppins',sans-serif;font-size:13px;line-height:1.5;color:oklch(0.75 0.01 205);">{{ channel.desc }}</div>
-        <!-- same pill, same blink as SYS. INFO, but laid out along the row -->
+        <!-- same pill, same blink as SYS. INFO, but laid out along the row.
+             The station has no tape behind it, so it has no button. -->
+        <sc-if value="{{ channel.isProject }}" hint-placeholder-val="{{ true }}">
         <div onclick="{{ onWatchTape }}" style="margin-top:18px;display:flex;align-items:center;justify-content:flex-end;gap:12px;cursor:pointer;">
           <div style="font-family:'VT323',monospace;font-size:13px;color:var(--btn-label);letter-spacing:.04em;">WATCH FULL TAPE</div>
           <button style="width:32px;height:8px;border-radius:9999px;background:oklch(0.40 0.09 205);border:none;padding:0;cursor:pointer;animation:sysinfo-blink 3s ease-in-out infinite;"></button>
         </div>
+        </sc-if>
       </div>
     </sc-if>
 
@@ -866,7 +899,8 @@
 const VIDEO_BASE = 'https://pub-5b672117a09a448c8adcce01bccabfc1.r2.dev';
 
 const CHANNELS_BUILTIN = [
-  {num:'00', label:'STATION ID', title:'NOiNA', sub:'Motion Designer', type:'station', aspect:'16/9'},
+  {num:'00', label:'STATION ID', title:'NOiNA', sub:'Motion Designer', type:'station', aspect:'16/9',
+    desc:"Interrupting your regular programming with the NOiNA Broadcasting Network. You\u2019ve successfully tuned in to my motion design portfolio. Grab the remote control below to flip through the channels and explore my work. Feel free to poke around!"},
   {num:"01", label:"PRIME TIME", title:"Folo", sub:"KidsTV diary app", type:"project", aspect:"16/9", file:"01-folo.mp4", vimeoId:"477155128", vimeoUrl:"https://vimeo.com/477155128?share=copy&fl=sv&fe=ci",
     palette:["#ffee18", "#42dae5", "#ff2f63", "#814bdd"],
     desc:"Meet Folo - the next generation of student diaries! A video I made for the app I designed for Kidstv. Had fun designing a complete app from scratch for the first time (grueling yet rewarding!), but nothing beats animating this wee fella. ɷ◡ɷ"},
@@ -928,6 +962,20 @@ const CHANNELS_BUILTIN = [
 const CMS_KEY = 'noina_cms_projects_v1';
 const CMS_TAGLINE_KEY = 'noina_cms_taglines_v1';
 const CMS_COIN_KEY = 'noina_cms_coins_v1';
+const CMS_STATION_KEY = 'noina_cms_station_v1';
+
+/** The station's own blurb. It never came from the CMS's project list — the
+    station is always the built-in entry — so it gets its own small store,
+    read the same way and overridden by channels.json like everything else. */
+function stationDesc(builtin) {
+  const pub = typeof window !== 'undefined' && window.__NOINA_PUBLISHED_STATION;
+  if (pub && pub.desc) return pub.desc;
+  try {
+    const raw = localStorage.getItem(CMS_STATION_KEY);
+    if (raw) { const o = JSON.parse(raw); if (o && typeof o.desc === 'string' && o.desc.trim()) return o.desc; }
+  } catch (e) {}
+  return builtin;
+}
 
 /** Which client logos are in play, and in what order.
 
@@ -956,7 +1004,8 @@ function buildChannels() {
     const raw = localStorage.getItem(CMS_KEY);
     if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) saved = a; }
   } catch (e) {}
-  const station = CHANNELS_BUILTIN.find(c => c.type === 'station');
+  const built = CHANNELS_BUILTIN.find(c => c.type === 'station');
+  const station = { ...built, desc: stationDesc(built.desc) };
   const published = (typeof window !== 'undefined' && window.__NOINA_PUBLISHED) || null;
   const projects = (published || saved || CHANNELS_BUILTIN.filter(c => c.type === 'project')).filter(p => !p.hidden);
   const n = projects.length;
@@ -994,6 +1043,7 @@ function fetchPublishedChannels(onReady) {
       if (Array.isArray(data) ? false : (data && Array.isArray(data.taglines) && data.taglines.length)) {
         window.__NOINA_PUBLISHED_TAGLINES = data.taglines.map((t) => String(t).trim()).filter(Boolean);
       }
+      if (!Array.isArray(data) && data && data.station) window.__NOINA_PUBLISHED_STATION = data.station;
       if (onReady) onReady();
     })
     .catch(() => {});
@@ -1424,6 +1474,8 @@ class Component extends DCLogic {
     this._dvdRaf = requestAnimationFrame(step);
   }
   componentWillUnmount() {
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach((n) =>
+      document.removeEventListener(n, this.onGesture));
     cancelAnimationFrame(this._tvRaf);
     window.removeEventListener('keydown', this.onKeyDown);
     clearInterval(this._kaomojiInt);
@@ -1847,7 +1899,13 @@ class Component extends DCLogic {
     else if (k === 'm') { e.preventDefault(); this.kickRemote(); this.setMuted(!this.state.muted, true); }
   };
 
+  /** iOS stopped honouring user-scalable years ago, so a pinch has to be
+      refused at the event. Double-tap zoom goes with it. */
+  onGesture = (e) => e.preventDefault();
+
   componentDidMount() {
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach((n) =>
+      document.addEventListener(n, this.onGesture, { passive: false }));
     window.addEventListener('keydown', this.onKeyDown);
     this.probeVideoCors();
     fetchPublishedChannels(() => {
@@ -2581,7 +2639,7 @@ class Component extends DCLogic {
         : 'brightness(var(--screen-lift, 1)) saturate(1.25) contrast(1.2) hue-rotate(-9deg) blur(0px)'
           + (this.state.glitching ? ' url(#tv-glitch)' : ''),
       descOpen: this.state.descOpen,
-      descVisible: this.state.descRendered && channel.isProject,
+      descVisible: this.state.descRendered && !!channel.desc,
       descRef: this.descRef,
       onWatchTape: () => {
         const url = CHANNELS[this.state.index].vimeoUrl;
