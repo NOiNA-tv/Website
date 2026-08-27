@@ -717,14 +717,15 @@
                   </div>
                 </div>
                 <!-- The five pairs are spread evenly down the portrait's full
-                     213px. Jersey 10's glyphs sit a shade below their line box,
-                     so the column is trimmed by .09em: that puts the ink of the
-                     last line on the photo's bottom edge rather than past it.
+                     213px. Jersey 10's glyphs sit outside their line box at
+                     both ends, so the column is nudged down .09em and trimmed
+                     by .16em: that lands the ink of the first and last lines on
+                     the photo's top and bottom edges instead of past them.
                      Label over value, both left-aligned, so the dotted leaders
                      that used to carry the eye across are no longer needed.
                      Each half is its own typed line, which keeps the terminal
                      cadence: the label types, then its answer. -->
-                <div style="text-align:left;letter-spacing:-.02em;height:calc(213px - .09em);display:flex;flex-direction:column;justify-content:space-between;">
+                <div style="text-align:left;letter-spacing:-.02em;margin-top:.09em;height:calc(213px - .16em);display:flex;flex-direction:column;justify-content:space-between;">
                   <div>
                     <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">OPERATOR</div>
                     <div data-type-line="true" style="font-size:1.06em;line-height:1;">NOI NAVVE</div>
