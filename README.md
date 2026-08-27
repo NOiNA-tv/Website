@@ -200,12 +200,26 @@ line-up, update **both**, or the CMS and the live site will drift apart.
 | i | Open / close the description drawer |
 | m | Mute |
 
-Tapping the SYS. INFO portrait wipes it away with the same dither animation
-that brought it in, run backwards, and draws the next of three in its place.
+Tapping the SYS. INFO portrait cuts straight to the next of four.
 
 Tapping the chassis knocks the set from the side you hit — only the dominant
 axis moves, so the edge you touch decides whether it rocks side to side or up
-and down. Tapping the glass plays a one-shot Lottie at that point, from
+and down — and breaks the picture while it wobbles.
+
+That break is an SVG filter (`#tv-glitch`), not the usual CSS glitch. The CSS
+technique duplicates its content into `::before`/`::after` and slices the copies
+with `clip-path`, which cannot work here: the content is a playing `<video>` and
+a pseudo-element cannot hold one. An SVG filter applies to whatever it is put
+on, and is the only route to a real channel split rather than a coloured
+overlay. `feTurbulence` runs at low frequency across x and high down y, so the
+noise barely varies along a row but jumps between rows — that is what tears the
+picture into shifted bands instead of smearing it. The picture is then separated
+into red and cyan, pushed apart and screen-blended back; at zero offset that
+recombines to the original, so the filter is free when idle.
+
+It is driven by the knock's own spring — by its *energy*, which starts full at
+the impact and only falls. Position and velocity both cross zero on every swing,
+which made the picture heal and break again four times over. Tapping the glass plays a one-shot Lottie at that point, from
 `assets/lottie/screen-tap.json`; if the file isn't there the tap is simply
 inert. Each has an optional sound (`assets/tv-knock.mp3`, `assets/screen-tap.mp3`)
 which is skipped while the set is muted.

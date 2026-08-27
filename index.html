@@ -564,6 +564,33 @@
         </div>
       </sc-if>
       <div ref="{{ screenRef }}" style="{{ screenStyle }}">
+        <!-- The knock's picture break. The classic CSS glitch duplicates its
+             content into ::before/::after and slices the copies with clip-path —
+             that cannot work here, because the content is a playing <video> and
+             a pseudo-element cannot hold one. An SVG filter operates on whatever
+             it is applied to, so it works on video, and it is the only route to
+             a real channel split rather than a coloured overlay.
+
+             feTurbulence's frequency is low across x and high down y, so the
+             noise is near-constant along each row and jumps between rows: that
+             is what tears the picture into shifted horizontal bands rather than
+             smearing it. The picture is then separated into red and cyan, the
+             two pushed apart, and screen-blended back together — at zero offset
+             that recombination is exactly the original, so the effect costs
+             nothing visually when idle.
+
+             Every parameter sits at rest until knockTv drives it. -->
+        <svg width="0" height="0" style="position:absolute;" aria-hidden="true"><defs>
+          <filter id="tv-glitch" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
+            <feTurbulence ref="{{ glitchNoiseRef }}" type="fractalNoise" baseFrequency="0.02 0.7" numOctaves="1" seed="1" result="noise"></feTurbulence>
+            <feDisplacementMap ref="{{ glitchWarpRef }}" in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" result="warped"></feDisplacementMap>
+            <feColorMatrix in="warped" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="chR"></feColorMatrix>
+            <feColorMatrix in="warped" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0" result="chGB"></feColorMatrix>
+            <feOffset ref="{{ glitchRedRef }}" in="chR" dx="0" dy="0" result="offR"></feOffset>
+            <feOffset ref="{{ glitchCyanRef }}" in="chGB" dx="0" dy="0" result="offGB"></feOffset>
+            <feBlend in="offR" in2="offGB" mode="screen"></feBlend>
+          </filter>
+        </defs></svg>
         <svg width="0" height="0" style="position:absolute;"><defs><clipPath id="tv-screen-clip" clipPathUnits="userSpaceOnUse"><path ref="{{ clipPathRef }}" d="M82.29,95.56S0,289.02,0,540s82.29,444.44,82.29,444.44c0,0,392.97,95.56,877.71,95.56,484.75,0,877.71-95.56,877.71-95.56,0,0,82.29-193.46,82.29-444.44s-82.29-444.44-82.29-444.44c0,0-392.97-95.56-877.71-95.56C475.25,0,82.29,95.56,82.29,95.56Z"></path></clipPath></defs></svg>
 
         <div ref="{{ flickerOverlayRef }}" style="position:absolute;inset:0;background:#000;mix-blend-mode:multiply;opacity:0;pointer-events:none;z-index:12;transition:opacity 200ms ease-in-out;"></div>
@@ -1030,7 +1057,7 @@ class Component extends DCLogic {
   ];
   tagQueue = [];
 
-  state = { index: 0, transitioning: false, muted: true, infoOpen: false, descOpen: false, descRendered: false, remoteOpen: false, dragging: false, remoteHeight: 300, videoReady: false, glowSource: 'PALETTE (fallback)' };
+  state = { index: 0, transitioning: false, muted: true, infoOpen: false, descOpen: false, descRendered: false, remoteOpen: false, dragging: false, remoteHeight: 300, videoReady: false, glitching: false, glowSource: 'PALETTE (fallback)' };
 
   constructor(props) {
     super(props);
@@ -1264,14 +1291,7 @@ class Component extends DCLogic {
     this._pixelRevealWaits = 0;
     this._runPixelReveal(el);
   }
-  _runPixelReveal(el) { this._runPixelWipe(el, false); }
-
-  /** The dither wipe, both directions.
-
-      In:  nothing -> colour -> photo.  Out: photo -> colour -> nothing.
-      They are the same two staggered passes with the roles swapped, so the
-      photo always leaves exactly the way it arrived. */
-  _runPixelWipe(el, out, onDone) {
+  _runPixelReveal(el) {
     const myGen = ++this._pixelRevealGen;
     const cell = 16, durationMs = 850, delayMs = 250;
     const cols = Math.ceil(el.width / cell), rows = Math.ceil(el.height / cell);
@@ -1293,56 +1313,32 @@ class Component extends DCLogic {
       const elapsed = performance.now() - start;
       const colorT = Math.min(1, Math.max(0, elapsed / durationMs));
       const imageT = Math.min(1, Math.max(0, (elapsed - delayMs) / durationMs));
-      const leadCount = Math.floor(ease(colorT) * total);   // cells the first pass has taken
-      const trailCount = Math.floor(ease(imageT) * total);   // cells the second pass has taken
-      if (out) {
-        // colour eats the photo, then nothing eats the colour
-        this.paintPixelFrame(el, cells.slice(trailCount, leadCount), cells.slice(leadCount), img);
-      } else {
-        // colour builds, then the photo comes up under it
-        this.paintPixelFrame(el, cells.slice(trailCount, leadCount), cells.slice(0, trailCount), img);
-      }
+      const colorCount = Math.floor(ease(colorT) * total);
+      const imageCount = Math.floor(ease(imageT) * total);
+      // color cells: built but not yet revealed. image cells: already revealed (drawn from
+      // the real photo, regardless of colorCount — no visibility race, so overlap is safe).
+      this.paintPixelFrame(el, cells.slice(imageCount, colorCount), cells.slice(0, imageCount), img);
       if (elapsed < totalMs) { requestAnimationFrame(step); return; }
-      if (out) {
-        this.paintPixelFrame(el, [], [], null);   // leave the frame genuinely empty
-        if (onDone) onDone();
-        return;
-      }
       // done animating — hand off to the real <image-slot> so the photo displays at its
       // native resolution (the canvas's fixed small backing store looked soft/low-quality
       // as a permanent display surface, especially on high-DPI screens).
       el.style.display = 'none';
       if (slotEl) slotEl.style.visibility = 'visible';
-      if (onDone) onDone();
     };
     requestAnimationFrame(step);
   }
-  PORTRAITS = ['./assets/portrait-1.png', './assets/portrait-2.png', './assets/portrait-3.png'];
+  PORTRAITS = ['./assets/portrait-1.png', './assets/portrait-2.png',
+               './assets/portrait-3.png', './assets/portrait-4.png'];
   portraitIdx = 0;
 
-  /** Tap the photo and it wipes away the way it arrived, then the next one
-      draws itself in its place. Fixed order, looping. */
+  /** Tap the photo to cut to the next one. A straight swap, no transition —
+      the dither reveal belongs to the page arriving, not to this. */
   onPortraitTap = () => {
-    const el = this.pixelRevealEl;
     const box = this.photoBoxEl;
-    if (!el || !box || this._portraitBusy) return;
-    const slotEl = box.querySelector('image-slot');
+    const slotEl = box && box.querySelector('image-slot');
     if (!slotEl) return;
-    this._portraitBusy = true;
-
-    // the canvas is display:none once a reveal has finished — bring it back and
-    // hide the slot again, so the wipe has a surface to run on
-    el.style.display = '';
-    slotEl.style.visibility = 'hidden';
-
-    this._runPixelWipe(el, true, () => {
-      this.portraitIdx = (this.portraitIdx + 1) % this.PORTRAITS.length;
-      slotEl.setAttribute('src', this.PORTRAITS[this.portraitIdx]);
-      // startPixelReveal waits for the new file to decode before animating, so
-      // the incoming photo never pops in half-way through the wipe
-      this._portraitBusy = false;
-      this.startPixelReveal();
-    });
+    this.portraitIdx = (this.portraitIdx + 1) % this.PORTRAITS.length;
+    slotEl.setAttribute('src', this.PORTRAITS[this.portraitIdx]);
   };
 
   logBoxRef = (el) => { this.logBoxEl = el; };
@@ -2240,15 +2236,24 @@ class Component extends DCLogic {
     const horizontal = Math.abs(dx) >= Math.abs(dy);
     const dir = horizontal ? Math.sign(dx) || 1 : Math.sign(dy) || 1;
     const axis = horizontal ? 'X' : 'Y';
-    let t = 0, v = -dir * 380;                 // away from the hand, then back
+    const LAUNCH = 380;
+    let t = 0, v = -dir * LAUNCH;              // away from the hand, then back
     const stiffness = 260, damping = 12;
+    this.setState({ glitching: true });
     const step = () => {
       const dt = 1 / 60;
       v += (-stiffness * t - damping * v) * dt;
       t += v * dt;
+      // Driven by the spring's total energy, not its position or speed: those
+      // both pass through zero on every swing, which made the picture heal and
+      // break again four times over. Energy starts at full on the impact and
+      // only falls, so the break is worst at the moment of the hit and fades.
+      this.driveGlitch(Math.sqrt(stiffness * t * t + v * v) / LAUNCH);
       if (Math.abs(t) < 0.06 && Math.abs(v) < 0.6) {
         this._tvShake = '';
         el.style.transform = '';
+        this.driveGlitch(0);
+        this.setState({ glitching: false });
         return;
       }
       this._tvShake = `translate${axis}(${t.toFixed(2)}px)`;
@@ -2257,6 +2262,23 @@ class Component extends DCLogic {
     };
     step();
     this.playSfx('./assets/tv-knock.mp3', 1);
+  }
+
+  /** Set the picture break's strength, 0 to 1.
+
+      The seed is re-rolled every frame so the tearing boils rather than sitting
+      still, and the two channels are pushed opposite ways so the split reads as
+      one image coming apart rather than a red ghost. */
+  driveGlitch(amount) {
+    const a = Math.max(0, Math.min(1, amount));
+    if (this.glitchNoiseEl) this.glitchNoiseEl.setAttribute('seed', String(Math.floor(Math.random() * 999)));
+    if (this.glitchWarpEl) this.glitchWarpEl.setAttribute('scale', (a * 38).toFixed(1));
+    const dx = a * 11;
+    if (this.glitchRedEl) {
+      this.glitchRedEl.setAttribute('dx', dx.toFixed(2));
+      this.glitchRedEl.setAttribute('dy', (a * 2.5 * (Math.random() - 0.5)).toFixed(2));
+    }
+    if (this.glitchCyanEl) this.glitchCyanEl.setAttribute('dx', (-dx).toFixed(2));
   }
 
   /** A one-shot Lottie where the glass was tapped.
@@ -2481,6 +2503,10 @@ class Component extends DCLogic {
       glowImage,
       glowRef: this.glowRef,
       tvBezelRef: this.tvBezelRef,
+      glitchNoiseRef: (el) => { this.glitchNoiseEl = el; },
+      glitchWarpRef: (el) => { this.glitchWarpEl = el; },
+      glitchRedRef: (el) => { this.glitchRedEl = el; },
+      glitchCyanRef: (el) => { this.glitchCyanEl = el; },
       onTvTap: this.onTvTap,
       uptime: this.uptime(),
       // ?debug=glow — is the glow reading frames, or on its palette fallback?
@@ -2523,7 +2549,10 @@ class Component extends DCLogic {
       dvdBallRef: this.dvdBallRef,
       coinInnerRef: this.coinInnerRef,
       onCoinClick: this.onCoinClick,
-      flickerFilter: this.state.infoOpen ? 'none' : 'brightness(var(--screen-lift, 1)) saturate(1.25) contrast(1.2) hue-rotate(-9deg) blur(0px)',
+      flickerFilter: this.state.infoOpen
+        ? 'none'
+        : 'brightness(var(--screen-lift, 1)) saturate(1.25) contrast(1.2) hue-rotate(-9deg) blur(0px)'
+          + (this.state.glitching ? ' url(#tv-glitch)' : ''),
       descOpen: this.state.descOpen,
       descVisible: this.state.descRendered && channel.isProject,
       descRef: this.descRef,
