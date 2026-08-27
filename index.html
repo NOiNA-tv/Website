@@ -838,6 +838,9 @@
     <sc-if value="{{ showGlowDebug }}" hint-placeholder-val="{{ false }}">
       <div style="position:fixed;left:8px;top:8px;z-index:2000;pointer-events:none;font-family:'VT323',monospace;font-size:14px;letter-spacing:.08em;padding:4px 9px;border-radius:6px;background:rgba(0,0,0,.72);border:1px solid {{ glowDebugColor }};color:{{ glowDebugColor }};">GLOW: {{ glowSource }}</div>
     </sc-if>
+    <sc-if value="{{ showCmsDebug }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;left:8px;top:36px;right:8px;z-index:2000;pointer-events:none;font-family:'VT323',monospace;font-size:14px;letter-spacing:.08em;padding:4px 9px;border-radius:6px;background:rgba(0,0,0,.72);border:1px solid oklch(0.8 0.17 205);color:oklch(0.8 0.17 205);">CHANNELS.JSON: {{ cmsSource }}</div>
+    </sc-if>
 
     <!-- REMOTE -->
     <svg width="0" height="0" style="position:absolute;"><defs><clipPath id="remote-clip" clipPathUnits="objectBoundingBox"><path d="M0.02960,0.14252 C0.01610,0.22546 0,0.35480 0,0.50000 s0.01610,0.27448 0.02960,0.35755 c0.00984,0.06039 0.07626,0.10910 0.16542,0.12119 c0.10385,0.01412 0.20649,0.02127 0.30507,0.02127 s0.20123,-0.00716 0.30507,-0.02127 c0.08908,-0.01211 0.15550,-0.06081 0.16542,-0.12119 c0.01349,-0.08299 0.02960,-0.21243 0.02960,-0.35755 s-0.01610,-0.27447 -0.02960,-0.35755 c-0.00984,-0.06039 -0.07626,-0.10910 -0.16542,-0.12119 C0.70123,0.00716 0.59860,0 0.50017,0 s-0.20123,0.00716 -0.30507,0.02127 C0.10589,0.03337 0.03944,0.08209 0.02960,0.14252 Z"></path></clipPath></defs></svg>
@@ -1023,24 +1026,48 @@ let CHANNELS = buildChannels();
 
     The URL carries a timestamp because R2 caches aggressively and an edit that
     takes an hour to appear is worse than no edit at all. */
+// Whatever happens to this fetch, the site still works — it just quietly keeps
+// the built-in line-up. That silence is the problem when a publish does not
+// take: nothing on screen or in the console says why. So every outcome is
+// recorded on window.__NOINA_CMS and printed, and ?debug=cms puts it on screen.
 function fetchPublishedChannels(onReady) {
   if (typeof fetch !== 'function') return;
-  fetch(VIDEO_BASE + '/channels.json?t=' + Math.floor(Date.now() / 60000), { mode: 'cors', cache: 'no-cache' })
-    .then((r) => (r.ok ? r.json() : Promise.reject(new Error('http ' + r.status))))
-    .then((data) => {
+  const note = (msg) => {
+    window.__NOINA_CMS = msg;
+    if (typeof console !== 'undefined') console.log('[noina] channels.json — ' + msg);
+  };
+  const url = VIDEO_BASE + '/channels.json?t=' + Math.floor(Date.now() / 60000);
+  fetch(url, { mode: 'cors', cache: 'no-cache' })
+    .then((r) => {
+      if (!r.ok) { note('not loaded: the bucket answered ' + r.status + (r.status === 404 ? ' — no file by that exact name' : '')); return null; }
+      return r.text();
+    })
+    .then((text) => {
+      if (text == null) return;
+      let data;
+      try { data = JSON.parse(text); }
+      catch (e) { note('not loaded: the file is not valid JSON'); return; }
       const list = Array.isArray(data) ? data : (data && data.channels);
-      const clean = (Array.isArray(list) ? list : [])
-        .filter((p) => p && p.title && p.file && !p.hidden);
-      if (!clean.length) return;
+      if (!Array.isArray(list)) { note('not loaded: no channel list inside the file'); return; }
+      const clean = list.filter((p) => p && p.title && p.file && !p.hidden);
+      if (!clean.length) {
+        // the commonest cause by far: every row is missing its video filename
+        const noFile = list.filter((p) => p && p.title && !p.file).length;
+        note('not loaded: ' + list.length + ' rows, none usable' +
+             (noFile ? ' — ' + noFile + ' have no "file" (video filename)' : ''));
+        return;
+      }
+      note('loaded ' + clean.length + ' channels' +
+           (clean.length < list.length ? ' (' + (list.length - clean.length) + ' hidden or incomplete)' : ''));
       window.__NOINA_PUBLISHED = clean;
       CHANNELS = buildChannels();
-      if (Array.isArray(data) ? false : (data && Array.isArray(data.taglines) && data.taglines.length)) {
+      if (!Array.isArray(data) && data && Array.isArray(data.taglines) && data.taglines.length) {
         window.__NOINA_PUBLISHED_TAGLINES = data.taglines.map((t) => String(t).trim()).filter(Boolean);
       }
       if (!Array.isArray(data) && data && data.station) window.__NOINA_PUBLISHED_STATION = data.station;
       if (onReady) onReady();
     })
-    .catch(() => {});
+    .catch(() => note('not loaded: the request was blocked (CORS, or the bucket is unreachable)'));
 }
 
 // The station's rotating slogans, same contract as the channels: whatever the
@@ -1101,7 +1128,7 @@ class Component extends DCLogic {
   ];
   tagQueue = [];
 
-  state = { index: 0, transitioning: false, muted: true, infoOpen: false, descOpen: false, descRendered: false, remoteOpen: false, dragging: false, remoteHeight: 300, videoReady: false, glitching: false, glowSource: 'PALETTE (fallback)' };
+  state = { index: 0, transitioning: false, muted: true, infoOpen: false, descOpen: false, descRendered: false, remoteOpen: false, dragging: false, remoteHeight: 300, videoReady: false, glitching: false, glowSource: 'PALETTE (fallback)', cmsSource: 'checking\u2026' };
 
   constructor(props) {
     super(props);
@@ -1495,6 +1522,7 @@ class Component extends DCLogic {
     cancelAnimationFrame(this._tvRaf);
     window.removeEventListener('keydown', this.onKeyDown);
     clearInterval(this._kaomojiInt);
+    clearInterval(this._cmsPoll);
     this.stopGlowSampling();
     cancelAnimationFrame(this._kickRaf);
     ['muteAnim', 'infoAnim', 'prevAnim', 'nextAnim'].forEach((k) => {
@@ -1791,6 +1819,15 @@ class Component extends DCLogic {
     const line = this.tagQueue.shift();
     this._lastTagline = line;
     this.setState({ tagline: line, taglineFlickering: false });
+    // fetchPublishedChannels is a plain function, not a method, so it leaves its
+    // verdict on window rather than calling setState; pick it up for the badge
+    this._cmsPoll = setInterval(() => {
+      const m = window.__NOINA_CMS;
+      if (m && m !== this.state.cmsSource) this.setState({ cmsSource: m });
+      if (m) { clearInterval(this._cmsPoll); this._cmsPoll = null; }
+    }, 250);
+    setTimeout(() => { if (this._cmsPoll) { clearInterval(this._cmsPoll); this._cmsPoll = null;
+      if (!window.__NOINA_CMS) this.setState({ cmsSource: 'no answer from the bucket' }); } }, 12000);
     this._tagT1 = setTimeout(() => {
       this.setState({ taglineFlickering: true });
       this._tagT2 = setTimeout(this.showNextTagline, 350);
@@ -2628,6 +2665,9 @@ class Component extends DCLogic {
       uptime: this.uptime(),
       // ?debug=glow — is the glow reading frames, or on its palette fallback?
       showGlowDebug: typeof location !== 'undefined' && /[?&]debug=glow\b/.test(location.search),
+      // ?debug=cms — did the bucket's channels.json load, and if not, why not?
+      showCmsDebug: typeof location !== 'undefined' && /[?&]debug=cms\b/.test(location.search),
+      cmsSource: this.state.cmsSource,
       glowSource: this.state.glowSource,
       glowDebugColor: this.state.glowSource === 'SAMPLING VIDEO' ? 'oklch(0.85 0.2 145)' : 'oklch(0.8 0.17 75)',
       glowMode: palette.length >= 2 ? 'tv-ambient--pal' : '',
