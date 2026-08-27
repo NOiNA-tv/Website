@@ -703,30 +703,41 @@
               </div>
 
               <div style="display:flex;justify-content:flex-start;align-items:flex-start;gap:16px;">
-                <div ref="{{ photoBoxRef }}" onclick="{{ onPortraitTap }}" title="Tap for another" style="flex-shrink:0;position:relative;width:152px;height:213px;opacity:0;border:2px dashed oklch(0.8 0.17 205);cursor:pointer;">
+                <div ref="{{ photoBoxRef }}" onclick="{{ onPortraitTap }}" title="Tap me" style="flex-shrink:0;position:relative;width:152px;height:213px;opacity:0;border:2px dashed oklch(0.8 0.17 205);cursor:pointer;">
                   <div style="position:absolute;inset:6px;">
                     <image-slot id="profile-photo" shape="rect" style="width:100%;height:100%;visibility:hidden;pointer-events:none;" placeholder="Photo" src="./assets/portrait-1.png"></image-slot>
                     <canvas ref="{{ pixelRevealRef }}" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
+                    <!-- The clip sits on top of the still, fully loaded and
+                         already decoded, so the tap starts it with no wait.
+                         Its opacity is deliberately NOT in this style string:
+                         React rewrites the template's style on every render,
+                         which would blank the clip mid-play. -->
+                    <video ref="{{ portraitVidRef }}" src="./assets/portrait-anim.mp4" preload="auto" playsinline
+                           style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;"></video>
                   </div>
                 </div>
-                <!-- Label over value, both left-aligned, so the dotted leaders
+                <!-- The five pairs are spread evenly down the portrait's full
+                     213px. Jersey 10's glyphs sit a shade below their line box,
+                     so the column is trimmed by .09em: that puts the ink of the
+                     last line on the photo's bottom edge rather than past it.
+                     Label over value, both left-aligned, so the dotted leaders
                      that used to carry the eye across are no longer needed.
                      Each half is its own typed line, which keeps the terminal
                      cadence: the label types, then its answer. -->
-                <div style="text-align:left;letter-spacing:-.02em;height:213px;display:flex;flex-direction:column;justify-content:center;">
-                  <div style="margin-bottom:.18em;">
+                <div style="text-align:left;letter-spacing:-.02em;height:calc(213px - .09em);display:flex;flex-direction:column;justify-content:space-between;">
+                  <div>
                     <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">OPERATOR</div>
                     <div data-type-line="true" style="font-size:1.06em;line-height:1;">NOI NAVVE</div>
                   </div>
-                  <div style="margin-bottom:.18em;">
+                  <div>
                     <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">ROLE</div>
                     <div data-type-line="true" style="font-size:1.06em;line-height:1;">MOTION DESIGNER</div>
                   </div>
-                  <div style="margin-bottom:.18em;">
+                  <div>
                     <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">UPTIME</div>
                     <div data-type-line="true" style="font-size:1.06em;line-height:1;">{{ uptime }}</div>
                   </div>
-                  <div style="margin-bottom:.18em;">
+                  <div>
                     <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">SIGNAL SOURCE</div>
                     <div data-type-line="true" style="font-size:1.06em;line-height:1;">GIV'ATAYIM, IL</div>
                   </div>
@@ -1214,11 +1225,14 @@ class Component extends DCLogic {
     // the segment labels suggest.
     if (this.infoAnim) this.infoAnim.playSegments(opening ? [61, 120] : [1, 60], true);
     this.kickRemote();
+    this.playSfx('./assets/remote-info.mp3', 1);
     this.onToggleDesc();
   };
 
-  onPrevPress = () => { if (this.prevAnim) this.prevAnim.playSegments([0, 60], true); this.kickRemote(); this.next(); };
-  onNextPress = () => { if (this.nextAnim) this.nextAnim.playSegments([0, 60], true); this.kickRemote(); this.prev(); };
+  // Each button has its own click, named for the button it belongs to. Like
+  // the knock and the taps these are room sounds, so playSfx ignores mute.
+  onPrevPress = () => { if (this.prevAnim) this.prevAnim.playSegments([0, 60], true); this.kickRemote(); this.playSfx('./assets/remote-channel-up.mp3', 1); this.next(); };
+  onNextPress = () => { if (this.nextAnim) this.nextAnim.playSegments([0, 60], true); this.kickRemote(); this.playSfx('./assets/remote-channel-down.mp3', 1); this.prev(); };
 
   // The shell dips and springs back on every press, as if the plastic absorbed
   // the click. Runs on its own layer so it never fights the drag transform.
@@ -1377,18 +1391,37 @@ class Component extends DCLogic {
     };
     requestAnimationFrame(step);
   }
-  PORTRAITS = ['./assets/portrait-1.png', './assets/portrait-2.png',
-               './assets/portrait-3.png', './assets/portrait-4.png'];
-  portraitIdx = 0;
+  /** The still photo is the resting state; tapping it plays a short clip over
+      it, with sound, and the still comes back when the clip ends.
 
-  /** Tap the photo to cut to the next one. A straight swap, no transition —
-      the dither reveal belongs to the page arriving, not to this. */
+      Everything here is about the gap between the tap and the first frame.
+      The element is mounted with the page and preloaded, and the first frame
+      is decoded ahead of time by nudging currentTime, so play() has nothing
+      left to fetch. The call also has to sit directly in the click handler —
+      iOS only lets a video with sound start inside the gesture itself. */
+  portraitVidRef = (el) => {
+    if (!el || this.portraitVidEl === el) return;
+    this.portraitVidEl = el;
+    // boolean props, not attributes: React hands bare attributes over as "",
+    // which is falsy, and the attribute is dropped
+    el.playsInline = true;
+    el.disableRemotePlayback = true;
+    el.muted = false;
+    el.style.opacity = '0';
+    el.addEventListener('loadeddata', () => { try { el.currentTime = 0; } catch (e) {} });
+    try { el.load(); } catch (e) {}
+  };
+
   onPortraitTap = () => {
-    const box = this.photoBoxEl;
-    const slotEl = box && box.querySelector('image-slot');
-    if (!slotEl) return;
-    this.portraitIdx = (this.portraitIdx + 1) % this.PORTRAITS.length;
-    slotEl.setAttribute('src', this.PORTRAITS[this.portraitIdx]);
+    const v = this.portraitVidEl;
+    if (!v) return;
+    const hide = () => { v.style.opacity = '0'; try { v.pause(); v.currentTime = 0; } catch (e) {} };
+    try { v.currentTime = 0; } catch (e) {}
+    v.onended = hide;
+    v.onerror = hide;
+    v.style.opacity = '1';
+    const p = v.play();
+    if (p && p.catch) p.catch(hide);   // blocked or broken: fall straight back to the still
   };
 
   logBoxRef = (el) => { this.logBoxEl = el; };
@@ -2632,6 +2665,7 @@ class Component extends DCLogic {
       onPickBorder: (v) => this.setState({ infoBorderStyle: v }),
       photoBoxRef: this.photoBoxRef,
       onPortraitTap: this.onPortraitTap,
+      portraitVidRef: this.portraitVidRef,
       pixelRevealRef: this.pixelRevealRef,
       logBoxRef: this.logBoxRef,
       clientsBoxRef: this.clientsBoxRef,
@@ -2665,7 +2699,7 @@ class Component extends DCLogic {
       taglineAnim: this.state.taglineFlickering ? 'tagline-flicker .35s steps(8, end) forwards' : 'none',
       transitionVideoRef: this.transitionVideoRef,
       onTransitionEnded: this.onTransitionEnded,
-      onToggleMute: () => { this.kickRemote(); this.setMuted(!this.state.muted, true); },
+      onToggleMute: () => { this.kickRemote(); this.playSfx('./assets/remote-mute.mp3', 1); this.setMuted(!this.state.muted, true); },
       remoteRef: this.remoteRef,
       screenRef: this.screenRef,
       clipPathRef: this.clipPathRef,
