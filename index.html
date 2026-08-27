@@ -713,26 +713,26 @@
                      that used to carry the eye across are no longer needed.
                      Each half is its own typed line, which keeps the terminal
                      cadence: the label types, then its answer. -->
-                <div style="text-align:left;letter-spacing:-.02em;">
-                  <div style="margin-bottom:.5em;">
-                    <div data-type-line="true" style="font-size:.72em;letter-spacing:.08em;color:oklch(0.85 0.1 205);">OPERATOR</div>
-                    <div data-type-line="true" style="font-size:1.12em;line-height:1.1;">NOI NAVVE</div>
+                <div style="text-align:left;letter-spacing:-.02em;height:213px;display:flex;flex-direction:column;justify-content:center;">
+                  <div style="margin-bottom:.18em;">
+                    <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">OPERATOR</div>
+                    <div data-type-line="true" style="font-size:1.06em;line-height:1;">NOI NAVVE</div>
                   </div>
-                  <div style="margin-bottom:.5em;">
-                    <div data-type-line="true" style="font-size:.72em;letter-spacing:.08em;color:oklch(0.85 0.1 205);">ROLE</div>
-                    <div data-type-line="true" style="font-size:1.12em;line-height:1.1;">MOTION DESIGNER</div>
+                  <div style="margin-bottom:.18em;">
+                    <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">ROLE</div>
+                    <div data-type-line="true" style="font-size:1.06em;line-height:1;">MOTION DESIGNER</div>
                   </div>
-                  <div style="margin-bottom:.5em;">
-                    <div data-type-line="true" style="font-size:.72em;letter-spacing:.08em;color:oklch(0.85 0.1 205);">UPTIME</div>
-                    <div data-type-line="true" style="font-size:1.12em;line-height:1.1;">{{ uptime }}</div>
+                  <div style="margin-bottom:.18em;">
+                    <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">UPTIME</div>
+                    <div data-type-line="true" style="font-size:1.06em;line-height:1;">{{ uptime }}</div>
                   </div>
-                  <div style="margin-bottom:.5em;">
-                    <div data-type-line="true" style="font-size:.72em;letter-spacing:.08em;color:oklch(0.85 0.1 205);">SIGNAL_SRC</div>
-                    <div data-type-line="true" style="font-size:1.12em;line-height:1.1;">GIV'ATAYIM, IL</div>
+                  <div style="margin-bottom:.18em;">
+                    <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">SIGNAL SOURCE</div>
+                    <div data-type-line="true" style="font-size:1.06em;line-height:1;">GIV'ATAYIM, IL</div>
                   </div>
                   <div>
-                    <div data-type-line="true" style="font-size:.72em;letter-spacing:.08em;color:oklch(0.85 0.1 205);">STATUS</div>
-                    <div data-type-line="true" style="font-size:1.12em;line-height:1.1;">OPEN TO WORK</div>
+                    <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">STATUS</div>
+                    <div data-type-line="true" style="font-size:1.06em;line-height:1;">OPEN TO WORK</div>
                   </div>
                 </div>
               </div>
@@ -2379,8 +2379,11 @@ class Component extends DCLogic {
     // 81px against a phone's short edge, 72px against a desktop's.
     const short = Math.min(r.width, r.height);
     const SIZE = Math.round(Math.max(66, Math.min(92, 86.3 - short * 0.0297)));
-    box.style.cssText = 'position:absolute;pointer-events:none;z-index:14;width:' + SIZE +
-      'px;height:' + SIZE + 'px;left:' + (x - r.left - SIZE / 2) + 'px;top:' + (y - r.top - SIZE / 2) + 'px;';
+    // The artwork is 60x80, so the box has to be 3:4 as well or the print
+    // stretches. SIZE is the height; the width follows from the aspect.
+    const W = Math.round(SIZE * 0.75);
+    box.style.cssText = 'position:absolute;pointer-events:none;z-index:14;width:' + W +
+      'px;height:' + SIZE + 'px;left:' + (x - r.left - W / 2) + 'px;top:' + (y - r.top - SIZE / 2) + 'px;';
     host.appendChild(box);
     // a different angle every time, so repeated taps don't stamp the same mark
     box.style.transform = 'rotate(' + Math.floor(Math.random() * 360) + 'deg)';
@@ -2393,7 +2396,9 @@ class Component extends DCLogic {
     try {
       anim = lottie.loadAnimation({
         container: box, renderer: 'svg', loop: false, autoplay: true,
-        path: './assets/lottie/screen-tap.json',
+        // four different prints, picked at random, so no two taps leave the
+        // same mark even before the rotation is applied
+        path: './assets/lottie/fingerprint-0' + (1 + Math.floor(Math.random() * 4)) + '.json',
       });
       anim.addEventListener('complete', clean);
       anim.addEventListener('data_failed', clean);

@@ -76,11 +76,23 @@
       <span></span><span>CH</span><span>Frame</span><span>Title / subtitle</span><span>Video file</span><span>Status</span><span style="text-align:right;">Actions</span>
     </div>
 
-    <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;margin-bottom:10px;border-radius:12px;background:linear-gradient(90deg,#1e2325 0%,#191e20 100%);border:1px dashed #333d3f;opacity:0.75;">
-      <span style="width:26px;text-align:center;color:#4a5658;font-size:14px;">◆</span>
-      <span style="width:74px;font-family:'Segment7Standard',monospace;font-size:24px;color:oklch(0.78 0.15 55);">00</span>
-      <span style="flex:1;font-weight:600;font-size:14px;">NOiNA <span style="color:#7d8f92;font-weight:400;">— Station ID</span></span>
-      <span style="font-size:10px;letter-spacing:1.6px;color:#6f8083;">FIXED · NOT EDITABLE HERE</span>
+    <!-- The station sits in the line-up like any other channel, so its blurb
+         is edited inside its own card rather than in a panel further down. -->
+    <div style="padding:12px 16px;margin-bottom:10px;border-radius:12px;background:linear-gradient(90deg,#1e2325 0%,#191e20 100%);border:1px dashed #333d3f;">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span style="width:26px;text-align:center;color:#4a5658;font-size:14px;">◆</span>
+        <span style="width:74px;font-family:'Segment7Standard',monospace;font-size:24px;color:oklch(0.78 0.15 55);">00</span>
+        <span style="flex:1;font-weight:600;font-size:14px;">NOiNA <span style="color:#7d8f92;font-weight:400;">— Station ID</span></span>
+        <span style="font-size:10px;letter-spacing:1.6px;color:#6f8083;">FIXED · DESCRIPTION EDITABLE</span>
+      </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #262f31;">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px;">
+          <div style="font-size:10.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Description</div>
+          <div style="font-size:11px;color:#4f5c5e;flex:1;min-width:180px;">The blurb behind the station ID, in the same drawer as the projects'.</div>
+          <button onClick="{{ publishStation }}" style="{{ stationPublishStyle }}">{{ stationPublishLabel }}</button>
+        </div>
+        <textarea onChange="{{ onStationDesc }}" rows="4" value="{{ stationDesc }}" style="width:100%;background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#9db0b3;padding:10px 12px;font-size:12.5px;line-height:1.6;resize:vertical;"></textarea>
+      </div>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:10px;">
@@ -164,16 +176,6 @@
           </sc-if>
         </div>
       </sc-for>
-    </div>
-
-    <!-- CHANNEL 00 -->
-    <div style="margin-top:22px;padding:18px 20px;border-radius:12px;border:1px solid #232b2d;background:#161b1d;">
-      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px;">
-        <div style="font-size:10.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Channel 00 description</div>
-        <div style="font-size:11px;color:#4f5c5e;flex:1;min-width:180px;">The blurb behind the station ID, in the same drawer as the projects'.</div>
-        <button onClick="{{ publishStation }}" style="{{ stationPublishStyle }}">{{ stationPublishLabel }}</button>
-      </div>
-      <textarea onChange="{{ onStationDesc }}" rows="4" value="{{ stationDesc }}" style="width:100%;background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#9db0b3;padding:10px 12px;font-size:12.5px;line-height:1.6;resize:vertical;"></textarea>
     </div>
 
     <!-- STATION SLOGANS -->
