@@ -9,7 +9,7 @@ project is `../coins-data.js` (see below).
 |---|---|
 | `noina-logo.gif` | Animated logo on the station channel (00) — 648×200, 200 frames |
 | `noina-logo-static.png` | Static logo under the TV bezel — 648×200, transparent |
-| `profile-photo.png` | Portrait in the SYS. INFO panel, revealed by the pixel wipe |
+| `portrait-1..3.png` | The three SYS. INFO portraits — tap to cycle; each is revealed by the pixel wipe and erased by the same wipe reversed |
 | `terrazzo-random.png` | Floor + wall texture, tiled at 270px |
 | `static-noise-tile.png` | CRT static grain over the screen, tiled at 180px |
 | `og-share.png` | Social share card — 1200×630, as declared in the OG tags |

@@ -200,6 +200,9 @@ line-up, update **both**, or the CMS and the live site will drift apart.
 | i | Open / close the description drawer |
 | m | Mute |
 
+Tapping the SYS. INFO portrait wipes it away with the same dither animation
+that brought it in, run backwards, and draws the next of three in its place.
+
 Tapping the chassis knocks the set from the side you hit — only the dominant
 axis moves, so the edge you touch decides whether it rocks side to side or up
 and down. Tapping the glass plays a one-shot Lottie at that point, from
