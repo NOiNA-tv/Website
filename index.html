@@ -704,7 +704,7 @@
             <div class="info-frame">
               <div style="position:absolute;top:6px;bottom:6px;right:5px;width:5px;background:oklch(0.8 0.17 205 / .15);z-index:2;"></div>
               <div ref="{{ infoScrollThumbRef }}" style="position:absolute;top:6px;right:5px;width:5px;height:40px;background:oklch(0.8 0.17 205);box-shadow:0 0 6px oklch(0.8 0.17 205 / .5);z-index:2;"></div>
-              <div ref="{{ infoScrollRef }}" onscroll="{{ onInfoScroll }}" data-no-scrollbar="true" style="position:absolute;inset:0;overflow-y:scroll;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;scrollbar-width:none;padding:16px 26px 16px 16px;font-size:clamp(16px,1.5vw + 11px,23px);line-height:1.55;letter-spacing:.03em;-webkit-overflow-scrolling:touch;">
+              <div ref="{{ infoScrollRef }}" onscroll="{{ onInfoScroll }}" data-no-scrollbar="true" style="position:absolute;inset:0;overflow-y:scroll;overflow-x:hidden;touch-action:none;overscroll-behavior:contain;scrollbar-width:none;padding:16px 26px 16px 16px;font-size:clamp(16px,1.5vw + 11px,23px);line-height:1.55;letter-spacing:.03em;-webkit-overflow-scrolling:touch;">
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
                 <div style="flex:1;overflow:hidden;white-space:nowrap;font-family:'Jersey 10',monospace;font-size:27px;letter-spacing:.1em;">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</div>
                 <div data-type-line="true" style="font-family:'Jersey 10',monospace;font-size:27px;text-align:center;letter-spacing:.1em;text-shadow:0 0 6px oklch(0.8 0.17 205 / .4);white-space:nowrap;">SYSTEM INFO</div>
@@ -852,7 +852,7 @@
 
     <!-- PROJECT DESCRIPTION -->
     <sc-if value="{{ descVisible }}" hint-placeholder-val="{{ false }}">
-      <div ref="{{ descRef }}" style="width:100%;max-width:620px;margin-left:auto;margin-right:auto;max-height:34vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;background:#060706;border-radius:12px;padding:14px 20px 16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), inset 0 2px 10px rgba(0,0,0,.6);opacity:0;position:relative;z-index:35;">
+      <div ref="{{ descRef }}" style="width:100%;max-width:620px;margin-left:auto;margin-right:auto;max-height:34vh;overflow-y:auto;touch-action:none;overscroll-behavior:contain;background:#060706;border-radius:12px;padding:14px 20px 16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05), inset 0 2px 10px rgba(0,0,0,.6);opacity:0;position:relative;z-index:35;">
         <div style="font-family:'Poppins',sans-serif;font-size:clamp(17px, calc(15px * var(--dec, 1)), 24px);line-height:1.5;color:oklch(0.75 0.01 205);">{{ channel.desc }}</div>
         <!-- same pill, same blink as SYS. INFO, but laid out along the row.
              The station has no project behind it, so it has no button. -->
@@ -1189,6 +1189,7 @@ class Component extends DCLogic {
   descRef = (el) => {
     if (!el) return;
     this.descEl = el;
+    this.bindTouchScroll(el);
     el.style.opacity = '0';
     el.style.transform = 'translateY(-8px)';
     setTimeout(() => {
@@ -1595,8 +1596,69 @@ class Component extends DCLogic {
     if (this._clientsSquareRo) this._clientsSquareRo.disconnect();
     if (this._infoScrollRo) this._infoScrollRo.disconnect();
   }
+
+  /** Scroll a panel from touch events instead of asking the browser to.
+
+      Two rounds of trying to coax native touch scrolling out of this panel
+      failed on real iPhones, and the reason is not something the page can see:
+      an overflow:scroll box that is absolutely positioned inside a fixed
+      ancestor is a combination iOS has never handled reliably, and nothing in
+      the CSS reports whether the compositor has decided to scroll it or not.
+
+      So it is not asked any more. touch-action:none tells the browser to keep
+      its hands off entirely, and the finger drives scrollTop directly, with a
+      little inertia afterwards so it still feels thrown rather than dragged.
+      A wheel and a trackpad are untouched by touch-action, so the desktop keeps
+      its own native scrolling.
+
+      The listener must be non-passive: it calls preventDefault so the gesture
+      cannot also be read as something else. */
+  bindTouchScroll(el) {
+    if (!el || el._touchScrollBound) return;
+    el._touchScrollBound = true;
+    let startY = 0, startTop = 0, lastY = 0, lastT = 0, vel = 0, raf = 0;
+    const maxTop = () => Math.max(0, el.scrollHeight - el.clientHeight);
+    const clamp = (v) => Math.max(0, Math.min(maxTop(), v));
+
+    el.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      cancelAnimationFrame(raf);
+      startY = lastY = e.touches[0].clientY;
+      startTop = el.scrollTop;
+      lastT = performance.now();
+      vel = 0;
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+      if (e.touches.length !== 1) return;
+      const y = e.touches[0].clientY;
+      const now = performance.now();
+      // Two samples in the same millisecond would divide by ~0 and produce a
+      // throw that crosses the whole panel, so the interval has a floor and the
+      // result a ceiling of roughly one panel-height per second.
+      const dt = Math.max(8, now - lastT);
+      vel = Math.max(-60, Math.min(60, (lastY - y) / dt * 16));
+      lastY = y; lastT = now;
+      el.scrollTop = clamp(startTop - (y - startY));
+      if (maxTop() > 0) e.preventDefault();      // nothing else may claim it
+    }, { passive: false });
+
+    el.addEventListener('touchend', () => {
+      const glide = () => {
+        vel *= 0.91;
+        if (Math.abs(vel) < 0.25) return;
+        const before = el.scrollTop;
+        el.scrollTop = clamp(before + vel);
+        if (el.scrollTop === before) return;     // hit an end, stop dead
+        raf = requestAnimationFrame(glide);
+      };
+      raf = requestAnimationFrame(glide);
+    }, { passive: true });
+  }
+
   infoScrollRef = (el) => {
     this.infoScrollEl = el;
+    this.bindTouchScroll(el);
     if (el && window.ResizeObserver && !this._infoScrollRo) {
       this._infoScrollRo = new ResizeObserver(() => this.updateInfoScrollThumb());
       this._infoScrollRo.observe(el);
