@@ -1280,14 +1280,14 @@ class Component extends DCLogic {
     // the segment labels suggest.
     if (this.infoAnim) this.infoAnim.playSegments(opening ? [61, 120] : [1, 60], true);
     this.kickRemote();
-    this.playSfx('./assets/remote-info.mp3', 1);
+    this.playSfx('./assets/remote-info.mp3', 1.2);
     this.onToggleDesc();
   };
 
   // Each button has its own click, named for the button it belongs to. Like
   // the knock and the taps these are room sounds, so playSfx ignores mute.
-  onPrevPress = () => { if (this.prevAnim) this.prevAnim.playSegments([0, 60], true); this.kickRemote(); this.playSfx('./assets/remote-channel-up.mp3', 1); this.next(); };
-  onNextPress = () => { if (this.nextAnim) this.nextAnim.playSegments([0, 60], true); this.kickRemote(); this.playSfx('./assets/remote-channel-down.mp3', 1); this.prev(); };
+  onPrevPress = () => { if (this.prevAnim) this.prevAnim.playSegments([0, 60], true); this.kickRemote(); this.playSfx('./assets/remote-channel-up.mp3', 1.6); this.next(); };
+  onNextPress = () => { if (this.nextAnim) this.nextAnim.playSegments([0, 60], true); this.kickRemote(); this.playSfx('./assets/remote-channel-down.mp3', 1.6); this.prev(); };
 
   // The shell dips and springs back on every press, as if the plastic absorbed
   // the click. Runs on its own layer so it never fights the drag transform.
@@ -2556,6 +2556,7 @@ class Component extends DCLogic {
          './assets/screen-tap-01.mp3', './assets/screen-tap-02.mp3',
          './assets/screen-tap-03.mp3', './assets/screen-tap-04.mp3'];
   _sfxBuf = {};
+  _sfxPeak = {};
 
   initSfx() {
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -2569,7 +2570,17 @@ class Component extends DCLogic {
           const out = this._actx.decodeAudioData(buf, res, rej);
           if (out && out.then) out.then(res, rej);
         }))
-        .then((decoded) => { this._sfxBuf[src] = decoded; })
+        .then((decoded) => {
+          this._sfxBuf[src] = decoded;
+          // the loudest sample in the clip, so playSfx knows how much headroom
+          // there is before a gain above 1 would clip
+          let peak = 0;
+          for (let ch = 0; ch < decoded.numberOfChannels; ch++) {
+            const d = decoded.getChannelData(ch);
+            for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > peak) peak = a; }
+          }
+          this._sfxPeak[src] = peak || 1;
+        })
         .catch(() => {});                   // that clip just uses the fallback
     });
   }
@@ -2579,8 +2590,16 @@ class Component extends DCLogic {
     if (this._actx && this._actx.state === 'suspended') this._actx.resume().catch(() => {});
   };
 
+  /** `volume` may exceed 1: Web Audio has no ceiling where an <audio> element
+      capped at unity, so a clip can be pushed past its recorded level without
+      re-exporting it. What it cannot do is exceed full scale — samples above
+      1.0 are clipped flat by the output, which is audible as distortion on
+      exactly the loudest part of the sound. So the gain is limited to whatever
+      headroom the clip actually has. */
   playSfx(src, volume) {
-    const vol = volume == null ? 0.5 : volume;
+    const want = volume == null ? 0.5 : volume;
+    const peak = this._sfxPeak[src];
+    const vol = peak ? Math.min(want, 0.98 / peak) : want;
     const ctx = this._actx, buf = this._sfxBuf[src];
     if (ctx && buf && ctx.state === 'running') {
       try {
@@ -2595,7 +2614,7 @@ class Component extends DCLogic {
     }
     try {
       const a = new Audio(src);
-      a.volume = vol;
+      a.volume = Math.min(1, vol);   // an element cannot go above unity
       a.play().catch(() => {});
     } catch (e) {}
   }
@@ -2862,7 +2881,7 @@ class Component extends DCLogic {
       taglineAnim: this.state.taglineFlickering ? 'tagline-flicker .35s steps(8, end) forwards' : 'none',
       transitionVideoRef: this.transitionVideoRef,
       onTransitionEnded: this.onTransitionEnded,
-      onToggleMute: () => { this.kickRemote(); this.playSfx('./assets/remote-mute.mp3', 1); this.setMuted(!this.state.muted, true); },
+      onToggleMute: () => { this.kickRemote(); this.playSfx('./assets/remote-mute.mp3', 1.2); this.setMuted(!this.state.muted, true); },
       remoteRef: this.remoteRef,
       screenRef: this.screenRef,
       clipPathRef: this.clipPathRef,
