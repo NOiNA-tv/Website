@@ -747,7 +747,14 @@
                   </div>
                   <div>
                     <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">UPTIME</div>
-                    <div data-type-line="true" style="font-size:1.06em;line-height:1;">{{ uptime }}</div>
+                    <!-- The only long value in the block, and the photograph
+                         beside it is a fixed 152px, so on a narrow phone this
+                         is the one line with nowhere to go. It shrinks to the
+                         width actually left over — 100vw less the photo, the
+                         gap and the page's margins — and stops shrinking as
+                         soon as it fits at full size, which is everywhere above
+                         about 500px. Clipping the readout would be worse. -->
+                    <div data-type-line="true" style="font-size:min(1.06em, calc((100vw - 225px) / 11.5));line-height:1;white-space:nowrap;">{{ uptime }}</div>
                   </div>
                   <div>
                     <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">SIGNAL SOURCE</div>
@@ -1569,6 +1576,7 @@ class Component extends DCLogic {
     window.removeEventListener('keydown', this.onKeyDown);
     clearInterval(this._kaomojiInt);
     clearInterval(this._cmsPoll);
+    clearInterval(this._uptimeInt);
     ['pointerdown', 'keydown', 'touchstart'].forEach((n) =>
       window.removeEventListener(n, this.unlockSfx));
     if (this._actx) { try { this._actx.close(); } catch (e) {} this._actx = null; }
@@ -1675,20 +1683,35 @@ class Component extends DCLogic {
       Counted by walking whole years and whole months off the start date rather
       than dividing elapsed milliseconds, because months are not a fixed length —
       the arithmetic would drift by days. What is left over splits cleanly into
-      weeks and days. */
+      weeks, days, hours and minutes, borrowing up the chain the way subtraction
+      by hand does.
+
+      Minutes are labelled MIN, not M: M is already months, three columns to its
+      left, and 1M:...:1M in the same line reads as a mistake.
+
+      A unit that comes out at zero is dropped rather than printed — a readout
+      is a statement about the time, and 0W says nothing. If every one of them
+      is zero, which is only true in the first minute, it says 0MIN. */
   uptime(now) {
     const start = new Date(2014, 6, 8);
     const end = now || new Date();
     let y = end.getFullYear() - start.getFullYear();
-    let m = end.getMonth() - start.getMonth();
+    let mo = end.getMonth() - start.getMonth();
     let d = end.getDate() - start.getDate();
+    let h = end.getHours() - start.getHours();
+    let mi = end.getMinutes() - start.getMinutes();
+    if (mi < 0) { mi += 60; h -= 1; }
+    if (h < 0) { h += 24; d -= 1; }
     if (d < 0) {
-      m -= 1;
+      mo -= 1;
       d += new Date(end.getFullYear(), end.getMonth(), 0).getDate();  // days in the month before
     }
-    if (m < 0) { y -= 1; m += 12; }
+    if (mo < 0) { y -= 1; mo += 12; }
     const w = Math.floor(d / 7);
-    return y + 'Y:' + m + 'M:' + w + 'W:' + (d - w * 7) + 'D';
+    const parts = [[y, 'Y'], [mo, 'M'], [w, 'W'], [d - w * 7, 'D'], [h, 'H'], [mi, 'MIN']]
+      .filter(([n]) => n > 0)
+      .map(([n, u]) => n + u);
+    return parts.length ? parts.join(':') : '0MIN';
   }
 
   /** Flip the little face at the end of the bio, one second on each side.
@@ -1731,8 +1754,9 @@ class Component extends DCLogic {
   startTypewriter(lines) {
     clearTimeout(this._typeT);
     let i = 0;
+    this._typeDone = false;
     const next = () => {
-      if (i >= lines.length) return;
+      if (i >= lines.length) { this._typeDone = true; return; }
       if (i === 4 && this.logBoxEl) this.logBoxEl.style.opacity = '1'; // log box appears as its text starts
       const line = lines[i];
       if (line.querySelector('a')) {
@@ -2106,6 +2130,12 @@ class Component extends DCLogic {
     this.scheduleFlicker();
     this.startNoise();
     this.initSfx();
+    // Keep the minutes column honest while the panel is open. Held off until
+    // the typewriter has finished: a re-render mid-type rewrites the line from
+    // the template and would wipe what has been typed so far.
+    this._uptimeInt = setInterval(() => {
+      if (this.state.infoOpen && this._typeDone) this.setState({ uptimeAt: Date.now() });
+    }, 20000);
     ['pointerdown', 'keydown', 'touchstart'].forEach((n) =>
       window.addEventListener(n, this.unlockSfx, { passive: true }));
   }
