@@ -389,9 +389,11 @@
      the template's style attribute on each render; it never touches classes. */
   .app-root{padding:16px 14px;}
   .tv-bezel{padding:18px 18px 14px;border-radius:32px;}
+  .tv-logo{margin:18px 0 0;}          /* 14px padding + 4px border below it */
   @media (max-width:600px){
     .app-root{padding:7px 6px;}
     .tv-bezel{padding:9px 9px 8px;border-radius:19px;}
+    .tv-logo{margin:12px 0 0;}        /* 8px padding + 4px border below it */
   }
   html,body{margin:0;height:100%;width:100%;overflow:hidden;position:fixed;
     overscroll-behavior:none;touch-action:manipulation;}
@@ -812,8 +814,11 @@
       </sc-if>
 
       <sc-if value="{{ !infoOpen }}" hint-placeholder-val="{{ true }}">
-      <div style="margin:14px 0 0;display:flex;justify-content:center;">
-        <img src="./assets/noina-logo-static.png" alt="NOiNA logo" style="height:16.5px;width:auto;filter:brightness(0) invert(1) opacity(0.55);">
+      <!-- .tv-logo's top margin is set to the chassis's bottom padding plus its
+           border, so the mark sits with equal air above and below: from the
+           bottom of the glass down to the outer edge of the set. -->
+      <div class="tv-logo" style="display:flex;justify-content:center;">
+        <img src="./assets/noina-logo-static.png" alt="NOiNA logo" style="height:12.4px;width:auto;filter:brightness(0) invert(1) opacity(0.55);">
       </div>
       </sc-if>
     </div>
@@ -1091,7 +1096,8 @@ function fetchPublishedChannels(onReady) {
       // old one, which is the question being asked when a publish looks ignored
       note('loaded ' + clean.length + ' channels' +
            (clean.length < list.length ? ' (' + (list.length - clean.length) + ' hidden or incomplete)' : '') +
-           ' — ch01 is "' + clean[0].title + '"');
+           ' — ch01 "' + clean[0].title + '", desc: ' +
+           JSON.stringify(String(clean[0].desc || '').slice(0, 40)));
       window.__NOINA_PUBLISHED = clean;
       CHANNELS = buildChannels();
       if (!Array.isArray(data) && data && Array.isArray(data.taglines) && data.taglines.length) {
@@ -1556,6 +1562,9 @@ class Component extends DCLogic {
     window.removeEventListener('keydown', this.onKeyDown);
     clearInterval(this._kaomojiInt);
     clearInterval(this._cmsPoll);
+    ['pointerdown', 'keydown', 'touchstart'].forEach((n) =>
+      window.removeEventListener(n, this.unlockSfx));
+    if (this._actx) { try { this._actx.close(); } catch (e) {} this._actx = null; }
     this.stopGlowSampling();
     cancelAnimationFrame(this._kickRaf);
     ['muteAnim', 'infoAnim', 'prevAnim', 'nextAnim'].forEach((k) => {
@@ -2028,6 +2037,9 @@ class Component extends DCLogic {
     }, 1000);
     this.scheduleFlicker();
     this.startNoise();
+    this.initSfx();
+    ['pointerdown', 'keydown', 'touchstart'].forEach((n) =>
+      window.addEventListener(n, this.unlockSfx, { passive: true }));
   }
 
   /** Grow the television to fill the window, up to a 960px-wide picture — the
@@ -2519,10 +2531,65 @@ class Component extends DCLogic {
       A fresh element each time: reusing one and rewinding it drops the sound
       whenever the previous play() is still resolving, which is what made the
       transition static come and go. */
+  /** Every one-shot the room makes, decoded once and kept in memory.
+
+      `new Audio(src).play()` is what this used to do, and it is late by design:
+      the element has to be created, the media pipeline spun up and the file
+      decoded before a sample reaches the speaker, and a phone is slower at all
+      three. Decoding each clip once into an AudioBuffer moves that cost to page
+      load; starting one afterwards is a buffer source and a gain node, which
+      begins on the next audio quantum — a few milliseconds, not a few hundred.
+
+      Browsers will not let an AudioContext make sound until the visitor has
+      interacted with the page, so the context is resumed on the first pointer
+      or key event. Until then, and if Web Audio is unavailable or a clip has
+      not finished decoding, it falls back to the old element. */
+  SFX = ['./assets/tv-knock.mp3', './assets/static-click.mp3',
+         './assets/remote-mute.mp3', './assets/remote-info.mp3',
+         './assets/remote-channel-up.mp3', './assets/remote-channel-down.mp3',
+         './assets/screen-tap-01.mp3', './assets/screen-tap-02.mp3',
+         './assets/screen-tap-03.mp3', './assets/screen-tap-04.mp3'];
+  _sfxBuf = {};
+
+  initSfx() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try { this._actx = new AC(); } catch (e) { return; }
+    this.SFX.forEach((src) => {
+      fetch(src)
+        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+        .then((buf) => new Promise((res, rej) => {
+          // the callback form too: older Safari does not return a promise here
+          const out = this._actx.decodeAudioData(buf, res, rej);
+          if (out && out.then) out.then(res, rej);
+        }))
+        .then((decoded) => { this._sfxBuf[src] = decoded; })
+        .catch(() => {});                   // that clip just uses the fallback
+    });
+  }
+
+  // the first touch or key press is what lets the context make sound at all
+  unlockSfx = () => {
+    if (this._actx && this._actx.state === 'suspended') this._actx.resume().catch(() => {});
+  };
+
   playSfx(src, volume) {
+    const vol = volume == null ? 0.5 : volume;
+    const ctx = this._actx, buf = this._sfxBuf[src];
+    if (ctx && buf && ctx.state === 'running') {
+      try {
+        const node = ctx.createBufferSource();
+        node.buffer = buf;
+        const gain = ctx.createGain();
+        gain.gain.value = vol;
+        node.connect(gain).connect(ctx.destination);
+        node.start();
+        return;
+      } catch (e) {}                        // fall through to the element
+    }
     try {
       const a = new Audio(src);
-      a.volume = volume == null ? 0.5 : volume;
+      a.volume = vol;
       a.play().catch(() => {});
     } catch (e) {}
   }
