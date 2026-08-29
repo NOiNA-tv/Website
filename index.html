@@ -389,11 +389,11 @@
      the template's style attribute on each render; it never touches classes. */
   .app-root{padding:16px 14px;}
   .tv-bezel{padding:18px 18px 14px;border-radius:32px;}
-  .tv-logo{margin:18px 0 0;}          /* 14px padding + 4px border below it */
+  .tv-logo{margin:16px 0 0;}          /* centred, then lifted 2px by eye */
   @media (max-width:600px){
     .app-root{padding:7px 6px;}
     .tv-bezel{padding:9px 9px 8px;border-radius:19px;}
-    .tv-logo{margin:12px 0 0;}        /* 8px padding + 4px border below it */
+    .tv-logo{margin:10px 0 0;}        /* centred, then lifted 2px by eye */
   }
   html,body{margin:0;height:100%;width:100%;overflow:hidden;position:fixed;
     overscroll-behavior:none;touch-action:manipulation;}
@@ -726,15 +726,17 @@
                   </div>
                 </div>
                 <!-- The five pairs are spread evenly down the portrait's full
-                     213px. Jersey 10's glyphs sit outside their line box at
-                     both ends, so the column is nudged down .09em and trimmed
-                     by .16em: that lands the ink of the first and last lines on
-                     the photo's top and bottom edges instead of past them.
+                     height of the photograph — the light rectangle, not the
+                     dashed frame around it, which sits 8px outside on every
+                     side. Jersey 10's glyphs sit outside their line box at both
+                     ends, so the column is nudged down a further .09em and
+                     trimmed by .16em: that lands the ink of the first and last
+                     lines on the photo's own top and bottom edges.
                      Label over value, both left-aligned, so the dotted leaders
                      that used to carry the eye across are no longer needed.
                      Each half is its own typed line, which keeps the terminal
                      cadence: the label types, then its answer. -->
-                <div style="text-align:left;letter-spacing:-.02em;margin-top:.09em;height:calc(213px - .16em);display:flex;flex-direction:column;justify-content:space-between;">
+                <div style="text-align:left;letter-spacing:-.02em;margin-top:calc(8px + .09em);height:calc(197px - .16em);display:flex;flex-direction:column;justify-content:space-between;">
                   <div>
                     <div data-type-line="true" style="font-size:.6em;line-height:1;letter-spacing:.08em;color:oklch(0.85 0.1 205);">OPERATOR</div>
                     <div data-type-line="true" style="font-size:1.06em;line-height:1;">NOI NAVVE</div>
@@ -1098,12 +1100,16 @@ function fetchPublishedChannels(onReady) {
            (clean.length < list.length ? ' (' + (list.length - clean.length) + ' hidden or incomplete)' : '') +
            ' — ch01 "' + clean[0].title + '", desc: ' +
            JSON.stringify(String(clean[0].desc || '').slice(0, 40)));
+      // Everything the file carries has to be in place BEFORE buildChannels
+      // runs: it reads the station's blurb while assembling channel 00, so a
+      // station set afterwards was always one step too late and the built-in
+      // text stayed on screen while every project's text updated.
       window.__NOINA_PUBLISHED = clean;
-      CHANNELS = buildChannels();
       if (!Array.isArray(data) && data && Array.isArray(data.taglines) && data.taglines.length) {
         window.__NOINA_PUBLISHED_TAGLINES = data.taglines.map((t) => String(t).trim()).filter(Boolean);
       }
       if (!Array.isArray(data) && data && data.station) window.__NOINA_PUBLISHED_STATION = data.station;
+      CHANNELS = buildChannels();
       if (onReady) onReady();
     })
     .catch(() => note('not loaded: the request was blocked (CORS, or the bucket is unreachable)'));
