@@ -967,7 +967,7 @@
         <div style="position:relative;flex:1;min-width:0;height:var(--av-h);box-sizing:border-box;container-type:size;border:2px solid oklch(0.8 0.17 205);border-radius:4px;background:#020402;padding:10px 13px 22px;">
           <div style="position:absolute;left:-10px;top:26px;width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:10px solid oklch(0.8 0.17 205);"></div>
           <div style="position:absolute;left:-6px;top:28px;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:7px solid #020402;"></div>
-          <div ref="{{ pingTextRef }}" style="font-size:min(28px, var(--ping-fs, 14px));line-height:1.12;overflow:hidden;letter-spacing:.03em;white-space:pre-line;"></div>
+          <div ref="{{ pingTextRef }}" style="font-size:min(28px, var(--ping-fs, 14px));line-height:var(--ping-lh, 1.12);overflow:hidden;letter-spacing:.03em;white-space:pre-line;"></div>
           <sc-if value="{{ pingTyped }}" hint-placeholder-val="{{ true }}">
           <svg viewBox="0 0 40 24" style="position:absolute;right:10px;bottom:9px;width:22px;height:14px;animation:ping-arrow 1.6s steps(1,end) infinite;" aria-hidden="true">
             <polygon fill="oklch(0.8 0.17 205)" points="32 0 24 0 16 0 8 0 0 0 0 8 8 8 8 16 16 16 16 24 24 24 24 16 32 16 32 8 40 8 40 0 32 0"></polygon>
@@ -1418,6 +1418,8 @@ class Component extends DCLogic {
 
   // The rise takes 620ms. Typing under way while the box is still moving is
   // not read as typing, so it starts once the box has landed.
+  PING_LH_MIN = 1.12;
+  PING_LH_MAX = 1.5;
   PING_RISE_MS = 760;
   PING_TYPE_MS = 36;
 
@@ -1467,24 +1469,59 @@ class Component extends DCLogic {
       const es = getComputedStyle(el);
       const probe = document.createElement('div');
       probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;' +
-        'white-space:pre-line;line-height:1.12;width:' + availW + 'px;' +
+        'white-space:pre-line;line-height:' + this.PING_LH_MIN + ';width:' + availW + 'px;' +
         'font-family:' + es.fontFamily + ';letter-spacing:' + es.letterSpacing + ';';
-      probe.textContent = this.PING_TEXT;
       document.body.appendChild(probe);
-      let lo = 8, hi = 40, best = 8;
-      for (let i = 0; i < 22; i++) {
+
+      // The closing line has to survive whole. Left to the height alone, the
+      // search happily picks a size where "Works every time..." sheds its last
+      // word onto a line of its own — which is what pushed the block down the
+      // bubble and left it looking bottom-heavy. Measured on its own, it is a
+      // width the size must respect.
+      const tail = this.PING_TEXT.split('\n').pop();
+      const wide = document.createElement('div');
+      // Built from scratch, not by editing the probe's cssText: the browser
+      // reformats cssText when it is set, so a string replace against it
+      // silently matched nothing and this element kept wrapping like the probe
+      // — which made the constraint below always true and therefore useless.
+      wide.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;' +
+        'white-space:pre;width:auto;display:inline-block;line-height:' + this.PING_LH_MIN + ';' +
+        'font-family:' + es.fontFamily + ';letter-spacing:' + es.letterSpacing + ';';
+      wide.textContent = tail;
+      document.body.appendChild(wide);
+
+      probe.textContent = this.PING_TEXT;
+      let lo = 6, hi = 40, best = 6;
+      for (let i = 0; i < 24; i++) {
         const mid = (lo + hi) / 2;
         probe.style.fontSize = mid + 'px';
-        // scrollWidth catches a word too long to break, which no size can fix
-        // by wrapping — it has to shrink until the word itself fits
-        if (probe.scrollHeight <= availH + 0.5 && probe.scrollWidth <= availW + 0.5) { best = mid; lo = mid; }
-        else hi = mid;
+        wide.style.fontSize = mid + 'px';
+        const fits = probe.scrollHeight <= availH + 0.5     // all of it clears the bottom
+          && probe.scrollWidth <= availW + 0.5              // no word too long to break
+          && wide.getBoundingClientRect().width <= availW;  // and the last line stays whole
+        if (fits) { best = mid; lo = mid; } else hi = mid;
       }
-      probe.remove();
-      document.documentElement.style.setProperty('--ping-fs', (Math.floor(best * 4) / 4) + 'px');
+      const fs = Math.floor(best * 4) / 4;
+
+      // Whatever height that leaves over is given back to the leading rather
+      // than left as a gap under the text: the block then sits across the
+      // bubble instead of crowding its top.
+      probe.style.fontSize = fs + 'px';
+      const lines = Math.max(1, Math.round(probe.scrollHeight / (fs * this.PING_LH_MIN)));
+      const lh = Math.max(this.PING_LH_MIN, Math.min(this.PING_LH_MAX, availH / (lines * fs)));
+      probe.remove(); wide.remove();
+      const root = document.documentElement.style;
+      root.setProperty('--ping-fs', fs + 'px');
+      root.setProperty('--ping-lh', lh.toFixed(3));
     };
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(run).catch(run);
-    else run();
+    // Three passes: now, after the next layout, and once more a fifth of a
+    // second later. Leaving the tab and coming back used to be what made this
+    // right, because returning calls remeasure — the point of the extra passes
+    // is that nobody should have to do that. They all land well before the
+    // typing starts at 760ms, so the size is settled before a character shows.
+    const settle = () => { run(); requestAnimationFrame(run); setTimeout(run, 200); };
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(settle).catch(settle);
+    else settle();
   }
   pingAvatarRef = (el) => {
     if (!el || this._pingVid === el) return;
