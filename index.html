@@ -417,6 +417,9 @@
   @keyframes led-pulse{0%,100%{opacity:1;box-shadow:0 0 6px 1px currentColor;}50%{opacity:.4;box-shadow:0 0 2px 0 currentColor;}}
   @keyframes sysinfo-blink{0%,100%{background:oklch(0.40 0.09 205);}50%{background:#3CC4DC;}}
   @keyframes coin-overshoot{0%{transform:scale(1);}8%{transform:scale(0.62);}18%{transform:scale(1.16);}28%{transform:scale(0.86);}40%{transform:scale(1.09);}54%{transform:scale(0.95);}68%{transform:scale(1.03);}84%{transform:scale(0.985);}100%{transform:scale(1);}}
+  /* The squash and its settling are unchanged in shape and depth — only the
+     clock is slower, 1.25s where it was 0.7. Same keyframes stretched out
+     reads as a heavier spring rather than a twitchier one. */
   /* 0.97 lightness is as pale as cyan goes before it reads as white */
   @keyframes coin-flash{0%{color:oklch(0.97 0.09 205);}55%{color:oklch(0.93 0.12 205);}100%{color:oklch(0.8 0.17 205);}}
   @keyframes tagline-flicker{0%{opacity:1;}12%{opacity:.15;}24%{opacity:1;}38%{opacity:.1;}52%{opacity:.85;}66%{opacity:.1;}80%{opacity:.55;}100%{opacity:0;}}
@@ -1499,7 +1502,7 @@ class Component extends DCLogic {
 
   logBoxRef = (el) => { this.logBoxEl = el; };
   clientsBoxRef = (el) => { this.clientsBoxEl = el; };
-  dvdState = { x: 20, y: 30, vx: 82, vy: 64 }; // px/sec — a drift, not a throw
+  dvdState = { x: 20, y: 30, vx: 140, vy: 110 }; // px/sec
   coins = [];
   coinIdx = 0;
   loadCoins() {
@@ -1531,7 +1534,7 @@ class Component extends DCLogic {
     const el = this.coinInnerEl; // scoped to the inner logo element only — never touches dvdBallEl's own translate transform driving the bounce trajectory
     if (el) {
       el.style.animation = 'none';
-      requestAnimationFrame(() => { el.style.animation = 'coin-overshoot .7s ease-out, coin-flash .5s ease-out'; });
+      requestAnimationFrame(() => { el.style.animation = 'coin-overshoot 1.25s ease-out, coin-flash .8s ease-out'; });
     }
   };
   clientsSquareRef = (el) => {
