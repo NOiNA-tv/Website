@@ -394,10 +394,17 @@
      overflow them there is nothing to scroll or rubber-band, and the set sits
      at the top of an ordinary document.
 
-     svh is the viewport measured with the address bar showing, so the set is
-     never taller than what can actually be seen; dvh would have grown and
-     shrunk underneath it as the bar came and went. */
-  .app-root{padding:16px 14px;height:100vh;height:100svh;}
+     The height is not a CSS unit at all any more. svh is the viewport with the
+     address bar SHOWING, and Safari commonly loads with it hidden — so the set
+     came out shorter than the visible area, sitting high with a band of bare
+     body beneath it, which is the grey at the bottom. dvh tracks the right
+     number but is applied a beat late on the same browsers.
+
+     --app-h is window.innerHeight, written from JS on load, on resize and
+     whenever the visual viewport changes, which is exactly the height that is
+     visible at that moment. dvh is the fallback for the frames before the
+     script runs. */
+  .app-root{padding:16px 14px;height:100vh;height:100dvh;height:var(--app-h, 100dvh);}
   .tv-bezel{padding:18px 18px 14px;border-radius:32px;}
   .tv-logo{margin:16px 0 0;}          /* centred, then lifted 2px by eye */
   @media (max-width:600px){
@@ -940,6 +947,9 @@
     <sc-if value="{{ showGlowDebug }}" hint-placeholder-val="{{ false }}">
       <div style="position:fixed;left:8px;top:8px;z-index:2000;pointer-events:none;font-family:'VT323',monospace;font-size:14px;letter-spacing:.08em;padding:4px 9px;border-radius:6px;background:rgba(0,0,0,.72);border:1px solid {{ glowDebugColor }};color:{{ glowDebugColor }};">GLOW: {{ glowSource }}</div>
     </sc-if>
+    <sc-if value="{{ showPerfDebug }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;left:8px;bottom:8px;z-index:2000;pointer-events:none;font-family:'VT323',monospace;font-size:14px;letter-spacing:.08em;padding:4px 9px;border-radius:6px;background:rgba(0,0,0,.72);border:1px solid oklch(0.85 0.2 145);color:oklch(0.85 0.2 145);">FPS: {{ fpsLabel }}</div>
+    </sc-if>
     <sc-if value="{{ showCmsDebug }}" hint-placeholder-val="{{ false }}">
       <div style="position:fixed;left:8px;top:36px;right:8px;z-index:2000;pointer-events:none;font-family:'VT323',monospace;font-size:14px;letter-spacing:.08em;padding:4px 9px;border-radius:6px;background:rgba(0,0,0,.72);border:1px solid oklch(0.8 0.17 205);color:oklch(0.8 0.17 205);">CHANNELS.JSON: {{ cmsSource }}</div>
     </sc-if>
@@ -1287,7 +1297,7 @@ class Component extends DCLogic {
   ];
   tagQueue = [];
 
-  state = { index: 0, transitioning: false, muted: true, infoOpen: false, descOpen: false, descRendered: false, remoteOpen: false, dragging: false, remoteHeight: 300, videoReady: false, glitching: false, glowSource: 'PALETTE (fallback)', cmsSource: 'checking\u2026', fxOn: true, pingOn: false, pingAnim: 'ping-in', pingTyped: false };
+  state = { index: 0, transitioning: false, muted: true, infoOpen: false, descOpen: false, descRendered: false, remoteOpen: false, dragging: false, remoteHeight: 300, videoReady: false, glitching: false, glowSource: 'PALETTE (fallback)', cmsSource: 'checking\u2026', fxOn: true, fps: 0, pingOn: false, pingAnim: 'ping-in', pingTyped: false };
 
   constructor(props) {
     super(props);
@@ -1415,10 +1425,27 @@ class Component extends DCLogic {
   PING_TEXT = 'Too GLITCHY for ya? SMACK THE TV SIDE!\nWorks every time...';
   _chanPresses = 0;
 
+  PING_WAIT_MS = 15000;
+
   countChannelPress() {
-    if (this.state.pingOn || this._pingDone) return;
     if (++this._chanPresses < this.PING_AFTER) return;
+    this.showPing();
+  }
+
+  /** Three changes of channel or fifteen seconds, whichever comes first.
+
+      Someone flipping channels has told us they are exploring, and the hint
+      answers that. Someone sitting still has told us nothing, so after a
+      quarter of a minute it offers itself anyway. And someone who has already
+      knocked the set never sees it at all: they found the thing it was going
+      to tell them about, and being taught what you have just done is worse
+      than being told nothing. */
+  showPing() {
+    if (this.state.pingOn || this._pingDone || this._knocked) return;
     this._pingDone = true;                       // only ever once
+    clearTimeout(this._pingWaitT);
+    clearTimeout(this._perfT);
+    cancelAnimationFrame(this._perfRaf);
     this.setState({ pingOn: true, pingAnim: 'ping-in', pingTyped: false });
     this.typePing();
   }
@@ -1445,6 +1472,14 @@ class Component extends DCLogic {
         el.innerHTML = this.PING_TEXT.replace('GLITCHY',
           '<span class="glitchy" data-text="GLITCHY">GLITCHY</span>');
         this.setState({ pingTyped: true });    // the arrow waits for this
+        // A second later the set knocks itself, low on its right-hand side, so
+        // the instruction is shown rather than only described.
+        this._pingT = setTimeout(() => {
+          const bez = this.tvBezelEl;
+          if (!bez || !this.state.pingOn) return;
+          const r = bez.getBoundingClientRect();
+          this.knockTv(r.right - 8, r.bottom - r.height * 0.12, true);
+        }, 1000);
       };
       tick();
     };
@@ -1834,10 +1869,17 @@ class Component extends DCLogic {
     clearInterval(this._cmsPoll);
     clearInterval(this._uptimeInt);
     clearTimeout(this._pingT);
+    clearTimeout(this._pingWaitT);
+    clearTimeout(this._perfT);
+    cancelAnimationFrame(this._perfRaf);
     ['pointerdown', 'keydown', 'touchstart'].forEach((n) =>
       window.removeEventListener(n, this.unlockSfx));
     ['load', 'pageshow', 'orientationchange'].forEach((n) =>
       window.removeEventListener(n, this.settleViewport));
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener('resize', this.onResize);
+      window.visualViewport.removeEventListener('scroll', this.onResize);
+    }
     if (this._actx) { try { this._actx.close(); } catch (e) {} this._actx = null; }
     this.stopGlowSampling();
     cancelAnimationFrame(this._kickRaf);
@@ -2374,7 +2416,14 @@ class Component extends DCLogic {
       this.setState({ taglineFlickering: true });
       this._tagT2 = setTimeout(this.showNextTagline, 350);
     }, 4000);
+    this.syncViewportHeight();
     window.addEventListener('resize', this.onResize, { passive: true });
+    // iOS does not always fire a window resize when the address bar slides
+    // away; the visual viewport always reports it.
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', this.onResize, { passive: true });
+      window.visualViewport.addEventListener('scroll', this.onResize, { passive: true });
+    }
     document.addEventListener('visibilitychange', this.onVisibilityChange);
     requestAnimationFrame(this.remeasure);
     // Coming back from another tab already fixed this by calling remeasure, so
@@ -2397,6 +2446,9 @@ class Component extends DCLogic {
     this.scheduleFlicker();
     this.startNoise();
     this.initSfx();
+    this._pingWaitT = setTimeout(() => this.showPing(), this.PING_WAIT_MS);
+    // late enough that the load, the fonts and the first video are done with
+    this._perfT = setTimeout(() => this.measurePerf(), 3500);
     // Keep the minutes column honest while the panel is open. Held off until
     // the typewriter has finished: a re-render mid-type rewrites the line from
     // the template and would wipe what has been typed so far.
@@ -2482,14 +2534,66 @@ class Component extends DCLogic {
   /** Put the page back where it belongs and measure again, a few times over
       the first couple of seconds. Cheap, and it covers every order in which
       iOS decides on its address bar, its fonts and its viewport. */
+  /** How many frames the device is actually managing, and what to give up if
+      the answer is "not many".
+
+      The expensive part of this page is not arithmetic, it is compositing: a
+      full-width backdrop-filter, a colour grade over a playing video, and two
+      screen-blended layers on top of that. A mid-range phone can decode the
+      video perfectly well and still drop to a slideshow carrying all of it,
+      and the sampler makes it worse — drawing a video frame into a canvas ten
+      times a second pulls the texture back across the bus and fights the
+      decoder for it.
+
+      So the frame rate is measured, once, a few seconds in when everything has
+      settled. Below the threshold the CRT layers come off and the glow falls
+      back to its palette, which is the same state a knock produces — and a
+      knock still turns them back on, because it is the visitor's call in the
+      end, not the measurement's. */
+  PERF_MIN_FPS = 45;
+
+  measurePerf() {
+    let n = 0;
+    const t0 = performance.now();
+    const tick = () => {
+      n++;
+      const dt = performance.now() - t0;
+      if (dt < 1500) { this._perfRaf = requestAnimationFrame(tick); return; }
+      const fps = Math.round(n / (dt / 1000));
+      this.setState({ fps });
+      if (fps >= this.PERF_MIN_FPS || document.hidden) return;
+      this._lowPower = true;
+      this.stopGlowSampling();
+      this._glowDead = true;                    // do not let it restart
+      this._glowBg = null;
+      this.setState({ fxOn: false, glowSource: 'PALETTE (device is slow, ' + fps + 'fps)' });
+      if (typeof console !== 'undefined') {
+        console.log('[noina] ' + fps + 'fps measured — CRT layers and video sampling off');
+      }
+    };
+    this._perfRaf = requestAnimationFrame(tick);
+  }
+
+  /** The one number the layout hangs off: how tall the page actually is right
+      now. Written to the root element, which React never rewrites. */
+  syncViewportHeight = () => {
+    const h = Math.round(window.innerHeight);
+    if (h > 0 && h !== this._appH) {
+      this._appH = h;
+      document.documentElement.style.setProperty('--app-h', h + 'px');
+    }
+  };
+
   settleViewport = () => {
     [0, 60, 250, 700, 1500].forEach((ms) => setTimeout(() => {
+      this.syncViewportHeight();
       if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
       this.remeasure();
     }, ms));
   };
 
   onResize = () => {
+    this.syncViewportHeight();
     if (this._resizeRaf) return;
     this._resizeRaf = requestAnimationFrame(() => { this._resizeRaf = null; this.remeasure(); });
   };
@@ -2777,9 +2881,14 @@ class Component extends DCLogic {
       along the unit vector pointing away from the hand. That keeps the shove
       the same strength wherever it lands — a corner does not hit half again as
       hard as an edge — and leaves the energy calculation below untouched. */
-  knockTv(x, y) {
+  /** `demo` marks a knock the page performed on itself. It behaves exactly
+      like a real one — same shove, same channel split, same sound — but it
+      does not count as the visitor having knocked, so it neither dismisses the
+      hint that asked for it nor suppresses a future one. */
+  knockTv(x, y, demo) {
     const el = this.tvBezelEl;
     if (!el) return;
+    if (!demo) this._knocked = true;
     cancelAnimationFrame(this._tvRaf);
     const r = el.getBoundingClientRect();
     const dx = (x - (r.left + r.width / 2)) / (r.width / 2);
@@ -2790,7 +2899,7 @@ class Component extends DCLogic {
     let t = 0, v = -LAUNCH;                    // away from the hand, then back
     const stiffness = 260, damping = 12;
     this.nextGlitchPair();
-    this.dismissPing();                        // they did what it asked
+    if (!demo) this.dismissPing();             // they did what it asked
     // Every knock also flips the CRT overlays: off, then on again next time.
     this.setState({ glitching: true, fxOn: !this.state.fxOn });
     const step = () => {
@@ -3051,7 +3160,9 @@ class Component extends DCLogic {
     let last = 0;
     const step = (now) => {
       this._glowRaf = requestAnimationFrame(step);
-      if (now - last < 90) return;              // ~11 a second; the layer is blurred, nothing finer shows
+      if (now - last < 150) return;             // ~7 a second. The layer is blurred hard and eased into,
+                                                // so nothing finer is visible, and each frame pulled out of
+                                                // the video costs the decoder something on a slow phone.
       last = now;
       const v = this._videoEl;
       if (!v || v.paused || v.readyState < 2 || document.hidden ||
@@ -3189,6 +3300,11 @@ class Component extends DCLogic {
       showGlowDebug: typeof location !== 'undefined' && /[?&]debug=glow\b/.test(location.search),
       // ?debug=cms — did the bucket's channels.json load, and if not, why not?
       showCmsDebug: typeof location !== 'undefined' && /[?&]debug=cms\b/.test(location.search),
+      // ?debug=perf — what the device actually managed, and what was given up
+      showPerfDebug: typeof location !== 'undefined' && /[?&]debug=perf\b/.test(location.search),
+      fpsLabel: this.state.fps
+        ? this.state.fps + (this._lowPower ? ' — EFFECTS OFF' : ' — ALL ON')
+        : 'measuring\u2026',
       cmsSource: this.state.cmsSource,
       glowSource: this.state.glowSource,
       glowDebugColor: this.state.glowSource === 'SAMPLING VIDEO' ? 'oklch(0.85 0.2 145)' : 'oklch(0.8 0.17 75)',
