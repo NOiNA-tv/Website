@@ -412,7 +412,14 @@
     .tv-bezel{padding:9px 9px 8px;border-radius:19px;}
     .tv-logo{margin:10px 0 0;}        /* centred, then lifted 2px by eye */
   }
-  html,body{margin:0;height:100%;width:100%;overflow:hidden;
+  /* height:100% resolved against the initial containing block, which on iOS is
+     the viewport with the toolbars HIDDEN. With the toolbars showing, the body
+     was therefore taller than the visible area — so the document could scroll,
+     Safari scrolled it, and the result was the top cut off with a band of bare
+     body showing beneath the set. Both are pinned to the measured height for
+     the same reason .app-root is: nothing can overflow, so nothing can scroll. */
+  html,body{margin:0;width:100%;overflow:hidden;
+    height:100vh;height:100dvh;height:var(--app-h, 100dvh);
     overscroll-behavior:none;touch-action:manipulation;}
   body{background:linear-gradient(135deg, oklch(0.73 0.012 205), oklch(0.60 0.013 205));}
   /* The set is an object, not a document — selecting its text breaks the
@@ -1472,14 +1479,22 @@ class Component extends DCLogic {
         el.innerHTML = this.PING_TEXT.replace('GLITCHY',
           '<span class="glitchy" data-text="GLITCHY">GLITCHY</span>');
         this.setState({ pingTyped: true });    // the arrow waits for this
-        // A second later the set knocks itself, low on its right-hand side, so
-        // the instruction is shown rather than only described.
-        this._pingT = setTimeout(() => {
+        // Two seconds later the set knocks itself, low on its right-hand side,
+        // so the instruction is shown rather than only described — then again
+        // a second after that. Two knocks, because one would leave the picture
+        // stripped: every knock flips the CRT layers, so the pair demonstrates
+        // the effect and hands the television back the way it was found.
+        const demoKnock = () => {
           const bez = this.tvBezelEl;
-          if (!bez || !this.state.pingOn) return;
+          if (!bez || !this.state.pingOn) return false;
           const r = bez.getBoundingClientRect();
           this.knockTv(r.right - 8, r.bottom - r.height * 0.12, true);
-        }, 1000);
+          return true;
+        };
+        this._pingT = setTimeout(() => {
+          if (!demoKnock()) return;
+          this._pingT = setTimeout(demoKnock, 1000);
+        }, 2000);
       };
       tick();
     };
@@ -1876,6 +1891,7 @@ class Component extends DCLogic {
       window.removeEventListener(n, this.unlockSfx));
     ['load', 'pageshow', 'orientationchange'].forEach((n) =>
       window.removeEventListener(n, this.settleViewport));
+    window.removeEventListener('scroll', this.onStrayScroll);
     if (window.visualViewport) {
       window.visualViewport.removeEventListener('resize', this.onResize);
       window.visualViewport.removeEventListener('scroll', this.onResize);
@@ -2417,6 +2433,7 @@ class Component extends DCLogic {
       this._tagT2 = setTimeout(this.showNextTagline, 350);
     }, 4000);
     this.syncViewportHeight();
+    window.addEventListener('scroll', this.onStrayScroll, { passive: true });
     window.addEventListener('resize', this.onResize, { passive: true });
     // iOS does not always fire a window resize when the address bar slides
     // away; the visual viewport always reports it.
@@ -2550,28 +2567,53 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
-  PERF_MIN_FPS = 45;
+  PERF_MIN_FPS = 50;
+  PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
 
   measurePerf() {
-    let n = 0;
-    const t0 = performance.now();
+    // ?fx=off and ?fx=on settle it by hand, which is also how to tell whether
+    // the effects are what is costing a given phone its frames.
+    const forced = /[?&]fx=(on|off)\b/.exec(location.search);
+    if (forced) {
+      this.setState({ fps: 0 });
+      if (forced[1] === 'off') this.stepDown('forced by ?fx=off');
+      return;
+    }
+    let n = 0, long = 0, prev = performance.now();
+    const t0 = prev;
     const tick = () => {
+      const now = performance.now();
+      // A frame that took longer than a frame and a third is a dropped one.
+      // Counting them matters more than the average: a phone compositing this
+      // page badly still gets its callbacks on the vsync it does make, so the
+      // average sits near 60 while the picture visibly hitches.
+      if (now - prev > 22) long++;
+      prev = now;
       n++;
-      const dt = performance.now() - t0;
-      if (dt < 1500) { this._perfRaf = requestAnimationFrame(tick); return; }
+      const dt = now - t0;
+      if (dt < 2000) { this._perfRaf = requestAnimationFrame(tick); return; }
       const fps = Math.round(n / (dt / 1000));
+      const ratio = n ? long / n : 0;
+      this._longRatio = ratio;
       this.setState({ fps });
-      if (fps >= this.PERF_MIN_FPS || document.hidden) return;
-      this._lowPower = true;
-      this.stopGlowSampling();
-      this._glowDead = true;                    // do not let it restart
-      this._glowBg = null;
-      this.setState({ fxOn: false, glowSource: 'PALETTE (device is slow, ' + fps + 'fps)' });
-      if (typeof console !== 'undefined') {
-        console.log('[noina] ' + fps + 'fps measured — CRT layers and video sampling off');
-      }
+      if (document.hidden) return;
+      if (fps >= this.PERF_MIN_FPS && ratio <= this.PERF_MAX_LONG) return;
+      this.stepDown(fps + 'fps, ' + Math.round(ratio * 100) + '% of frames late');
     };
     this._perfRaf = requestAnimationFrame(tick);
+  }
+
+  /** Give up the expensive layers. Same state a knock produces, and a knock
+      still brings them back — the measurement gets an opinion, not a veto. */
+  stepDown(why) {
+    this._lowPower = true;
+    this.stopGlowSampling();
+    this._glowDead = true;                      // do not let it restart
+    this._glowBg = null;
+    this.setState({ fxOn: false, glowSource: 'PALETTE (' + why + ')' });
+    if (typeof console !== 'undefined') {
+      console.log('[noina] ' + why + ' — CRT layers and video sampling off');
+    }
   }
 
   /** The one number the layout hangs off: how tall the page actually is right
@@ -2582,6 +2624,13 @@ class Component extends DCLogic {
       this._appH = h;
       document.documentElement.style.setProperty('--app-h', h + 'px');
     }
+    if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
+  };
+
+  // Nothing here scrolls. If the document moves at all it is the browser doing
+  // it to itself, and the only correct answer is to put it back.
+  onStrayScroll = () => {
+    if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
   };
 
   settleViewport = () => {
@@ -3303,8 +3352,9 @@ class Component extends DCLogic {
       // ?debug=perf — what the device actually managed, and what was given up
       showPerfDebug: typeof location !== 'undefined' && /[?&]debug=perf\b/.test(location.search),
       fpsLabel: this.state.fps
-        ? this.state.fps + (this._lowPower ? ' — EFFECTS OFF' : ' — ALL ON')
-        : 'measuring\u2026',
+        ? this.state.fps + 'fps, ' + Math.round((this._longRatio || 0) * 100) + '% late' +
+          (this._lowPower ? ' — EFFECTS OFF' : ' — ALL ON')
+        : (this._lowPower ? 'forced off' : 'measuring\u2026'),
       cmsSource: this.state.cmsSource,
       glowSource: this.state.glowSource,
       glowDebugColor: this.state.glowSource === 'SAMPLING VIDEO' ? 'oklch(0.85 0.2 145)' : 'oklch(0.8 0.17 75)',
