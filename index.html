@@ -433,9 +433,16 @@
   .ping-shell{width:var(--ping-w, 342px);margin:0 auto;background:#000;padding:8px;}
   /* --av-w is the portrait's width and --av-h follows from its 114:160, and
      the bubble is given that same height. The type then sizes against both
-     dimensions of the bubble — cqw so a line holds its character count, cqh so
-     the lines that result still fit the height — which is what keeps the two
-     halves level instead of letting the text run the box past the picture. */
+     dimensions of the bubble, which is what keeps the two halves level instead
+     of letting the text run the box past the picture.
+
+     7.84cqw is not a guess. Set in VT323 at this letter-spacing, the string
+     "If the signal is too" measures 12.641x the font size, so a font of
+     width/12.75 is the largest at which that line still holds together — and
+     the break lands after "too", as the design has it, instead of after "is"
+     with a finger's width of dead space at the end of every line. 22cqh is the
+     four lines that follow fitting the portrait's height; 28px is where the
+     desktop stops growing. */
   .ping-frame{--av-w:clamp(92px, calc((var(--ping-w, 342px) - 76px) * 0.35), 114px);
     --av-h:calc(var(--av-w) * 1.4035);
     background:#000;padding:11px;box-sizing:border-box;width:100%;
@@ -962,12 +969,12 @@
              rather than the viewport, so the number of characters on a line
              stays the same whether the portrait beside it has given width back
              or not. Without it a slightly wider phone read worse, not better. -->
-        <div style="position:relative;flex:1;min-width:0;height:var(--av-h);box-sizing:border-box;overflow:hidden;container-type:size;border:2px solid oklch(0.8 0.17 205);border-radius:4px;background:#020402;padding:10px 13px 22px;">
+        <div style="position:relative;flex:1;min-width:0;height:var(--av-h);box-sizing:border-box;container-type:size;border:2px solid oklch(0.8 0.17 205);border-radius:4px;background:#020402;padding:10px 13px 22px;">
           <div style="position:absolute;left:-10px;top:26px;width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:10px solid oklch(0.8 0.17 205);"></div>
           <div style="position:absolute;left:-6px;top:28px;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:7px solid #020402;"></div>
-          <div ref="{{ pingTextRef }}" style="font-size:min(28px, 22cqh, 8.7cqw);line-height:1.12;letter-spacing:.03em;white-space:pre-line;"></div>
+          <div ref="{{ pingTextRef }}" style="font-size:min(28px, 22cqh, 7.84cqw);line-height:1.12;overflow:hidden;letter-spacing:.03em;white-space:pre-line;"></div>
           <sc-if value="{{ pingTyped }}" hint-placeholder-val="{{ true }}">
-          <svg viewBox="0 0 40 24" style="position:absolute;right:16px;bottom:9px;width:22px;height:14px;animation:ping-arrow 1.6s steps(1,end) infinite;" aria-hidden="true">
+          <svg viewBox="0 0 40 24" style="position:absolute;right:10px;bottom:9px;width:22px;height:14px;animation:ping-arrow 1.6s steps(1,end) infinite;" aria-hidden="true">
             <polygon fill="oklch(0.8 0.17 205)" points="32 0 24 0 16 0 8 0 0 0 0 8 8 8 8 16 16 16 16 24 24 24 24 16 32 16 32 8 40 8 40 0 32 0"></polygon>
           </svg>
           </sc-if>
