@@ -1503,9 +1503,18 @@ class Component extends DCLogic {
       the half second it is on screen, with the click that goes with it. */
   runBoxStatic() {
     this.playSfx('./assets/static-click.mp3', 1);
+    this.rollStatic();
+  }
+
+  /** React drops bare boolean attributes, so muted and loop are set here; and
+      a video that is not in the document yet is retried on the next frame. */
+  rollStatic() {
     const v = this.boxStaticEl;
-    if (!v) return;
-    try { v.currentTime = 0; v.muted = true; v.loop = true; const q = v.play(); if (q && q.catch) q.catch(() => {}); } catch (e) {}
+    if (!v) { requestAnimationFrame(() => { if (this.boxStaticEl && this.state.boxStaticOn) this.rollStatic(); }); return; }
+    try {
+      v.muted = true; v.loop = true; v.playsInline = true; v.currentTime = 0;
+      const q = v.play(); if (q && q.catch) q.catch(() => {});
+    } catch (e) {}
   }
 
   onBoxTap = () => {
@@ -1634,7 +1643,12 @@ class Component extends DCLogic {
     setTimeout(gone, 900);                      // never leave one behind
   }
 
-  boxStaticRef = (el) => { this.boxStaticEl = el; };
+  boxStaticRef = (el) => {
+    this.boxStaticEl = el;
+    // The element only exists once the box is on screen, which is a render
+    // later than the call that asked for the static — so it starts itself.
+    if (el && this.state.boxStaticOn) this.rollStatic();
+  };
   ringProtoRef = (el) => { this.ringProtoEl = el; };
   pingTextRef = (el) => { this.pingTextEl = el; if (el) this.fitBoxText(); };
   pingAvatarRef = (el) => {
@@ -1675,13 +1689,17 @@ class Component extends DCLogic {
         'white-space:pre-line;line-height:' + this.PING_LH_MIN + ';width:' + availW + 'px;' +
         'font-family:' + es.fontFamily + ';letter-spacing:' + es.letterSpacing + ';';
       document.body.appendChild(probe);
-      const tail = text.split('\n').pop();
+      // Only a line the author broke on purpose has to stay whole. A single
+      // unbroken sentence has no tail — asking for it would force the whole
+      // page onto one line, and with it a tiny font.
+      const parts = text.split('\n');
+      const tail = parts.length > 1 ? parts[parts.length - 1] : '';
       const wide = document.createElement('div');
       wide.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;' +
         'white-space:pre;width:auto;display:inline-block;line-height:' + this.PING_LH_MIN + ';' +
         'font-family:' + es.fontFamily + ';letter-spacing:' + es.letterSpacing + ';';
       wide.textContent = tail;
-      document.body.appendChild(wide);
+      if (tail) document.body.appendChild(wide);
       probe.textContent = text;
       let lo = 6, hi = 40, best = 6;
       for (let i = 0; i < 24; i++) {
@@ -1690,14 +1708,14 @@ class Component extends DCLogic {
         wide.style.fontSize = mid + 'px';
         const fits = probe.scrollHeight <= availH + 0.5     // all of it clears the bottom
           && probe.scrollWidth <= availW + 0.5              // no word too long to break
-          && wide.getBoundingClientRect().width <= availW;  // and the last line stays whole
+          && (!tail || wide.getBoundingClientRect().width <= availW);  // a deliberate last line stays whole
         if (fits) { best = mid; lo = mid; } else hi = mid;
       }
       const fs = Math.floor(best * 4) / 4;
       probe.style.fontSize = fs + 'px';
       const lines = Math.max(1, Math.round(probe.scrollHeight / (fs * this.PING_LH_MIN)));
       const lh = Math.max(this.PING_LH_MIN, Math.min(this.PING_LH_MAX, availH / (lines * fs)));
-      probe.remove(); wide.remove();
+      probe.remove(); if (wide.parentNode) wide.remove();
       const root = document.documentElement.style;
       root.setProperty('--ping-fs', fs + 'px');
       root.setProperty('--ping-lh', lh.toFixed(3));

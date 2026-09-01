@@ -97,6 +97,23 @@
         </div>
         <textarea onChange="{{ onStationDesc }}" rows="4" value="{{ stationDesc }}" style="width:100%;background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:#9db0b3;padding:10px 12px;font-size:12.5px;line-height:1.6;resize:vertical;"></textarea>
       </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #262f31;">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="font-size:10.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Station slogans</div>
+        <div style="font-size:11px;color:#4f5c5e;flex:1;min-width:180px;">The lines that cycle under the logo on channel 00.</div>
+        <button onClick="{{ addTagline }}" style="border:none;cursor:pointer;padding:9px 14px;border-radius:8px;background:#232b2d;color:#dbe6e7;font-size:10.5px;font-weight:700;letter-spacing:1.3px;">+ ADD</button>
+        <button onClick="{{ publishTaglines }}" style="{{ tagPublishStyle }}">{{ tagPublishLabel }}</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:9px;">
+        <sc-for list="{{ taglineRows }}" as="tag" hint-placeholder-count="{{ 4 }}">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input value="{{ tag.text }}" onChange="{{ onTagline }}" data-idx="{{ tag.i }}" style="{{ tag.inputStyle }}" />
+            <button onClick="{{ onTagToggle }}" data-idx="{{ tag.i }}" title="Show or hide this line" style="{{ tag.toggleStyle }}">{{ tag.toggleLabel }}</button>
+            <button onClick="{{ onTagRemove }}" data-idx="{{ tag.i }}" title="Remove for good" style="border:none;cursor:pointer;background:#1d2325;color:#6f8083;border-radius:7px;width:28px;height:28px;font-size:15px;line-height:1;">×</button>
+          </div>
+        </sc-for>
+      </div>
+      </div>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:10px;">
@@ -180,25 +197,6 @@
           </sc-if>
         </div>
       </sc-for>
-    </div>
-
-    <!-- STATION SLOGANS -->
-    <div style="margin-top:22px;padding:18px 20px;border-radius:12px;border:1px solid #232b2d;background:#161b1d;">
-      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
-        <div style="font-size:10.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Station slogans</div>
-        <div style="font-size:11px;color:#4f5c5e;flex:1;min-width:180px;">The lines that cycle under the logo on channel 00.</div>
-        <button onClick="{{ addTagline }}" style="border:none;cursor:pointer;padding:9px 14px;border-radius:8px;background:#232b2d;color:#dbe6e7;font-size:10.5px;font-weight:700;letter-spacing:1.3px;">+ ADD</button>
-        <button onClick="{{ publishTaglines }}" style="{{ tagPublishStyle }}">{{ tagPublishLabel }}</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:9px;">
-        <sc-for list="{{ taglineRows }}" as="tag" hint-placeholder-count="{{ 4 }}">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <input value="{{ tag.text }}" onChange="{{ onTagline }}" data-idx="{{ tag.i }}" style="{{ tag.inputStyle }}" />
-            <button onClick="{{ onTagToggle }}" data-idx="{{ tag.i }}" title="Show or hide this line" style="{{ tag.toggleStyle }}">{{ tag.toggleLabel }}</button>
-            <button onClick="{{ onTagRemove }}" data-idx="{{ tag.i }}" title="Remove for good" style="border:none;cursor:pointer;background:#1d2325;color:#6f8083;border-radius:7px;width:28px;height:28px;font-size:15px;line-height:1;">×</button>
-          </div>
-        </sc-for>
-      </div>
     </div>
 
     <!-- TEXT BOXES -->
