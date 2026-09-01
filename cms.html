@@ -201,6 +201,33 @@
       </div>
     </div>
 
+    <!-- TEXT BOXES -->
+    <div style="margin-top:22px;padding:18px 20px;border-radius:12px;border:1px solid #232b2d;background:#161b1d;">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="font-size:10.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Text boxes</div>
+        <div style="font-size:11px;color:#4f5c5e;flex:1;min-width:180px;">The RPG-style boxes that talk to the visitor. One page per tap — a tap wipes the line and types the next.</div>
+        <button onClick="{{ publishDialogues }}" style="{{ dialoguePublishStyle }}">{{ dialoguePublishLabel }}</button>
+      </div>
+      <sc-for list="{{ dialogueRows }}" as="row" hint-placeholder-count="{{ 7 }}">
+        <div style="{{ row.wrapStyle }}">
+          <sc-if value="{{ row.isHeader }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <div style="font-size:10.5px;letter-spacing:1.6px;color:#9db0b3;text-transform:uppercase;font-weight:700;">{{ row.title }}</div>
+              <div style="font-size:11px;color:#4f5c5e;flex:1;min-width:200px;line-height:1.5;">{{ row.when }}</div>
+              <button onClick="{{ addDialoguePage }}" data-key="{{ row.key }}" style="border:none;cursor:pointer;padding:7px 12px;border-radius:7px;background:#232b2d;color:#dbe6e7;font-size:10px;font-weight:700;letter-spacing:1.2px;">+ ADD PAGE</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ row.isPage }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:flex-start;gap:8px;">
+              <div style="width:22px;flex-shrink:0;padding-top:11px;font-size:11px;color:#4f5c5e;text-align:right;">{{ row.num }}</div>
+              <textarea onChange="{{ onDialogueText }}" data-key="{{ row.key }}" data-idx="{{ row.idx }}" rows="2" value="{{ row.text }}" style="flex:1;min-width:0;background:#161c1e;border:1px solid #2c3639;border-radius:8px;color:oklch(0.82 0.13 205);padding:9px 11px;font-family:'VT323',monospace;font-size:17px;letter-spacing:1px;line-height:1.4;resize:vertical;"></textarea>
+              <button onClick="{{ removeDialoguePage }}" data-key="{{ row.key }}" data-idx="{{ row.idx }}" title="Remove this page" style="border:none;cursor:pointer;background:#1d2325;color:#6f8083;border-radius:7px;width:28px;height:28px;font-size:15px;line-height:1;flex-shrink:0;margin-top:6px;">×</button>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
     <!-- CLIENT LOGOS -->
     <div style="margin-top:22px;padding:18px 20px;border-radius:12px;border:1px solid #232b2d;background:#161b1d;">
       <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
@@ -284,11 +311,85 @@
 class Component extends DCLogic {
   KEY = 'noina_cms_projects_v1';
   ACCENT = 'oklch(0.78 0.15 205)';
-  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', palOpen: null, taglines: null, tagDirty: false, coins: null, coinArt: null, coinDirty: false, coinEdit: null, coinEditName: '', coinEditSvg: '', stationDesc: null, stationDirty: false };
+  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', palOpen: null, taglines: null, tagDirty: false, coins: null, coinArt: null, coinDirty: false, coinEdit: null, coinEditName: '', coinEditSvg: '', stationDesc: null, stationDirty: false, dialogues: null, dialogueDirty: false };
 
   TAG_KEY = 'noina_cms_taglines_v1';
   COIN_KEY = 'noina_cms_coins_v1';
   STATION_KEY = 'noina_cms_station_v1';
+  DIALOGUE_KEY = 'noina_cms_dialogues_v1';
+
+  /** The text boxes, in the order the site shows them. Only the words live
+      here — which page raises the remote, which word tears, how long the box
+      waits — all of that is behaviour and stays in the site's own code. */
+  DIALOGUE_SPEC = [
+    { key: 'intro', title: 'Welcome box',
+      when: 'On arrival. Each page advances when the box is tapped; the second raises the remote; the last winks.' },
+    { key: 'knock', title: 'Knock tip',
+      when: 'After four channel changes, or twenty seconds after the welcome closes. Never if the set has already been knocked. GLITCHY tears if the word is present.' },
+    { key: 'spare', title: 'Spare box',
+      when: 'Not shown yet — reserved for a third use. Leave it empty until it has a home.' },
+  ];
+  FACTORY_DIALOGUES = {
+    intro: ['Welcome to NOiNA Broadcasting Network...',
+            'Use the REMOTE to Flip through the channels...',
+            'Feel free to tap, click and poke around ;)'],
+    knock: ['Too GLITCHY for ya? SMACK THE TV SIDE! Works every time.'],
+    spare: [''],
+  };
+
+  hydrateDialogues() {
+    if (this.state.dialogues != null) return;
+    let saved = null;
+    try {
+      const raw = localStorage.getItem(this.DIALOGUE_KEY);
+      if (raw) saved = JSON.parse(raw);
+    } catch (e) {}
+    const out = {};
+    Object.keys(this.FACTORY_DIALOGUES).forEach((k) => {
+      const given = saved && Array.isArray(saved[k]) ? saved[k] : null;
+      out[k] = (given && given.length ? given : this.FACTORY_DIALOGUES[k]).map(String);
+    });
+    this.setState({ dialogues: out });
+  }
+  onDialogueText = (e) => {
+    const key = e.target.dataset.key, i = +e.target.dataset.idx;
+    const d = { ...(this.state.dialogues || {}) };
+    d[key] = (d[key] || []).slice();
+    d[key][i] = e.target.value;
+    this.setState({ dialogues: d, dialogueDirty: true });
+  };
+  addDialoguePage = (e) => {
+    const key = e.currentTarget.dataset.key;
+    const d = { ...(this.state.dialogues || {}) };
+    d[key] = (d[key] || []).concat(['']);
+    this.setState({ dialogues: d, dialogueDirty: true });
+  };
+  removeDialoguePage = (e) => {
+    const key = e.currentTarget.dataset.key, i = +e.currentTarget.dataset.idx;
+    const d = { ...(this.state.dialogues || {}) };
+    d[key] = (d[key] || []).filter((_, n) => n !== i);
+    if (!d[key].length) d[key] = [''];
+    this.setState({ dialogues: d, dialogueDirty: true });
+  };
+  publishDialogues = () => {
+    const d = this.liveDialogues();
+    try {
+      localStorage.setItem(this.DIALOGUE_KEY, JSON.stringify(d));
+      this.setState({ dialogueDirty: false });
+      this.flash('TEXT BOXES PUBLISHED');
+    } catch (e) { this.flash('COULD NOT SAVE'); }
+  };
+  /** Blank pages are dropped: an empty page would be a box that types nothing
+      and waits to be tapped through. */
+  liveDialogues() {
+    const src = this.state.dialogues || this.FACTORY_DIALOGUES;
+    const out = {};
+    Object.keys(src).forEach((k) => {
+      const kept = (src[k] || []).map((t) => String(t).trim()).filter(Boolean);
+      out[k] = kept;
+    });
+    return out;
+  }
 
   // ---- channel 00's blurb ------------------------------------------------
   // The station is never part of the project list, so its description lives in
@@ -445,6 +546,7 @@ class Component extends DCLogic {
       })),
       taglines: this.liveTaglines(),
       station: { desc: (this.state.stationDesc || '').trim() },
+      dialogues: this.liveDialogues(),
     };
     const missing = payload.channels.filter((c) => !c.file).map((c) => c.title);
     if (missing.length) { this.flash('NO VIDEO FILE ON: ' + missing.join(', ').toUpperCase()); return; }
@@ -582,6 +684,7 @@ class Component extends DCLogic {
     this.hydrateTaglines();
     this.hydrateCoins();
     this.hydrateStation();
+    this.hydrateDialogues();
     this._t = setInterval(() => { if (!this.state.items) this.hydrate(); }, 200);
     this._sweepT = setInterval(this.sweepThumbs, 400);
   }
@@ -760,6 +863,26 @@ class Component extends DCLogic {
         toggleStyle: 'border:none;cursor:pointer;border-radius:6px;padding:5px 9px;font-size:9.5px;font-weight:800;letter-spacing:1px;'
           + (t.hidden ? 'background:#242c2e;color:#6f8083;' : 'background:' + this.ACCENT + ';color:#04120f;'),
       })),
+      onDialogueText: this.onDialogueText, addDialoguePage: this.addDialoguePage,
+      removeDialoguePage: this.removeDialoguePage, publishDialogues: this.publishDialogues,
+      dialoguePublishLabel: this.state.dialogueDirty ? 'PUBLISH TEXT BOXES' : 'PUBLISHED \u2713',
+      dialoguePublishStyle: 'border:none;cursor:pointer;padding:9px 16px;border-radius:8px;font-size:10.5px;font-weight:800;letter-spacing:1.3px;'
+        + (this.state.dialogueDirty ? 'background:' + this.ACCENT + ';color:#04120f;' : 'background:#1d2325;color:#5d6c6e;'),
+      dialogueRows: (() => {
+        const d = this.state.dialogues || this.FACTORY_DIALOGUES;
+        const out = [];
+        this.DIALOGUE_SPEC.forEach((spec, si) => {
+          out.push({ isHeader: true, isPage: false, key: spec.key, title: spec.title, when: spec.when,
+            num: '', idx: '', text: '',
+            wrapStyle: 'margin-top:' + (si ? '18px' : '0') + ';padding-top:' + (si ? '16px' : '0')
+              + ';' + (si ? 'border-top:1px solid #232b2d;' : '') });
+          (d[spec.key] || ['']).forEach((t, i) => {
+            out.push({ isHeader: false, isPage: true, key: spec.key, title: '', when: '',
+              num: String(i + 1), idx: String(i), text: t, wrapStyle: 'margin-top:8px;' });
+          });
+        });
+        return out;
+      })(),
       onTagToggle: this.onTagToggle,
       downloadChannelsJson: this.downloadChannelsJson,
       coinEditOpen: this.state.coinEdit != null,
