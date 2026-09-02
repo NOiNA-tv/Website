@@ -635,7 +635,7 @@
        layer, over the floor and under everything else. The six colour groups
        are painted from CSS variables, which is why the file is inlined rather
        than pointed at with an <img>. -->
-  <div ref="{{ rugRef }}" aria-hidden="true" style="position:fixed;left:50%;bottom:0;width:2172.2px;height:819px;margin-left:-1086.1px;pointer-events:none;z-index:1;"></div>
+  <div ref="{{ rugRef }}" aria-hidden="true" style="position:fixed;left:50%;bottom:0;width:var(--rug-w, 2172.2px);height:var(--rug-h, 819px);transform:translateX(-50%);pointer-events:none;z-index:1;"></div>
   <div ref="{{ vignetteRef }}" style="position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:30;mix-blend-mode:multiply;background:radial-gradient(ellipse 62% 68% at 50% 50%, oklch(0.08 0.03 205 / 0) 0%, oklch(0.08 0.03 205 / 0) 55%, oklch(0.14 0.045 205 / .75) 78%, oklch(0.08 0.03 205 / .97) 100%);"></div>
   <sc-if value="{{ showTint }}" hint-placeholder-val="{{ false }}">
     <div class="vignette-tint" aria-hidden="true" style="background-image:{{ glowTint }}"></div>
@@ -2483,6 +2483,7 @@ class Component extends DCLogic {
     if (!el || el._rugDone) return;
     el._rugDone = true;
     this.paintRug();
+    this.updateRugPosition();
     fetch('./assets/carpet.svg').then((r) => r.text()).then((svg) => {
       if (!this.rugEl) return;
       this.rugEl.innerHTML = svg;
@@ -2521,6 +2522,29 @@ class Component extends DCLogic {
     this.vignetteEl.style.background = this._vignetteBg;
   }
 
+  /** The rug is scaled, not cropped: its top edge is left one decoder-height
+      below the decoder, and the rest of the way down to the bottom of the
+      screen is its height. Its own proportions are kept, so a narrow screen
+      sees the middle of it and a wide one sees the whole width — which is what
+      makes it sit with the floor's perspective rather than fight it. Written
+      as variables on the root element, which React never rewrites. */
+  RUG_RATIO = 2172.2 / 819;
+
+  updateRugPosition() {
+    if (!this.decoderEl) return;
+    const dec = this.decoderEl.getBoundingClientRect();
+    const free = window.innerHeight - dec.bottom;
+    // One decoder of air above the rug. On a wide desktop the set is large and
+    // sits low, and there is not that much room left: rather than shrink the
+    // rug to a strip, the space that is there is split evenly between the air
+    // and the rug, so both keep their share.
+    const gap = Math.min(dec.height, free / 2);
+    const h = Math.max(60, free - gap);
+    const root = document.documentElement.style;
+    root.setProperty('--rug-h', h + 'px');
+    root.setProperty('--rug-w', (h * this.RUG_RATIO) + 'px');
+  }
+
   updateWallPosition() {
     if (!this.rootEl || !this.wallEl || !this.decoderEl) return;
     const rootRect = this.rootEl.getBoundingClientRect();
@@ -2538,6 +2562,7 @@ class Component extends DCLogic {
     const midY = decRect.top - rootRect.top + decRect.height * 0.5;
     this.textureEl.style.top = `${midY}px`;
     this.updateWallPosition();
+    this.updateRugPosition();
     const viewportH = rootRect.height;
     const angleDeg = 88;
     const dCritical = 900 / Math.sin(angleDeg * Math.PI / 180);
