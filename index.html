@@ -2489,8 +2489,18 @@ class Component extends DCLogic {
       this.rugEl.innerHTML = svg;
       const node = this.rugEl.querySelector('svg');
       if (node) { node.style.width = '100%'; node.style.height = '100%'; node.style.display = 'block'; }
+      // The measurement may have already given up on the expensive layers by
+      // the time the file lands, so the wool is checked here as well.
+      if (this._lowPower) this.dropWool();
     }).catch(() => {});
   };
+
+  /** Hand back the flat vector rug: the wool filter is a big one-off raster,
+      and a device that is already dropping frames should not pay for it. */
+  dropWool() {
+    const g = this.rugEl && this.rugEl.querySelector('g[filter]');
+    if (g) g.removeAttribute('filter');
+  }
 
   paintRug() {
     const pool = this.RUG_PAIRS.slice();
@@ -2539,7 +2549,9 @@ class Component extends DCLogic {
     // rug to a strip, the space that is there is split evenly between the air
     // and the rug, so both keep their share.
     const gap = Math.min(dec.height, free / 2);
-    const h = Math.max(60, free - gap);
+    // 24px more rug than the rule alone gives: it reads better a little
+    // higher in the frame.
+    const h = Math.max(60, free - gap) + 24;
     const root = document.documentElement.style;
     root.setProperty('--rug-h', h + 'px');
     root.setProperty('--rug-w', (h * this.RUG_RATIO) + 'px');
@@ -2854,6 +2866,9 @@ class Component extends DCLogic {
     this._glowDead = true;                      // do not let it restart
     this._glowBg = null;
     this.setState({ fxOn: false, glowSource: 'PALETTE (' + why + ')' });
+    // The rug's wool filter is a big one-off raster; a device that is already
+    // struggling gets the flat vector instead.
+    this.dropWool();
     if (typeof console !== 'undefined') {
       console.log('[noina] ' + why + ' — CRT layers and video sampling off');
     }
