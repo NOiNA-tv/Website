@@ -88,7 +88,9 @@
         <span style="width:74px;font-family:'Segment7Standard',monospace;font-size:24px;color:oklch(0.78 0.15 55);">00</span>
         <span style="flex:1;font-weight:600;font-size:14px;">NOiNA <span style="color:#7d8f92;font-weight:400;">— Station ID</span></span>
         <span style="font-size:10px;letter-spacing:1.6px;color:#6f8083;">FIXED · DESCRIPTION EDITABLE</span>
+        <button onClick="{{ toggleStation }}" title="Edit" style="border:none;cursor:pointer;height:28px;padding:0 10px;border-radius:7px;background:#242c2e;color:oklch(0.78 0.15 205);font-size:10px;font-weight:700;letter-spacing:1.2px;">{{ stationEditLabel }}</button>
       </div>
+      <sc-if value="{{ stationOpen }}" hint-placeholder-val="{{ true }}">
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid #262f31;">
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px;">
           <div style="font-size:10.5px;letter-spacing:2px;color:#6f8083;text-transform:uppercase;">Description</div>
@@ -114,6 +116,7 @@
         </sc-for>
       </div>
       </div>
+      </sc-if>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:10px;">
@@ -309,7 +312,7 @@
 class Component extends DCLogic {
   KEY = 'noina_cms_projects_v1';
   ACCENT = 'oklch(0.78 0.15 205)';
-  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', palOpen: null, taglines: null, tagDirty: false, coins: null, coinArt: null, coinDirty: false, coinEdit: null, coinEditName: '', coinEditSvg: '', stationDesc: null, stationDirty: false, dialogues: null, dialogueDirty: false };
+  state = { items: null, openId: null, dirty: false, dragIdx: null, previewId: null, ioOpen: false, ioNote: '', toast: '', palOpen: null, taglines: null, tagDirty: false, coins: null, coinArt: null, coinDirty: false, coinEdit: null, coinEditName: '', coinEditSvg: '', stationDesc: null, stationDirty: false, stationOpen: false, dialogues: null, dialogueDirty: false };
 
   TAG_KEY = 'noina_cms_taglines_v1';
   COIN_KEY = 'noina_cms_coins_v1';
@@ -405,6 +408,7 @@ class Component extends DCLogic {
     } catch (e) {}
     this.setState({ stationDesc: saved == null ? this.FACTORY_STATION_DESC : saved });
   }
+  toggleStation = () => this.setState({ stationOpen: !this.state.stationOpen });
   onStationDesc = (e) => this.setState({ stationDesc: e.target.value, stationDirty: true });
   publishStation = () => {
     const d = (this.state.stationDesc || '').trim();
@@ -850,6 +854,8 @@ class Component extends DCLogic {
       onPalette: this.onPalette, onPaletteClear: this.onPaletteClear, togglePalette: this.togglePalette,
       stationDesc: this.state.stationDesc || '',
       onStationDesc: this.onStationDesc, publishStation: this.publishStation,
+      stationOpen: this.state.stationOpen, toggleStation: this.toggleStation,
+      stationEditLabel: this.state.stationOpen ? 'CLOSE' : 'EDIT',
       stationPublishLabel: this.state.stationDirty ? 'PUBLISH CHANNEL 00' : 'PUBLISHED ✓',
       stationPublishStyle: 'border:none;cursor:pointer;padding:9px 16px;border-radius:8px;font-size:10.5px;font-weight:800;letter-spacing:1.3px;'
         + (this.state.stationDirty ? 'background:' + this.ACCENT + ';color:#04120f;' : 'background:#1d2325;color:#5d6c6e;'),
