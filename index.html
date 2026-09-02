@@ -451,8 +451,11 @@
     outline-offset:3px;display:flex;align-items:flex-start;gap:12px;}
   /* The box does not slide any more: it is cut to, behind half a second of
      static the exact size of the box, and cut away the same way. */
+  /* The tile underneath is what the first frames show: a video needs a moment
+     to hand over its first picture, and until it does the element is black. */
   .box-static{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-    z-index:5;background:#000;pointer-events:none;}
+    z-index:5;pointer-events:none;
+    background:#000 url(./assets/static-noise-tile.png) repeat center/180px;}
   @keyframes ping-arrow{0%,44%{opacity:1;}56%,100%{opacity:.08;}}
   /* The classic channel-split, which works here because this is text: the word
      is duplicated into two pseudo-elements, coloured, and shoved apart for a
@@ -1580,7 +1583,7 @@ class Component extends DCLogic {
         // In from the corner rather than on it: near enough to read as the
         // bottom right of the chassis, far enough that the burst is not
         // half off the set.
-        this.knockTv(r.right - r.width * 0.13, r.bottom - r.height * 0.12, true);
+        this.knockTv(r.right - r.width * 0.19, r.bottom - r.height * 0.12, true);
         return true;
       };
       this._boxT = setTimeout(() => {
@@ -1621,7 +1624,7 @@ class Component extends DCLogic {
     const r = host.getBoundingClientRect();
     const bez = this.tvBezelEl;
     const w = bez ? bez.getBoundingClientRect().width : 340;
-    const SIZE = Math.round(Math.max(96, Math.min(190, w * 0.42)));
+    const SIZE = Math.round(Math.max(48, Math.min(95, w * 0.21)));
     const box = document.createElement('div');
     box.style.cssText = 'position:absolute;pointer-events:none;z-index:70;mix-blend-mode:screen;' +
       'width:' + SIZE + 'px;height:' + SIZE + 'px;' +
@@ -1630,10 +1633,15 @@ class Component extends DCLogic {
     let anim = null;
     const clean = () => { try { if (anim) anim.destroy(); } catch (e) {} box.remove(); };
     try {
-      anim = lottie.loadAnimation({
-        container: box, renderer: 'svg', loop: false, autoplay: true,
-        path: './assets/lottie/tv-knock.json',
-      });
+      // animationData, not path: fetching the file at the moment of the knock
+      // put the burst a whole round trip behind the sound and the shove. The
+      // clip is loaded once at start-up and reused for every knock after.
+      const cfg = { container: box, renderer: 'svg', loop: false, autoplay: true };
+      // lottie writes into the data it is given, so each burst gets its own
+      // copy of the parsed clip rather than sharing one object.
+      if (this._knockData) cfg.animationData = JSON.parse(this._knockData);
+      else cfg.path = './assets/lottie/tv-knock.json';
+      anim = lottie.loadAnimation(cfg);
       anim.addEventListener('complete', clean);
       anim.addEventListener('data_failed', clean);
       setTimeout(clean, 2000);                  // never leave one behind
@@ -2588,6 +2596,10 @@ class Component extends DCLogic {
     this.scheduleFlicker();
     this.startNoise();
     this.initSfx();
+    // The knock burst is fetched once, up front, so a knock draws it at once
+    // rather than a round trip later.
+    fetch('./assets/lottie/tv-knock.json').then((r) => r.text())
+      .then((t) => { this._knockData = t; }).catch(() => {});
     // late enough that the load, the fonts and the first video are done with
     this._perfT = setTimeout(() => this.measurePerf(), 3500);
     // Keep the minutes column honest while the panel is open. Held off until
