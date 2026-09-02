@@ -640,7 +640,7 @@
   <sc-if value="{{ showTint }}" hint-placeholder-val="{{ false }}">
     <div class="vignette-tint" aria-hidden="true" style="background-image:{{ glowTint }}"></div>
   </sc-if>
-  <div ref="{{ contentColRef }}" style="width:100%;max-width:428px;--tv-max:1004px;display:flex;flex-direction:column;gap:12px;min-height:0;position:relative;">
+  <div ref="{{ contentColRef }}" style="width:100%;max-width:428px;--tv-max:760px;display:flex;flex-direction:column;gap:12px;min-height:0;position:relative;">
 
     <!-- TV BEZEL -->
     <div ref="{{ tvBezelRef }}" onpointerdown="{{ onTvTap }}" class="{{ tvBezelClass }}" style="{{ tvBezelStyle }}">
@@ -2749,14 +2749,22 @@ class Component extends DCLogic {
     const padX = rp ? parseFloat(rp.paddingLeft) + parseFloat(rp.paddingRight) : 28;
     const padY = rp ? parseFloat(rp.paddingTop) + parseFloat(rp.paddingBottom) : 32;
     const availW = window.innerWidth - padX;
-    const availH = window.innerHeight - padY - (85 + 12 + 8); // remote peek, breathing room
+    // Room for the remote's peek and a little air — plus, on a desktop, room
+    // for the description drawer and the rug underneath the set. Without that
+    // reserve the picture grew until the drawer had nowhere to open and the
+    // rug was a sliver.
+    const wide = window.innerWidth >= 900;
+    const reserve = wide ? 200 : 0;
+    const availH = window.innerHeight - padY - (85 + 12 + 8) - reserve;
     // The description drawer is left out of the sum. Its height depends on how
     // the text wraps, which depends on the width the fit is trying to decide —
     // so including it made the loop land somewhere different for every channel,
     // and the picture visibly changed size as you zapped. The drawer scrolls
     // inside itself instead.
     const drawer = () => (this.descEl ? this.descEl.offsetHeight + 12 : 0);
-    let w = Math.min(1004, availW);
+    // A smaller ceiling than the set used to have: at full size the remote
+    // covered the decoder and the description ran off the bottom of the window.
+    let w = Math.min(760, availW);
     col.style.maxWidth = w + 'px';
     for (let i = 0; i < 3; i++) {
       const h = col.offsetHeight - drawer();
