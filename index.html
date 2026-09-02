@@ -629,18 +629,18 @@
   <div style="position:absolute;left:0;right:0;bottom:0;top:0;overflow:hidden;pointer-events:none;z-index:0;perspective:900px;perspective-origin:50% 0%;">
   <div ref="{{ wallRef }}" style="position:absolute;left:0;right:0;background-image:linear-gradient(oklch(0.55 0.013 205) 2px, transparent 2px),linear-gradient(90deg, oklch(0.55 0.013 205) 2px, transparent 2px),url('./assets/terrazzo-random.png?v=2');background-repeat:repeat;background-size:90px 90px,90px 90px,270px 270px;filter:brightness(0.855);"></div>
   <div ref="{{ textureRef }}" style="position:absolute;left:50%;top:0;width:420%;transform:translateX(-50%) rotateX(88deg);transform-origin:50% 0%;background-image:linear-gradient(oklch(0.55 0.013 205) 2px, transparent 2px),linear-gradient(90deg, oklch(0.55 0.013 205) 2px, transparent 2px),url('./assets/terrazzo-random.png?v=2');background-repeat:repeat;background-size:90px 90px,90px 90px,270px 270px;"></div>
-  </div>
   <!-- THE RUG. Drawn at its own size and pinned to the bottom of the screen:
        a desktop sees the whole width, a phone sees the middle of it. Its own
        layer, over the floor and under everything else. The six colour groups
        are painted from CSS variables, which is why the file is inlined rather
        than pointed at with an <img>. -->
-  <div ref="{{ rugRef }}" aria-hidden="true" style="position:fixed;left:50%;bottom:0;width:var(--rug-w, 2172.2px);height:var(--rug-h, 819px);transform:translateX(-50%);pointer-events:none;z-index:1;"></div>
+  <div ref="{{ rugRef }}" aria-hidden="true" style="position:fixed;left:50%;bottom:0;width:var(--rug-w, 2172.2px);height:var(--rug-h, 819px);transform:translateX(-50%);pointer-events:none;z-index:2;"></div>
+  </div>
   <div ref="{{ vignetteRef }}" style="position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:30;mix-blend-mode:multiply;background:radial-gradient(ellipse 62% 68% at 50% 50%, oklch(0.08 0.03 205 / 0) 0%, oklch(0.08 0.03 205 / 0) 55%, oklch(0.14 0.045 205 / .75) 78%, oklch(0.08 0.03 205 / .97) 100%);"></div>
   <sc-if value="{{ showTint }}" hint-placeholder-val="{{ false }}">
     <div class="vignette-tint" aria-hidden="true" style="background-image:{{ glowTint }}"></div>
   </sc-if>
-  <div ref="{{ contentColRef }}" style="width:100%;max-width:428px;--tv-max:1004px;display:flex;flex-direction:column;gap:12px;min-height:0;position:relative;z-index:2;">
+  <div ref="{{ contentColRef }}" style="width:100%;max-width:428px;--tv-max:1004px;display:flex;flex-direction:column;gap:12px;min-height:0;position:relative;">
 
     <!-- TV BEZEL -->
     <div ref="{{ tvBezelRef }}" onpointerdown="{{ onTvTap }}" class="{{ tvBezelClass }}" style="{{ tvBezelStyle }}">
