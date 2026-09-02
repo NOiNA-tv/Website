@@ -699,7 +699,11 @@
         </div>
         </div>
 
+        <!-- The channel number flashes over the picture, and only over the
+             picture: SYS. INFO takes the screen, so it goes with it. -->
+        <sc-if value="{{ !infoOpen }}" hint-placeholder-val="{{ true }}">
         <div ref="{{ numFlashRef }}" style="position:absolute;top:12.5%;right:7.5%;z-index:11;pointer-events:none;font-family:'Jersey 10',monospace;font-size:calc(40px * var(--osd, 1));line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 8px oklch(0.8 0.17 205 / .5);opacity:0;">{{ channel.num }}</div>
+        </sc-if>
 
         <sc-if value="{{ showMuteIcon }}" hint-placeholder-val="{{ false }}">
           <svg viewBox="0 0 48 36" fill="oklch(0.8 0.17 205)" style="position:absolute;top:13.5%;left:8.5%;z-index:11;pointer-events:none;width:calc(40px * var(--osd, 1));height:calc(30px * var(--osd, 1));filter:drop-shadow(0 0 8px oklch(0.8 0.17 205 / .5));">
@@ -1511,6 +1515,7 @@ class Component extends DCLogic {
 
   onBoxTap = () => {
     if (!this.state.boxOn || this.state.boxStaticOn) return;   // mid-transition
+    this.flushBoxAct();
     if (this.state.boxPage + 1 < this.boxPages().length) this.eraseThenNext();
     else this.closeBox();
   };
@@ -1539,6 +1544,8 @@ class Component extends DCLogic {
     const page = this.boxPage();
     const el = this.pingTextEl;
     if (!page || !el) { this._boxT = setTimeout(() => this.typeBoxPage(), 60); return; }
+    // What this page is meant to do, still owed until the line is whole.
+    this._pendingAct = page.act || null;
     this.fitBoxText();
     const full = String(page.text || '');
     let i = 0;
@@ -1553,7 +1560,7 @@ class Component extends DCLogic {
       }
       this.setState({ boxTyped: true });
       if (page.wink) this.startWink(el, full);
-      if (page.act) this.runBoxAct(page.act);
+      if (page.act) { this._pendingAct = null; this.runBoxAct(page.act); }
     };
     tick();
   }
@@ -1569,6 +1576,17 @@ class Component extends DCLogic {
       winking = !winking;
       this.pingTextEl.textContent = winking ? full : open;
     }, 800);
+  }
+
+  /** A visitor who taps through faster than the line types would otherwise
+      skip what the page was there to do — the remote would never come up. So
+      leaving a page settles its debt first. The knock demonstration is the one
+      exception: it is a performance, and there is nothing to catch up on once
+      the box it belongs to is on its way out. */
+  flushBoxAct() {
+    const act = this._pendingAct;
+    this._pendingAct = null;
+    if (act && act !== 'knockDemo') this.runBoxAct(act);
   }
 
   runBoxAct(act) {
