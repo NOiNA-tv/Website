@@ -940,7 +940,7 @@
         <!-- same pill, same blink as SYS. INFO, but laid out along the row.
              The station has no project behind it, so it has no button. -->
         <sc-if value="{{ channel.isProject }}" hint-placeholder-val="{{ true }}">
-        <div onclick="{{ onWatchTape }}" style="margin-top:18px;display:flex;align-items:center;justify-content:flex-end;gap:12px;cursor:pointer;">
+        <div data-watch-tape onclick="{{ onWatchTape }}" style="margin-top:18px;display:flex;align-items:center;justify-content:flex-end;gap:12px;cursor:pointer;">
           <div style="font-family:'VT323',monospace;font-size:clamp(15px, calc(13px * var(--dec, 1)), 20px);color:var(--btn-label);letter-spacing:.04em;">WATCH FULL PROJECT</div>
           <button style="width:32px;height:8px;border-radius:9999px;background:oklch(0.40 0.09 205);border:none;padding:0;cursor:pointer;animation:sysinfo-blink 3s ease-in-out infinite;"></button>
         </div>
@@ -1316,6 +1316,18 @@ class Component extends DCLogic {
     if (!el) return;
     this.descEl = el;
     this.bindTouchScroll(el);
+    // A tap anywhere on the panel closes it. Bound here rather than in the
+    // template so it can tell a tap from a scroll: a drag of more than a few
+    // pixels is the reader moving the text, not asking for it to go away.
+    let sx = 0, sy = 0, moved = false;
+    el.addEventListener('pointerdown', (e) => { sx = e.clientX; sy = e.clientY; moved = false; });
+    el.addEventListener('pointermove', (e) => {
+      if (Math.abs(e.clientX - sx) > 6 || Math.abs(e.clientY - sy) > 6) moved = true;
+    });
+    el.addEventListener('pointerup', (e) => {
+      if (moved || e.target.closest('button, [data-watch-tape]')) return;
+      this.dismissDesc();
+    });
     el.style.opacity = '0';
     el.style.transform = 'translateY(-8px)';
     setTimeout(() => {
@@ -1401,6 +1413,16 @@ class Component extends DCLogic {
     if (this.muteAnim) this.muteAnim.playSegments(muted ? [61, 120] : [1, 60], true);
   }
 
+  /** The description can be dismissed from three places: the INFO button, the
+      panel itself, and the remote's handle. Wherever it comes from, the button
+      has to end up dark again — so the same closing half of its animation runs
+      here, and onToggleDesc brings the remote back up. */
+  dismissDesc = () => {
+    if (!this.state.descOpen) return;
+    if (this.infoAnim) this.infoAnim.playSegments([1, 60], true);
+    this.onToggleDesc();
+  };
+
   onInfoDown = () => {
     const opening = !this.state.descOpen;
     // Verified against the rendered clip: closed->open is [61,120], not what
@@ -1447,7 +1469,7 @@ class Component extends DCLogic {
   BOX_TYPE_MS = 36;         // per character
   BOX_ERASE_MS = 12;        // per character, wiping a page before the next
   BOX_RISE_MS = 120;        // after the static clears, before the first letter
-  PING_AFTER = 4;           // channel presses before the knock tip
+  PING_AFTER = 3;           // channel presses before the knock tip
   PING_WAIT_MS = 20000;     // or this long after the intro closes
   PING_LH_MIN = 1.12;
   PING_LH_MAX = 1.5;
@@ -2879,6 +2901,10 @@ class Component extends DCLogic {
   onHandleDown = (e) => {
     if (!this.remoteEl || e.target.closest('button, [data-remote-btn]')) return;
     e.preventDefault();
+    // Reaching for the remote means done reading. The dismissal raises the
+    // remote by itself, so a plain tap must not then toggle it back down.
+    this._grabClosedDesc = this.state.descOpen;
+    this.dismissDesc();
     cancelAnimationFrame(this._raf);
     const h = this.remoteEl.offsetHeight;
     this._maxT = Math.max(0, h - 85);
@@ -2903,7 +2929,9 @@ class Component extends DCLogic {
   onHandleUp = () => {
     window.removeEventListener('pointermove', this.onHandleMove);
     window.removeEventListener('pointerup', this.onHandleUp);
-    const open = this._moved ? (this._lastT < this._maxT / 2) : !this.remoteOpenTarget();
+    const open = this._moved ? (this._lastT < this._maxT / 2)
+      : (this._grabClosedDesc ? true : !this.remoteOpenTarget());
+    this._grabClosedDesc = false;
     this._openTarget = open;
     this.springTo(this._lastT, open ? 0 : this._maxT, () => this.setState({ dragging: false, remoteOpen: open }));
   };
