@@ -960,6 +960,11 @@
     <sc-if value="{{ showPerfDebug }}" hint-placeholder-val="{{ false }}">
       <div style="position:fixed;left:8px;bottom:8px;z-index:2000;pointer-events:none;font-family:'VT323',monospace;font-size:14px;letter-spacing:.08em;padding:4px 9px;border-radius:6px;background:rgba(0,0,0,.72);border:1px solid oklch(0.85 0.2 145);color:oklch(0.85 0.2 145);">FPS: {{ fpsLabel }}</div>
     </sc-if>
+    <!-- ?debug=build answers one question only: which version of the page is
+         actually on screen. A stale cache and a bug look identical otherwise. -->
+    <sc-if value="{{ showBuildDebug }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;right:8px;top:8px;z-index:2000;pointer-events:none;font-family:'VT323',monospace;font-size:14px;letter-spacing:.08em;padding:4px 9px;border-radius:6px;background:rgba(0,0,0,.72);border:1px solid oklch(0.85 0.2 145);color:oklch(0.85 0.2 145);">BUILD: {{ buildLabel }} · TV {{ tvWidthLabel }}</div>
+    </sc-if>
     <sc-if value="{{ showCmsDebug }}" hint-placeholder-val="{{ false }}">
       <div style="position:fixed;left:8px;top:36px;right:8px;z-index:2000;pointer-events:none;font-family:'VT323',monospace;font-size:14px;letter-spacing:.08em;padding:4px 9px;border-radius:6px;background:rgba(0,0,0,.72);border:1px solid oklch(0.8 0.17 205);color:oklch(0.8 0.17 205);">CHANNELS.JSON: {{ cmsSource }}</div>
     </sc-if>
@@ -2830,6 +2835,8 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
+  BUILD = '2026-09-02-1';
+
   PERF_MIN_FPS = 50;
   PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
 
@@ -3623,6 +3630,9 @@ class Component extends DCLogic {
       showGlowDebug: typeof location !== 'undefined' && /[?&]debug=glow\b/.test(location.search),
       // ?debug=cms — did the bucket's channels.json load, and if not, why not?
       showCmsDebug: typeof location !== 'undefined' && /[?&]debug=cms\b/.test(location.search),
+      showBuildDebug: typeof location !== 'undefined' && /[?&]debug=build\b/.test(location.search),
+      buildLabel: this.BUILD,
+      tvWidthLabel: this.colEl ? Math.round(this.colEl.getBoundingClientRect().width) + 'px' : '?',
       // ?debug=perf — what the device actually managed, and what was given up
       showPerfDebug: typeof location !== 'undefined' && /[?&]debug=perf\b/.test(location.search),
       fpsLabel: this.state.fps
