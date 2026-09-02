@@ -634,7 +634,7 @@
        layer, over the floor and under everything else. The six colour groups
        are painted from CSS variables, which is why the file is inlined rather
        than pointed at with an <img>. -->
-  <div ref="{{ rugRef }}" aria-hidden="true" style="position:fixed;left:50%;bottom:0;width:var(--rug-w, 2172.2px);height:var(--rug-h, 819px);transform:translateX(-50%);pointer-events:none;z-index:2;"></div>
+  <div ref="{{ rugRef }}" aria-hidden="true" style="position:fixed;left:50%;bottom:var(--rug-b, 0px);width:var(--rug-w, 2172.2px);height:var(--rug-h, 819px);transform:translateX(-50%);pointer-events:none;z-index:2;"></div>
   </div>
   <div ref="{{ vignetteRef }}" style="position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:30;mix-blend-mode:multiply;background:radial-gradient(ellipse 62% 68% at 50% 50%, oklch(0.08 0.03 205 / 0) 0%, oklch(0.08 0.03 205 / 0) 55%, oklch(0.14 0.045 205 / .75) 78%, oklch(0.08 0.03 205 / .97) 100%);"></div>
   <sc-if value="{{ showTint }}" hint-placeholder-val="{{ false }}">
@@ -2557,9 +2557,15 @@ class Component extends DCLogic {
     // 24px more rug than the rule alone gives: it reads better a little
     // higher in the frame.
     const h = Math.max(60, free - gap) + 24;
+    // On a desktop the rug is drawn at twice that size, but grows downwards
+    // only: its top edge stays where the rule put it and the extra runs off
+    // the bottom of the window, so the near end of the rug is cropped the way
+    // a real one would be.
+    const grow = window.innerWidth >= 900 ? 2 : 1;
     const root = document.documentElement.style;
-    root.setProperty('--rug-h', h + 'px');
-    root.setProperty('--rug-w', (h * this.RUG_RATIO) + 'px');
+    root.setProperty('--rug-h', (h * grow) + 'px');
+    root.setProperty('--rug-w', (h * grow * this.RUG_RATIO) + 'px');
+    root.setProperty('--rug-b', (-(h * (grow - 1))) + 'px');
   }
 
   updateWallPosition() {
@@ -2835,7 +2841,7 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
-  BUILD = '2026-09-02-1';
+  BUILD = '2026-09-02-2';
 
   PERF_MIN_FPS = 50;
   PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
