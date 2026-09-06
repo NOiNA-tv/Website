@@ -1628,6 +1628,17 @@ class Component extends DCLogic {
     if (act === 'knockDemo') {
       // Two knocks, two seconds apart: the first shows what a knock does, the
       // second hands the set back with its filters on rather than stripped.
+      // SYS. INFO takes over the same element the knock shakes, so a knock
+      // performed while it is open would rock the whole page. The demonstration
+      // waits instead: it holds until the visitor comes back to the set.
+      const waitForSet = (then) => {
+        if (!this.state.boxOn) return;
+        if (this.state.infoOpen || this.state.infoTransitioning) {
+          this._boxT = setTimeout(() => waitForSet(then), 400);
+          return;
+        }
+        then();
+      };
       const hit = () => {
         const bez = this.tvBezelEl;
         if (!bez || !this.state.boxOn) return false;
@@ -1638,10 +1649,10 @@ class Component extends DCLogic {
         this.knockTv(r.right - r.width * 0.19, r.bottom - r.height * 0.12, true);
         return true;
       };
-      this._boxT = setTimeout(() => {
+      this._boxT = setTimeout(() => waitForSet(() => {
         if (!hit()) return;
-        this._boxT = setTimeout(hit, 2000);
-      }, 2000);
+        this._boxT = setTimeout(() => waitForSet(hit), 2000);
+      }), 2000);
     }
   }
 
@@ -2841,7 +2852,7 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
-  BUILD = '2026-09-02-2';
+  BUILD = '2026-09-02-3';
 
   PERF_MIN_FPS = 50;
   PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
@@ -3222,6 +3233,8 @@ class Component extends DCLogic {
   knockTv(x, y, demo) {
     const el = this.tvBezelEl;
     if (!el) return;
+    // In SYS. INFO that element is the page itself. Nothing knocks the page.
+    if (this.state.infoOpen || this.state.infoTransitioning) return;
     if (!demo) this._knocked = true;
     cancelAnimationFrame(this._tvRaf);
     const r = el.getBoundingClientRect();
