@@ -2540,7 +2540,7 @@ class Component extends DCLogic {
   /** The cat's nine schemes stand in the same order as the rug's nine pairs,
       so "not one of the rug's" is a question about indices. */
   CAT_SCHEMES = [
-    ['#27c2a3', '#00997c', '#00785f'], ['#2666a2', '#2666a2', '#327437'],
+    ['#27c2a3', '#00997c', '#00785f'], ['#70bd73', '#44954a', '#327437'],
     ['#c7a336', '#9f7b00', '#7d5f00'], ['#e69052', '#bc671f', '#944e12'],
     ['#ee857e', '#c45b56', '#9a4541'], ['#e783ac', '#bd5a84', '#944466'],
     ['#d588ce', '#ac60a6', '#874882'], ['#a799f3', '#8070ca', '#6356a0'],
@@ -2578,7 +2578,13 @@ class Component extends DCLogic {
           svg.style.cursor = 'pointer';
         }
       });
-      this.catAnim.addEventListener('complete', () => this.catAnim.goToAndStop(0, true));
+      // resetSegments first: after playSegments, frame numbers are counted from
+      // the segment's own start, so goToAndStop(0) on the fur segment would
+      // have parked it on frame 41 — which is exactly where that move ends.
+      this.catAnim.addEventListener('complete', () => {
+        try { this.catAnim.resetSegments(true); } catch (err) {}
+        this.catAnim.goToAndStop(0, true);
+      });
     }).catch(() => {});
   };
 
@@ -2634,7 +2640,9 @@ class Component extends DCLogic {
     // its own size; a desktop's band is shallower, because the set is lower —
     // so the growth is capped by the band rather than fighting it.
     const band = Math.max(120, vh - this.CAT_FLOOR_GAP - topMin);
-    const scale = Math.min(1 + 0.5 * t, band / this.CAT_H);
+    // 0.6 of the artwork on a phone, up to 1.5 on a wide screen — and never
+    // taller than the band it has to sit in.
+    const scale = Math.min(0.6 + 0.9 * t, band / this.CAT_H);
     const w = this.CAT_W * scale, h = this.CAT_H * scale;
     const topMax = vh - this.CAT_FLOOR_GAP - h;
     const y = topMax > topMin ? topMin + this._catBand * (topMax - topMin) : topMin;
@@ -2980,7 +2988,7 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
-  BUILD = '2026-09-02-4';
+  BUILD = '2026-09-02-5';
 
   PERF_MIN_FPS = 50;
   PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
