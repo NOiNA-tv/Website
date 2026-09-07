@@ -636,6 +636,10 @@
        than pointed at with an <img>. -->
   <div ref="{{ rugRef }}" aria-hidden="true" style="position:fixed;left:50%;bottom:var(--rug-b, 0px);width:var(--rug-w, 2172.2px);height:var(--rug-h, 819px);transform:translateX(-50%);pointer-events:none;z-index:2;"></div>
   </div>
+  <!-- THE CAT. Sits on the rug, in a different place and a different colour
+       every visit. The container takes no clicks — only the cat's own painted
+       shapes do — so it can lie across the set without swallowing a knock. -->
+  <div ref="{{ catRef }}" aria-hidden="true" style="position:fixed;left:var(--cat-x, 0px);top:var(--cat-y, 0px);width:var(--cat-w, 738px);height:var(--cat-h, 535px);transform:var(--cat-flip, none);transform-origin:50% 50%;pointer-events:none;z-index:20;"></div>
   <div ref="{{ vignetteRef }}" style="position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:30;mix-blend-mode:multiply;background:radial-gradient(ellipse 62% 68% at 50% 50%, oklch(0.08 0.03 205 / 0) 0%, oklch(0.08 0.03 205 / 0) 55%, oklch(0.14 0.045 205 / .75) 78%, oklch(0.08 0.03 205 / .97) 100%);"></div>
   <sc-if value="{{ showTint }}" hint-placeholder-val="{{ false }}">
     <div class="vignette-tint" aria-hidden="true" style="background-image:{{ glowTint }}"></div>
@@ -2529,7 +2533,130 @@ class Component extends DCLogic {
       root.setProperty('--rug-' + k + '-p', pool[i][0]);
       root.setProperty('--rug-' + k + '-s', pool[i][1]);
     });
+    // Which three were spent, so the cat can wear one of the other six.
+    this._rugSchemes = pool.slice(0, 3).map((p) => this.RUG_PAIRS.indexOf(p));
   }
+
+  /** The cat's nine schemes stand in the same order as the rug's nine pairs,
+      so "not one of the rug's" is a question about indices. */
+  CAT_SCHEMES = [
+    ['#27c2a3', '#00997c', '#00785f'], ['#2666a2', '#2666a2', '#327437'],
+    ['#c7a336', '#9f7b00', '#7d5f00'], ['#e69052', '#bc671f', '#944e12'],
+    ['#ee857e', '#c45b56', '#9a4541'], ['#e783ac', '#bd5a84', '#944466'],
+    ['#d588ce', '#ac60a6', '#874882'], ['#a799f3', '#8070ca', '#6356a0'],
+    ['#63adf6', '#3684cd', '#2666a2'],
+  ];
+  CAT_W = 738; CAT_H = 535;               // the artwork's own size
+  CAT_TAIL = [0, 41];                     // the tail flicks
+  CAT_SPIKE = [41, 81];                   // the fur stands on end
+  CAT_SPIKE_ODDS = 0.2;                   // one press in five
+  CAT_EDGE = 0.1;                         // how much of it hangs off the side
+  CAT_FLOOR_GAP = 18;                     // never quite flush with the bottom
+
+  catRef = (el) => {
+    this.catEl = el;
+    if (!el || el._catDone || typeof lottie === 'undefined') return;
+    el._catDone = true;
+    this.placeCat();
+    fetch('./assets/lottie/cat.json').then((r) => r.json()).then((data) => {
+      if (!this.catEl) return;
+      this.recolourCat(data);
+      this.catAnim = lottie.loadAnimation({
+        container: this.catEl, renderer: 'svg', loop: false, autoplay: false,
+        animationData: data,
+      });
+      // Frame one, held, until somebody prods it.
+      this.catAnim.addEventListener('DOMLoaded', () => {
+        this.catAnim.goToAndStop(0, true);
+        const svg = this.catEl.querySelector('svg');
+        // The container is deaf; the drawn cat is not. A press anywhere else
+        // over this rectangle goes through to whatever is underneath.
+        if (svg) {
+          svg.style.pointerEvents = 'none';
+          svg.querySelectorAll('path, g').forEach((n) => { n.style.pointerEvents = 'visiblePainted'; });
+          svg.addEventListener('pointerdown', this.onCatTap);
+          svg.style.cursor = 'pointer';
+        }
+      });
+      this.catAnim.addEventListener('complete', () => this.catAnim.goToAndStop(0, true));
+    }).catch(() => {});
+  };
+
+  /** One scheme, never one the rug is already wearing. The layers say which of
+      the three tones they take; the colours in the file are the fallback for
+      any layer whose name does not. */
+  recolourCat(data) {
+    const taken = this._rugSchemes || [];
+    const free = [];
+    for (let i = 0; i < this.CAT_SCHEMES.length; i++) if (taken.indexOf(i) < 0) free.push(i);
+    const pick = free.length ? free[Math.floor(Math.random() * free.length)]
+                             : Math.floor(Math.random() * this.CAT_SCHEMES.length);
+    const scheme = this.CAT_SCHEMES[pick];
+    this._catScheme = pick;
+    const rgb = (hex) => [parseInt(hex.slice(1, 3), 16) / 255,
+                          parseInt(hex.slice(3, 5), 16) / 255,
+                          parseInt(hex.slice(5, 7), 16) / 255, 1];
+    const tone = (name) => {
+      const n = String(name || '').toLowerCase();
+      // 'secondery' is in the file as exported; both spellings mean the same.
+      if (n.indexOf('primary') >= 0) return rgb(scheme[0]);
+      if (n.indexOf('second') >= 0) return rgb(scheme[1]);
+      if (n.indexOf('terti') >= 0) return rgb(scheme[2]);
+      return null;
+    };
+    const paint = (node, col) => {
+      if (!node || !col) return;
+      if (Array.isArray(node)) { node.forEach((n) => paint(n, col)); return; }
+      if (typeof node !== 'object') return;
+      if ((node.ty === 'fl' || node.ty === 'st') && node.c && !node.c.a) node.c.k = col.slice();
+      Object.keys(node).forEach((k) => { if (k !== 'c') paint(node[k], col); });
+    };
+    (data.layers || []).forEach((l) => paint(l.shapes, tone(l.nm)));
+    (data.assets || []).forEach((a) => (a.layers || []).forEach((l) => paint(l.shapes, tone(l.nm))));
+  }
+
+  /** Where the cat sits. Always against one wall, hanging a tenth of its own
+      width off that side, and somewhere in the band between the decoder's
+      lower third and a little above the bottom of the screen. Both the side
+      and the height are drawn once, on load, and kept through resizes. */
+  placeCat() {
+    if (!this.catEl) return;
+    if (this._catRight == null) this._catRight = Math.random() < 0.5;
+    if (this._catBand == null) this._catBand = Math.random();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    // A phone gets the artwork's own size; a wide screen grows it, up to half
+    // as big again at 1600px and beyond. A first guess, easily changed.
+    const t = Math.max(0, Math.min(1, (vw - 600) / 1000));
+    const dec = this.decoderEl ? this.decoderEl.getBoundingClientRect() : null;
+    const topMin = dec ? dec.bottom - dec.height / 3 : vh * 0.5;
+    // The band it may sit in: from a third up the decoder down to a little
+    // short of the bottom of the screen. A phone has room for the artwork at
+    // its own size; a desktop's band is shallower, because the set is lower —
+    // so the growth is capped by the band rather than fighting it.
+    const band = Math.max(120, vh - this.CAT_FLOOR_GAP - topMin);
+    const scale = Math.min(1 + 0.5 * t, band / this.CAT_H);
+    const w = this.CAT_W * scale, h = this.CAT_H * scale;
+    const topMax = vh - this.CAT_FLOOR_GAP - h;
+    const y = topMax > topMin ? topMin + this._catBand * (topMax - topMin) : topMin;
+    const x = this._catRight ? vw - w + w * this.CAT_EDGE : -w * this.CAT_EDGE;
+    const root = document.documentElement.style;
+    root.setProperty('--cat-w', w + 'px');
+    root.setProperty('--cat-h', h + 'px');
+    root.setProperty('--cat-x', Math.round(x) + 'px');
+    root.setProperty('--cat-y', Math.round(y) + 'px');
+    root.setProperty('--cat-flip', this._catRight ? 'scaleX(-1)' : 'none');
+  }
+
+  /** Four presses in five flick the tail; the fifth puts its fur up. Either
+      way it plays once and settles back on frame one. */
+  onCatTap = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!this.catAnim) return;
+    const spike = Math.random() < this.CAT_SPIKE_ODDS;
+    const seg = spike ? this.CAT_SPIKE : this.CAT_TAIL;
+    this.playSfx(spike ? './assets/cat-meow.mp3' : './assets/cat-purr.mp3', 1);
+    try { this.catAnim.playSegments(seg, true); } catch (err) {}
+  };
 
   wallRef = (el) => { this.wallEl = el; this.updateWallPosition(); };
 
@@ -2597,6 +2724,7 @@ class Component extends DCLogic {
     this.textureEl.style.top = `${midY}px`;
     this.updateWallPosition();
     this.updateRugPosition();
+    this.placeCat();
     const viewportH = rootRect.height;
     const angleDeg = 88;
     const dCritical = 900 / Math.sin(angleDeg * Math.PI / 180);
@@ -2852,7 +2980,7 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
-  BUILD = '2026-09-02-3';
+  BUILD = '2026-09-02-4';
 
   PERF_MIN_FPS = 50;
   PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
@@ -3386,7 +3514,8 @@ class Component extends DCLogic {
          './assets/remote-mute.mp3', './assets/remote-info.mp3',
          './assets/remote-channel-up.mp3', './assets/remote-channel-down.mp3',
          './assets/screen-tap-01.mp3', './assets/screen-tap-02.mp3',
-         './assets/screen-tap-03.mp3', './assets/screen-tap-04.mp3'];
+         './assets/screen-tap-03.mp3', './assets/screen-tap-04.mp3',
+         './assets/cat-purr.mp3', './assets/cat-meow.mp3'];
   _sfxBuf = {};
   _sfxPeak = {};
 
@@ -3740,6 +3869,7 @@ class Component extends DCLogic {
       rootRef: this.rootRef,
       textureRef: this.textureRef,
       rugRef: this.rugRef,
+      catRef: this.catRef,
       wallRef: this.wallRef,
       vignetteRef: this.vignetteRef,
       remoteOutlineRef: this.remoteOutlineRef,
