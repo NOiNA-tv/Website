@@ -1570,9 +1570,25 @@ class Component extends DCLogic {
   boxPages() { return (this.dialogues()[this.state.boxKey] || []); }
   boxPage() { return this.boxPages()[this.state.boxPage] || null; }
 
+  /** Hold something back until the tab is actually being looked at. Nothing
+      the box does — the count-down, the typing, the demonstration, its
+      sounds — should happen to an empty room. */
+  whenVisible(fn) {
+    if (!document.hidden) { fn(); return; }
+    (this._visQueue || (this._visQueue = [])).push(fn);
+  }
+
+  runVisQueue() {
+    const q = this._visQueue;
+    this._visQueue = null;
+    if (q) q.forEach((fn) => { try { fn(); } catch (e) {} });
+  }
+
   /** Open a script, unless it has been seen or something has ruled it out. */
   openBox(key) {
     if (this.state.boxOn || this._boxSeen[key]) return;
+    // Away from the tab: hold it, and open the moment they come back.
+    if (document.hidden) { this.whenVisible(() => this.openBox(key)); return; }
     if (key === 'knock' && this._knocked) return;      // they already found it
     const pages = this.dialogues()[key];
     if (!pages || !pages.length || !String(pages[0].text || '').trim()) return;
@@ -1691,7 +1707,7 @@ class Component extends DCLogic {
       // waits instead: it holds until the visitor comes back to the set.
       const waitForSet = (then) => {
         if (!this.state.boxOn) return;
-        if (this.state.infoOpen || this.state.infoTransitioning) {
+        if (document.hidden || this.state.infoOpen || this.state.infoTransitioning) {
           this._boxT = setTimeout(() => waitForSet(then), 400);
           return;
         }
@@ -3103,7 +3119,7 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
-  BUILD = '2026-09-02-13';
+  BUILD = '2026-09-02-14';
 
   PERF_MIN_FPS = 50;
   PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
@@ -3207,6 +3223,7 @@ class Component extends DCLogic {
       this.scheduleFlicker();
       this.startNoise();
       this.remeasure();
+      this.runVisQueue();
     }
   };
 
@@ -3681,6 +3698,7 @@ class Component extends DCLogic {
       exactly the loudest part of the sound. So the gain is limited to whatever
       headroom the clip actually has. */
   playSfx(src, volume) {
+    if (typeof document !== 'undefined' && document.hidden) return;
     const want = volume == null ? 0.5 : volume;
     const peak = this._sfxPeak[src];
     const vol = peak ? Math.min(want, 0.98 / peak) : want;
