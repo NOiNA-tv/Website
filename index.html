@@ -2689,7 +2689,7 @@ class Component extends DCLogic {
     }
     const floor = Math.max(56, vh * this.CAT_FLOOR_GAP);
     const band = Math.max(120, vh - floor - topMin);
-    // Half the artwork on a phone, up to a quarter again on a wide screen —
+    // Half the artwork on a phone, three quarters of it on a wide screen —
     // and never taller than the band it has to sit in.
     // 0.85 of the band, not all of it: a cat that exactly fills its run has
     // nowhere left to sit differently from one load to the next.
@@ -2697,7 +2697,7 @@ class Component extends DCLogic {
     // fits the band, the tenth of it that hangs off the wall, the height it
     // sits at. The canvas is then placed so the drawing lands there.
     const f = this.measureCatContent() || { x: 0, w: 1, y: 0, h: 1 };
-    const scale = Math.min(0.5 + 0.75 * t, (band * 0.95) / (this.CAT_H * f.h));
+    const scale = Math.min(0.5 + 0.25 * t, (band * 0.95) / (this.CAT_H * f.h));
     const w = this.CAT_W * scale, h = this.CAT_H * scale;
     const dw = w * f.w, dh = h * f.h;              // the cat as drawn
     const topMax = vh - floor - dh;
@@ -3049,7 +3049,7 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
-  BUILD = '2026-09-02-10';
+  BUILD = '2026-09-02-11';
 
   PERF_MIN_FPS = 50;
   PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
