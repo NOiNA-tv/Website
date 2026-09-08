@@ -926,7 +926,7 @@
         <div style="position:absolute;inset:0;background:linear-gradient(135deg, oklch(0.24 0.016 205), oklch(0.14 0.018 205));clip-path:url(#decoder-shape-clip);box-shadow:0 6px 14px rgba(0,0,0,.4);"></div>
         <div style="position:absolute;left:0;right:0;top:calc(46% - 16px * var(--dec, 1));bottom:-4px;border:4px solid oklch(0.30 0.065 205);border-radius:calc(12px * var(--dec, 1));background:transparent;pointer-events:none;transform:translateY(-4px);z-index:2;"></div>
         <div style="position:absolute;left:calc(16px * var(--dec, 1));right:calc(16px * var(--dec, 1));top:46%;bottom:8%;display:flex;align-items:center;gap:calc(8px * var(--dec, 1));transform:translateY(calc(-4px * var(--dec, 1)));">
-        <div style="background:oklch(0.14 0.018 205);border-radius:calc(6px * var(--dec, 1));padding:calc(2px * var(--dec, 1)) calc(5px * var(--dec, 1));display:flex;align-items:center;gap:calc(5px * var(--dec, 1));width:100%;height:100%;">
+        <div data-dec-row style="background:oklch(0.14 0.018 205);border-radius:calc(6px * var(--dec, 1));padding:calc(2px * var(--dec, 1)) calc(5px * var(--dec, 1));display:flex;align-items:center;gap:calc(5px * var(--dec, 1));width:100%;height:100%;">
         <div style="font-family:'Segment7Standard',monospace;font-size:calc(26px * var(--dec, 1));line-height:1;color:oklch(0.8 0.17 205);text-shadow:0 0 calc(8px * var(--dec, 1)) oklch(0.8 0.17 205 / .5);width:calc(46px * var(--dec, 1));height:100%;display:flex;align-items:center;justify-content:center;padding-top:calc(4px * var(--dec, 1));">{{ channel.num }}</div>
         <div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:0;align-self:stretch;">
           <div style="font-family:'Jersey 10',monospace;font-size:calc(20px * var(--dec, 1));letter-spacing:.04em;color:oklch(0.8 0.17 205);text-shadow:0 0 calc(6px * var(--dec, 1)) oklch(0.8 0.17 205 / .4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;top:calc(1px * var(--dec, 1));">{{ channel.title }}</div>
@@ -935,7 +935,7 @@
         <div style="display:flex;align-items:center;justify-content:center;align-self:stretch;margin-right:calc(14px * var(--dec, 1));">
           <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(6px * var(--dec, 1));">
             <button onclick="{{ onToggleInfo }}" style="width:calc(32px * var(--dec, 1));height:calc(8px * var(--dec, 1));border-radius:9999px;background:oklch(0.40 0.09 205);border:none;padding:0;cursor:pointer;animation:sysinfo-blink 3s ease-in-out infinite;"></button>
-            <div onclick="{{ onToggleInfo }}" style="font-family:'VT323',monospace;font-size:calc(9px * var(--dec, 1));color:var(--btn-label);letter-spacing:.04em;text-align:center;padding-right:.1em;margin-left:calc(2px * var(--dec, 1));cursor:pointer;">SYS. INFO</div>
+            <div data-sysinfo onclick="{{ onToggleInfo }}" style="font-family:'VT323',monospace;font-size:calc(9px * var(--dec, 1));color:var(--btn-label);letter-spacing:.04em;text-align:center;padding-right:.1em;margin-left:calc(2px * var(--dec, 1));cursor:pointer;">SYS. INFO</div>
           </div>
         </div>
         </div>
@@ -2552,7 +2552,7 @@ class Component extends DCLogic {
   CAT_SPIKE_ODDS = 0.2;                   // one press in five
   CAT_EDGE = 0.2;                         // how much of it hangs off the side
   CAT_FLOOR_GAP = 0.07;                   // share of the window kept clear at the bottom
-  CAT_CEIL = 0.25;                        // how far up the decoder its head may reach
+  CAT_CEIL = 0.72;                        // how far down the decoder its head may reach
 
   catRef = (el) => {
     this.catEl = el;
@@ -2660,7 +2660,12 @@ class Component extends DCLogic {
   placeCat() {
     if (!this.catEl) return;
     if (this._catRight == null) this._catRight = Math.random() < 0.5;
-    if (this._catBand == null) this._catBand = Math.random();
+    if (this._catBand == null) {
+      // ?cat=0 pins it to the top of its run and ?cat=1 to the bottom, which is
+      // how the two ends of the rule get looked at without reloading forty times.
+      const forced = /[?&]cat=([01](?:\.\d+)?)\b/.exec(location.search);
+      this._catBand = forced ? parseFloat(forced[1]) : Math.random();
+    }
     const vw = window.innerWidth, vh = window.innerHeight;
     // A phone gets the artwork's own size; a wide screen grows it, up to half
     // as big again at 1600px and beyond. A first guess, easily changed.
@@ -2672,7 +2677,16 @@ class Component extends DCLogic {
     // highest it may sit is with its head level with that line, hiding the
     // decoder's lower half and no more. From there down to a little short of
     // the bottom of the screen is its run.
-    const topMin = dec ? dec.top + dec.height * this.CAT_CEIL : vh * 0.4;
+    let topMin = dec ? dec.top + dec.height * this.CAT_CEIL : vh * 0.4;
+    // The decoder's lit row is what has to stay readable: the channel number,
+    // the title, the SYS. INFO button. The cat's head may reach its middle —
+    // enough to sit against the set rather than beside it, not enough to take
+    // a line of it away.
+    const row = document.querySelector('[data-dec-row]');
+    if (row) {
+      const rr = row.getBoundingClientRect();
+      if (rr.height > 0) topMin = Math.max(topMin, rr.bottom - rr.height * 0.25);
+    }
     const floor = Math.max(56, vh * this.CAT_FLOOR_GAP);
     const band = Math.max(120, vh - floor - topMin);
     // Half the artwork on a phone, up to a quarter again on a wide screen —
@@ -3035,7 +3049,7 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
-  BUILD = '2026-09-02-9';
+  BUILD = '2026-09-02-10';
 
   PERF_MIN_FPS = 50;
   PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
