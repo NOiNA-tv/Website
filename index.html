@@ -2550,7 +2550,7 @@ class Component extends DCLogic {
   CAT_TAIL = [0, 41];                     // the tail flicks
   CAT_SPIKE = [41, 81];                   // the fur stands on end
   CAT_SPIKE_ODDS = 0.2;                   // one press in five
-  CAT_EDGE = 0.15;                         // how much of it hangs off the side
+  CAT_EDGE = 0.2;                         // how much of it hangs off the side
   CAT_FLOOR_GAP = 18;                     // never quite flush with the bottom
 
   catRef = (el) => {
@@ -2634,17 +2634,19 @@ class Component extends DCLogic {
     // as big again at 1600px and beyond. A first guess, easily changed.
     const t = Math.max(0, Math.min(1, (vw - 600) / 1000));
     const dec = this.decoderEl ? this.decoderEl.getBoundingClientRect() : null;
-    // Never above the middle of the window, and never higher than a third up
-    // the decoder — whichever of the two is the lower line wins.
-    const topMin = Math.max(dec ? dec.bottom - dec.height / 3 : 0, vh * 0.5);
-    // The band it may sit in: from a third up the decoder down to a little
-    // short of the bottom of the screen. A phone has room for the artwork at
-    // its own size; a desktop's band is shallower, because the set is lower —
-    // so the growth is capped by the band rather than fighting it.
+    // Height is a question about the floor, not about the cat's head. The
+    // floor's horizon runs across the decoder's middle, so anywhere the cat's
+    // feet land below that line it reads as sitting on the floor — and the
+    // highest it may sit is with its head level with that line, hiding the
+    // decoder's lower half and no more. From there down to a little short of
+    // the bottom of the screen is its run.
+    const topMin = dec ? dec.top + dec.height * 0.5 : vh * 0.45;
     const band = Math.max(120, vh - this.CAT_FLOOR_GAP - topMin);
     // Half the artwork on a phone, up to a quarter again on a wide screen —
     // and never taller than the band it has to sit in.
-    const scale = Math.min(0.5 + 0.75 * t, band / this.CAT_H);
+    // 0.85 of the band, not all of it: a cat that exactly fills its run has
+    // nowhere left to sit differently from one load to the next.
+    const scale = Math.min(0.5 + 0.75 * t, (band * 0.85) / this.CAT_H);
     const w = this.CAT_W * scale, h = this.CAT_H * scale;
     const topMax = vh - this.CAT_FLOOR_GAP - h;
     const y = topMax > topMin ? topMin + this._catBand * (topMax - topMin) : topMin;
@@ -2990,7 +2992,7 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
-  BUILD = '2026-09-02-6';
+  BUILD = '2026-09-02-7';
 
   PERF_MIN_FPS = 50;
   PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
