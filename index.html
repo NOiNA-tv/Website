@@ -2551,7 +2551,8 @@ class Component extends DCLogic {
   CAT_SPIKE = [41, 81];                   // the fur stands on end
   CAT_SPIKE_ODDS = 0.2;                   // one press in five
   CAT_EDGE = 0.2;                         // how much of it hangs off the side
-  CAT_FLOOR_GAP = 18;                     // never quite flush with the bottom
+  CAT_FLOOR_GAP = 0.07;                   // share of the window kept clear at the bottom
+  CAT_CEIL = 0.25;                        // how far up the decoder its head may reach
 
   catRef = (el) => {
     this.catEl = el;
@@ -2568,6 +2569,8 @@ class Component extends DCLogic {
       // Frame one, held, until somebody prods it.
       this.catAnim.addEventListener('DOMLoaded', () => {
         this.catAnim.goToAndStop(0, true);
+        // now that there is something drawn, place it properly
+        requestAnimationFrame(() => { this.measureCatContent(); this.placeCat(); });
         const svg = this.catEl.querySelector('svg');
         // The container is deaf; the drawn cat is not. A press anywhere else
         // over this rectangle goes through to whatever is underneath.
@@ -2625,6 +2628,35 @@ class Component extends DCLogic {
       width off that side, and somewhere in the band between the decoder's
       lower third and a little above the bottom of the screen. Both the side
       and the height are drawn once, on load, and kept through resizes. */
+  /** What the file actually draws at frame one, as fractions of its canvas.
+      The artwork does not fill its own comp — at rest the cat occupies about
+      two thirds of the width and the lower half of the height — so measuring
+      the container told us nothing useful about where the cat looked like it
+      was, or how big. Measured once from the rendered shapes and cached. */
+  measureCatContent() {
+    if (this._catFrac || !this.catEl) return this._catFrac;
+    const box = this.catEl.getBoundingClientRect();
+    if (!(box.width > 4 && box.height > 4)) return null;
+    const rects = [];
+    this.catEl.querySelectorAll('path').forEach((n) => {
+      const r = n.getBoundingClientRect();
+      if (r.width > 1 && r.height > 1) rects.push(r);
+    });
+    if (!rects.length) return null;
+    const L = Math.min.apply(null, rects.map((r) => r.left));
+    const R = Math.max.apply(null, rects.map((r) => r.right));
+    const T = Math.min.apply(null, rects.map((r) => r.top));
+    const B = Math.max.apply(null, rects.map((r) => r.bottom));
+    const fx = (L - box.left) / box.width, fw = (R - L) / box.width;
+    // The rects are measured after the flip, so a right-hand cat reports its
+    // inset mirrored. Store it the way the file draws it, unflipped.
+    this._catFrac = {
+      x: this._catRight ? 1 - fx - fw : fx, w: fw,
+      y: (T - box.top) / box.height, h: (B - T) / box.height,
+    };
+    return this._catFrac;
+  }
+
   placeCat() {
     if (!this.catEl) return;
     if (this._catRight == null) this._catRight = Math.random() < 0.5;
@@ -2640,17 +2672,28 @@ class Component extends DCLogic {
     // highest it may sit is with its head level with that line, hiding the
     // decoder's lower half and no more. From there down to a little short of
     // the bottom of the screen is its run.
-    const topMin = dec ? dec.top + dec.height * 0.5 : vh * 0.45;
-    const band = Math.max(120, vh - this.CAT_FLOOR_GAP - topMin);
+    const topMin = dec ? dec.top + dec.height * this.CAT_CEIL : vh * 0.4;
+    const floor = Math.max(56, vh * this.CAT_FLOOR_GAP);
+    const band = Math.max(120, vh - floor - topMin);
     // Half the artwork on a phone, up to a quarter again on a wide screen —
     // and never taller than the band it has to sit in.
     // 0.85 of the band, not all of it: a cat that exactly fills its run has
     // nowhere left to sit differently from one load to the next.
-    const scale = Math.min(0.5 + 0.75 * t, (band * 0.85) / this.CAT_H);
+    // Everything below is about the drawn cat, not its canvas: the size that
+    // fits the band, the tenth of it that hangs off the wall, the height it
+    // sits at. The canvas is then placed so the drawing lands there.
+    const f = this.measureCatContent() || { x: 0, w: 1, y: 0, h: 1 };
+    const scale = Math.min(0.5 + 0.75 * t, (band * 0.95) / (this.CAT_H * f.h));
     const w = this.CAT_W * scale, h = this.CAT_H * scale;
-    const topMax = vh - this.CAT_FLOOR_GAP - h;
-    const y = topMax > topMin ? topMin + this._catBand * (topMax - topMin) : topMin;
-    const x = this._catRight ? vw - w + w * this.CAT_EDGE : -w * this.CAT_EDGE;
+    const dw = w * f.w, dh = h * f.h;              // the cat as drawn
+    const topMax = vh - floor - dh;
+    const dy = topMax > topMin ? topMin + this._catBand * (topMax - topMin) : topMin;
+    const dx = this._catRight ? vw - dw + dw * this.CAT_EDGE : -dw * this.CAT_EDGE;
+    // A flip mirrors the drawing inside its canvas, so the inset that was on
+    // the left is on the right once it is flipped.
+    const insetX = this._catRight ? (1 - f.x - f.w) : f.x;
+    const x = dx - insetX * w;
+    const y = dy - f.y * h;
     const root = document.documentElement.style;
     root.setProperty('--cat-w', w + 'px');
     root.setProperty('--cat-h', h + 'px');
@@ -2992,7 +3035,7 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
-  BUILD = '2026-09-02-7';
+  BUILD = '2026-09-02-9';
 
   PERF_MIN_FPS = 50;
   PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
