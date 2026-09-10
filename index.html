@@ -2622,6 +2622,7 @@ class Component extends DCLogic {
   CAT_SPIKE_ODDS = 0.2;                   // one press in five
   CAT_EDGE = 0.2;                         // how much of it hangs off the side
   CAT_FLOOR_GAP = 0.07;                   // share of the window kept clear at the bottom
+  CAT_FLOOR_GAP_NARROW = 0.14;            // twice as much on a phone
   CAT_CEIL = 0.72;                        // how far down the decoder its head may reach
 
   catRef = (el) => {
@@ -2757,7 +2758,10 @@ class Component extends DCLogic {
       const rr = row.getBoundingClientRect();
       if (rr.height > 0) topMin = Math.max(topMin, rr.bottom - rr.height * 0.25);
     }
-    const floor = Math.max(56, vh * this.CAT_FLOOR_GAP);
+    // A phone keeps twice the air under the cat: the screen is short, the
+    // remote's peek is right there, and 60-odd pixels read as almost nothing.
+    const gapShare = vw < 900 ? this.CAT_FLOOR_GAP_NARROW : this.CAT_FLOOR_GAP;
+    const floor = Math.max(vw < 900 ? 112 : 56, vh * gapShare);
     const band = Math.max(120, vh - floor - topMin);
     // Half the artwork on a phone, three quarters of it on a wide screen —
     // and never taller than the band it has to sit in.
@@ -3119,7 +3123,7 @@ class Component extends DCLogic {
       back to its palette, which is the same state a knock produces — and a
       knock still turns them back on, because it is the visitor's call in the
       end, not the measurement's. */
-  BUILD = '2026-09-02-14';
+  BUILD = '2026-09-02-15';
 
   PERF_MIN_FPS = 50;
   PERF_MAX_LONG = 0.12;                         // share of frames over 22ms
